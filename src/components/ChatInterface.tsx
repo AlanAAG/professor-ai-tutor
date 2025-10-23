@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, BookOpen } from "lucide-react";
+import { Loader2, Send, BookOpen, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -163,9 +164,16 @@ export const ChatInterface = () => {
       {/* Header with controls */}
       <div className="border-b bg-card p-4">
         <div className="max-w-4xl mx-auto space-y-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-bold">TETR AI Tutor Demo</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link to="/">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <BookOpen className="w-6 h-6 text-primary" />
+              <h1 className="text-2xl font-bold">TETR AI Tutor Demo</h1>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Select value={selectedClass} onValueChange={setSelectedClass}>
