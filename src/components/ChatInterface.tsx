@@ -2,10 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, BookOpen, ArrowLeft, Database } from "lucide-react";
+import { Loader2, Send, BookOpen, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
@@ -55,7 +53,6 @@ export const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [selectedPersona, setSelectedPersona] = useState<string>("Study");
-  const [useRAG, setUseRAG] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -91,7 +88,6 @@ export const ChatInterface = () => {
         messages: [...messages, { role: "user", content: userMessage }],
         selectedClass,
         persona: PERSONAS[selectedPersona as keyof typeof PERSONAS],
-        useRAG,
       }),
     });
 
@@ -232,17 +228,6 @@ export const ChatInterface = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Database className="w-4 h-4 text-muted-foreground" />
-            <Label htmlFor="rag-mode" className="flex-1 text-sm cursor-pointer">
-              Use Course Materials (RAG)
-            </Label>
-            <Switch 
-              id="rag-mode" 
-              checked={useRAG} 
-              onCheckedChange={setUseRAG}
-            />
           </div>
         </div>
       </div>

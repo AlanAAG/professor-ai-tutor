@@ -9,10 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, selectedClass, persona, useRAG = true } = await req.json();
-    
-    // Force RAG to always be enabled
-    const forceRAG = true;
+    const { messages, selectedClass, persona } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -22,8 +19,8 @@ serve(async (req) => {
     let courseContext = "";
     let sources: any[] = [];
 
-    // Fetch relevant course materials - ALWAYS enabled
-    if (forceRAG && messages.length > 0) {
+    // Fetch relevant course materials
+    if (messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
       if (lastUserMessage.role === "user") {
         try {
@@ -55,7 +52,7 @@ serve(async (req) => {
       }
     }
 
-    // Build system prompt based on class and persona - STRICT RAG-ONLY mode
+    // Build system prompt based on class and persona
     const systemPrompt = `You are an AI tutor for ${selectedClass || "general studies"}. ${
       persona ? `Your teaching style: ${persona}` : ""
     }
@@ -65,18 +62,25 @@ CRITICAL INSTRUCTIONS:
 - DO NOT use any external knowledge or information from your training
 - If the course materials don't contain the answer, say "I don't have information about that in the course materials"
 - When answering, ALWAYS reference the source material by number [1], [2], etc.
-- Stay strictly within the scope of ${selectedClass || "the subject"}
+- Stay strictly within the scope of the course topic
+
+FORMATTING RULES (MANDATORY):
+- NEVER use markdown bold formatting (**text**) - just write plain text
+- Keep answers SHORT and DIGESTIBLE - students don't like long walls of text
+- Use bullet points and short paragraphs (2-3 sentences max)
+- Break complex ideas into simple, bite-sized pieces
+- NEVER change the course name "${selectedClass}" - always use it exactly as provided
 
 Your role:
 - Answer questions using ONLY the course materials provided
-- Provide clear, educational explanations based on the lectures
-- Break down complex topics from the course into digestible parts
-- Help students master the content they've been taught
+- Keep responses concise and student-friendly
+- Break down complex topics into easy chunks
+- Help students learn efficiently without overwhelming them
 ${courseContext ? courseContext : "\n\nNo course materials were found for this query. Inform the student that you need course content to answer their question."}
 
-Keep responses focused, educational, and conversational. Never make up information.`;
+Keep responses SHORT, clear, and conversational. Students prefer quick, actionable answers over long explanations.`;
 
-    console.log("AI Tutor request:", { selectedClass, persona, messageCount: messages.length, useRAG, sourcesFound: sources.length });
+    console.log("AI Tutor request:", { selectedClass, persona, messageCount: messages.length, sourcesFound: sources.length });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
