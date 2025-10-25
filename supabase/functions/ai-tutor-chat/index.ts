@@ -10,6 +10,9 @@ serve(async (req) => {
 
   try {
     const { messages, selectedClass, persona, useRAG = true } = await req.json();
+    
+    // Force RAG to always be enabled
+    const forceRAG = true;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
@@ -19,8 +22,8 @@ serve(async (req) => {
     let courseContext = "";
     let sources: any[] = [];
 
-    // Fetch relevant course materials if RAG is enabled
-    if (useRAG && messages.length > 0) {
+    // Fetch relevant course materials - ALWAYS enabled
+    if (forceRAG && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1];
       if (lastUserMessage.role === "user") {
         try {
@@ -52,20 +55,26 @@ serve(async (req) => {
       }
     }
 
-    // Build system prompt based on class and persona
+    // Build system prompt based on class and persona - STRICT RAG-ONLY mode
     const systemPrompt = `You are an AI tutor for ${selectedClass || "general studies"}. ${
       persona ? `Your teaching style: ${persona}` : ""
     }
 
-Your role:
-- Answer questions about ${selectedClass || "the subject"}
-- Provide clear, educational explanations
-- Break down complex topics into digestible parts
-- Encourage critical thinking
-${useRAG ? "- When using course materials, reference them by their number [1], [2], etc." : ""}
-${courseContext ? courseContext : ""}
+CRITICAL INSTRUCTIONS:
+- You MUST ONLY use information from the provided course materials below
+- DO NOT use any external knowledge or information from your training
+- If the course materials don't contain the answer, say "I don't have information about that in the course materials"
+- When answering, ALWAYS reference the source material by number [1], [2], etc.
+- Stay strictly within the scope of ${selectedClass || "the subject"}
 
-Keep responses focused, educational, and conversational.`;
+Your role:
+- Answer questions using ONLY the course materials provided
+- Provide clear, educational explanations based on the lectures
+- Break down complex topics from the course into digestible parts
+- Help students master the content they've been taught
+${courseContext ? courseContext : "\n\nNo course materials were found for this query. Inform the student that you need course content to answer their question."}
+
+Keep responses focused, educational, and conversational. Never make up information.`;
 
     console.log("AI Tutor request:", { selectedClass, persona, messageCount: messages.length, useRAG, sourcesFound: sources.length });
 

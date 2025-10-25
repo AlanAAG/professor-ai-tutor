@@ -43,10 +43,10 @@ const SUBJECTS = [
 ];
 
 const PERSONAS = {
-  "Study": "Help students learn and understand concepts through clear explanations and examples",
-  "Quiz Maker": "Create quiz questions and practice problems to test understanding",
-  "Professor": "Provide detailed academic explanations with theoretical depth",
-  "Summary Creator": "Distill information into concise, easy-to-understand summaries",
+  "Study": "Reinforce knowledge by explaining concepts from the course materials with clear examples and interactive Q&A",
+  "Quiz Maker": "Generate quiz questions and practice problems based strictly on the course content to test understanding",
+  "Professor": "Teach concepts like a professor would, providing thorough academic explanations with depth and context from the lectures",
+  "Summary Creator": "Create comprehensive summaries of specific topics found in the database, condensing key information efficiently",
 };
 
 export const ChatInterface = () => {

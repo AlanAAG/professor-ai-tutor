@@ -52,7 +52,7 @@ const Index = () => {
                   variant="outline" 
                   className="text-lg px-8 py-6 border-2"
                 >
-                  Join Beta Waitlist
+                  Get Early Access
                 </Button>
               </div>
             </div>
@@ -216,7 +216,7 @@ const Index = () => {
                 variant="outline" 
                 className="text-lg px-10 py-7 border-2"
               >
-                Join Beta Waitlist
+                Get Early Access
               </Button>
             </div>
           </div>
