@@ -32,10 +32,12 @@ const Index = () => {
               </div>
               
               <h1 className="text-5xl lg:text-7xl font-bold text-foreground leading-tight">
-                Your Lectures,
-                <br />
-                <span className="text-primary bg-clip-text">Instantly Searchable</span>
+                A TETR Way to Study
               </h1>
+              
+              <p className="text-lg text-muted-foreground">
+                By: Juan Pablo Rocha, Alan Ayala and Samuel Estrada
+              </p>
               
               <p className="text-xl text-muted-foreground leading-relaxed max-w-xl">
                 Transform hours of lecture recordings into an AI tutor that knows everything from your classes. Ask questions, get summaries, and study smarter—all powered by your actual course content.
