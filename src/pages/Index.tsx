@@ -44,7 +44,7 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/demo">
+                <Link to="/auth">
                   <Button 
                     size="lg" 
                     className="text-lg px-10 py-7 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-[var(--shadow-hover)] font-semibold"

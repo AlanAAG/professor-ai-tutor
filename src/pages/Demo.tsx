@@ -1,7 +1,7 @@
-import { ChatInterface } from "@/components/ChatInterface";
+import { ProtectedChatInterface } from "@/components/ProtectedChatInterface";
 
 const Demo = () => {
-  return <ChatInterface />;
+  return <ProtectedChatInterface />;
 };
 
 export default Demo;
