@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import FeatureCard from "@/components/FeatureCard";
 import StepCard from "@/components/StepCard";
+import VisitorCounter from "@/components/VisitorCounter";
+import CountdownTimer from "@/components/CountdownTimer";
 import { 
   Download, 
   Sparkles, 
@@ -56,10 +58,8 @@ const Index = () => {
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span>Free to Start</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent/20 border border-accent/40 w-fit">
-                  <Zap className="w-4 h-4 text-accent" />
-                  <span className="text-sm font-semibold text-accent">Limited Time: Available until January 31st</span>
-                </div>
+                <VisitorCounter />
+                <CountdownTimer />
               </div>
             </div>
             
