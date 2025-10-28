@@ -95,7 +95,7 @@ const Auth = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button 
-            className="fixed top-6 right-6 z-50 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+            className="fixed bottom-6 right-6 z-50 shadow-lg hover:shadow-xl transition-all hover:scale-105"
             size="lg"
           >
             <UserPlus className="w-5 h-5 mr-2" />
