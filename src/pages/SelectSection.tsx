@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Copy, ArrowRight, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const SelectSection = () => {
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsLoggedIn(true);
+        // Auto-redirect to demo if already logged in
+        navigate("/demo");
+      }
+    });
+  }, [navigate]);
 
   const credentials = {
     1: { email: "student1@tetr.com", password: "TetrStudent1!" },
