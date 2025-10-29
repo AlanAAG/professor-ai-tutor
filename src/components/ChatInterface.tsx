@@ -76,13 +76,13 @@ export const ChatInterface = () => {
   }, [selectedClass]);
 
   const streamChat = async (userMessage: string) => {
-    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tutor-chat`;
+    const CHAT_URL = "https://professor-agent-platform.onrender.com/api/chat";
     
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        "x-api-key": import.meta.env.VITE_API_KEY,
       },
       body: JSON.stringify({
         messages: [...messages, { role: "user", content: userMessage }],
@@ -130,9 +130,8 @@ export const ChatInterface = () => {
           const parsed = JSON.parse(jsonStr);
           
           // Check for sources in the first chunk
-          if (parsed.choices?.[0]?.delta?.sources) {
-            const sourcesData = JSON.parse(parsed.choices[0].delta.sources);
-            sources = sourcesData.sources || [];
+          if (parsed.sources) {
+            sources = parsed.sources || [];
           }
           
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
