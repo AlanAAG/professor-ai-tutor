@@ -35,20 +35,17 @@ export const ProtectedChatInterface = () => {
   }, [navigate]);
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to log out",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Logged out",
-        description: "Successfully logged out",
-      });
-      navigate("/");
-    }
+    // Attempt to sign out, but continue regardless of errors
+    await supabase.auth.signOut().catch(() => {
+      // Silently handle errors - session might already be expired
+    });
+    
+    // Always show success and redirect, since the goal is to be logged out
+    toast({
+      title: "Logged out",
+      description: "Successfully logged out",
+    });
+    navigate("/");
   };
 
   if (loading) {
