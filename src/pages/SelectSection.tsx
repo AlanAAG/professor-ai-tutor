@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Copy, ArrowRight, GraduationCap } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { CheckCircle, ArrowRight, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SelectSection = () => {
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const credentials = {
@@ -15,16 +12,6 @@ const SelectSection = () => {
     2: { email: "student2@tetr.com", password: "TetrStudent2!" },
     3: { email: "student3@tetr.com", password: "TetrStudent3!" },
     4: { email: "student4@tetr.com", password: "TetrStudent4!" },
-  };
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    toast({
-      title: "Copied!",
-      description: `${field} copied to clipboard`,
-    });
-    setTimeout(() => setCopiedField(null), 2000);
   };
 
   return (
@@ -71,45 +58,21 @@ const SelectSection = () => {
                   <span className="text-lg font-semibold text-primary">Section {selectedSection}</span>
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Your Login Credentials</h2>
-                <p className="text-muted-foreground">Copy these credentials to log in</p>
+                <p className="text-muted-foreground">Click on "Go to Login" to automatically use them</p>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-5 bg-muted/50 p-6 rounded-xl">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      readOnly
-                      value={credentials[selectedSection as keyof typeof credentials].email}
-                      className="flex-1 px-4 py-3 rounded-lg border bg-muted text-foreground font-mono text-lg"
-                    />
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() => copyToClipboard(credentials[selectedSection as keyof typeof credentials].email, "Email")}
-                    >
-                      {copiedField === "Email" ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    </Button>
+                  <div className="px-4 py-3 rounded-lg border bg-background text-foreground font-mono text-lg">
+                    {credentials[selectedSection as keyof typeof credentials].email}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      readOnly
-                      value={credentials[selectedSection as keyof typeof credentials].password}
-                      className="flex-1 px-4 py-3 rounded-lg border bg-muted text-foreground font-mono text-lg"
-                    />
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() => copyToClipboard(credentials[selectedSection as keyof typeof credentials].password, "Password")}
-                    >
-                      {copiedField === "Password" ? <CheckCircle className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    </Button>
+                  <div className="px-4 py-3 rounded-lg border bg-background text-foreground font-mono text-lg">
+                    {credentials[selectedSection as keyof typeof credentials].password}
                   </div>
                 </div>
               </div>
