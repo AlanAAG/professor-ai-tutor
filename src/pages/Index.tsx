@@ -14,9 +14,12 @@ import {
   Zap
 } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.jpg";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -44,15 +47,21 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/select-section">
-                  <Button 
-                    size="lg" 
-                    className="text-lg px-10 py-7 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-[var(--shadow-hover)] font-semibold"
-                  >
-                    Start Learning Now
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="text-lg px-10 py-7 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-[var(--shadow-hover)] font-semibold"
+                  onClick={async () => {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session) {
+                      navigate('/demo');
+                    } else {
+                      navigate('/select-section');
+                    }
+                  }}
+                >
+                  Start Learning Now
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
               </div>
               
               <div className="flex flex-col gap-4 pt-4">
@@ -172,15 +181,21 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-              <Link to="/select-section">
-                <Button 
-                  size="lg" 
-                  className="text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-[var(--shadow-hover)] font-bold text-xl"
-                >
-                  Launch AI Tutor
-                  <ArrowRight className="ml-3 w-6 h-6" />
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="text-lg px-12 py-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:scale-105 hover:shadow-[var(--shadow-hover)] font-bold text-xl"
+                onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (session) {
+                    navigate('/demo');
+                  } else {
+                    navigate('/select-section');
+                  }
+                }}
+              >
+                Launch AI Tutor
+                <ArrowRight className="ml-3 w-6 h-6" />
+              </Button>
             </div>
             
             <p className="text-sm text-muted-foreground pt-4">

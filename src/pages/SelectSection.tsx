@@ -1,27 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Copy, ArrowRight, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const SelectSection = () => {
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsLoggedIn(true);
-        // Auto-redirect to demo if already logged in
-        navigate("/demo");
-      }
-    });
-  }, [navigate]);
 
   const credentials = {
     1: { email: "student1@tetr.com", password: "TetrStudent1!" },
@@ -136,12 +123,19 @@ const SelectSection = () => {
                 >
                   Choose Different Section
                 </Button>
-                <Link to="/auth" className="flex-1">
-                  <Button size="lg" className="w-full text-lg py-6">
-                    Go to Login
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg py-6 flex-1"
+                  onClick={() => navigate('/auth', { 
+                    state: { 
+                      email: credentials[selectedSection as keyof typeof credentials].email,
+                      password: credentials[selectedSection as keyof typeof credentials].password
+                    }
+                  })}
+                >
+                  Go to Login
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
               </div>
             </div>
           )}
@@ -152,9 +146,12 @@ const SelectSection = () => {
           <p className="text-sm text-muted-foreground">
             By: Juan Pablo Rocha, Alan Ayala and Samuel Estrada
           </p>
-          <Link to="/" className="text-sm text-primary hover:underline mt-2 inline-block">
+          <button 
+            onClick={() => navigate('/')}
+            className="text-sm text-primary hover:underline mt-2 inline-block"
+          >
             ← Back to home
-          </Link>
+          </button>
         </div>
       </div>
     </div>
