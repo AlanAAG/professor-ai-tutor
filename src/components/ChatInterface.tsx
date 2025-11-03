@@ -160,28 +160,30 @@ export const ChatInterface = () => {
   if (!selectedClass) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-        <Card className="w-full max-w-2xl p-8">
+        <Card className="w-full max-w-2xl p-8 max-h-[90vh] flex flex-col">
           <h1 className="text-3xl font-bold text-center mb-2">🎓 Professor AI Tutor</h1>
           <p className="text-center text-muted-foreground mb-8">
             Select a course to start chatting with your AI professor
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableClasses.map((classId) => {
-              const persona = (personas as Record<string, Persona>)[classId];
-              return (
-                <Button
-                  key={classId}
-                  onClick={() => setSelectedClass(classId)}
-                  variant="outline"
-                  className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-primary/10"
-                >
-                  <span className="font-semibold text-lg">{classId}</span>
-                  <span className="text-sm text-muted-foreground">
-                    Professor: {persona.professor_name}
-                  </span>
-                </Button>
-              );
-            })}
+          <div className="overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {availableClasses.map((classId) => {
+                const persona = (personas as Record<string, Persona>)[classId];
+                return (
+                  <Button
+                    key={classId}
+                    onClick={() => setSelectedClass(classId)}
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-primary/10"
+                  >
+                    <span className="font-semibold text-lg">{classId}</span>
+                    <span className="text-sm text-muted-foreground">
+                      Professor: {persona.professor_name}
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </Card>
       </div>
