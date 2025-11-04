@@ -66,8 +66,12 @@ export const ProtectedChatInterface = () => {
   return (
     <div className="flex flex-col h-screen">
       <div className="bg-card border-b py-4 px-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold">Ask TETR: A TETR Way to Study</h1>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/asktetr-logo.png" 
+            alt="Ask TETR Logo" 
+            className="h-12 w-auto"
+          />
           <p className="text-xs text-muted-foreground">
             By: Juan Pablo Rocha, Alan Ayala and Samuel Estrada
           </p>

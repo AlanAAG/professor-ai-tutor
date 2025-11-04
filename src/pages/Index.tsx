@@ -209,11 +209,12 @@ const Index = () => {
       <footer className="py-12 border-t border-border bg-muted/30">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2 text-2xl font-bold">
-              <GraduationCap className="w-8 h-8 text-primary" />
-              <span className="text-primary font-bold">
-                Ask TETR: A TETR Way to Study
-              </span>
+            <div className="flex items-center justify-center">
+              <img 
+                src="/asktetr-logo.png" 
+                alt="Ask TETR - A TETR Way to Study" 
+                className="h-24 w-auto"
+              />
             </div>
             
             <p className="text-muted-foreground text-center">
