@@ -236,10 +236,12 @@ export const ChatInterface = () => {
                     key={classId}
                     onClick={() => setSelectedClass(classId)}
                     variant="outline"
-                    className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-primary/10"
+                    className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-primary/10 w-full"
                   >
-                    <span className="font-semibold text-lg">{persona.display_name || classId}</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-lg text-left break-words line-clamp-2 w-full">
+                      {persona.display_name || classId}
+                    </span>
+                    <span className="text-sm text-muted-foreground text-left w-full">
                       Faculty: {persona.professor_name}
                     </span>
                   </Button>
