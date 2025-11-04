@@ -27,6 +27,7 @@ type Message = {
 };
 
 type Persona = {
+  display_name?: string;
   professor_name: string;
   style_prompt: string;
 };
@@ -237,9 +238,9 @@ export const ChatInterface = () => {
                     variant="outline"
                     className="h-auto p-4 flex flex-col items-start gap-2 hover:bg-primary/10"
                   >
-                    <span className="font-semibold text-lg">{classId}</span>
+                    <span className="font-semibold text-lg">{persona.display_name || classId}</span>
                     <span className="text-sm text-muted-foreground">
-                      Professor: {persona.professor_name}
+                      Faculty: {persona.professor_name}
                     </span>
                   </Button>
                 );
