@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, BookOpen, ArrowLeft } from "lucide-react";
+import { Loader2, Send, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
 import {
@@ -39,7 +37,6 @@ type Persona = {
   style_prompt: string;
 };
 
-
 type Mode = "balanced" | "study" | "professor" | "socratic";
 
 const MODE_DESCRIPTIONS = {
@@ -49,16 +46,16 @@ const MODE_DESCRIPTIONS = {
   socratic: "Socratic method - Guides you to discover answers through questions",
 };
 
-export const ChatInterface = () => {
+export const ChatInterface = forwardRef((_, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<Mode>("balanced");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const availableClasses = Object.keys(personas) as string[];
-  const selectedPersona = selectedClass ? (personas as Record<string, Persona>)[selectedClass] : null;
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -69,7 +66,60 @@ export const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (userMessage: string) => {
+  const loadConversation = async (conversationId: string) => {
+    try {
+      setIsLoading(true);
+      
+      const { data: conversation, error: convError } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("id", conversationId)
+        .single();
+
+      if (convError) throw convError;
+
+      const { data: messageData, error: msgError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (msgError) throw msgError;
+
+      setMessages(messageData.map(msg => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+        sources: msg.sources as Source[] | undefined,
+      })));
+
+      setSelectedClass(conversation.class_id);
+      setSelectedMode(conversation.mode as Mode);
+      setActiveConversationId(conversationId);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setActiveConversationId(null);
+    setInput("");
+  };
+
+  useImperativeHandle(ref, () => ({
+    loadConversation,
+    handleNewChat,
+    activeConversationId,
+  }));
+
+  const streamChat = async (userMessage: string, conversationId: string) => {
     const CHAT_URL = "https://professor-agent-platform.onrender.com/api/chat";
     
     const resp = await fetch(CHAT_URL, {
@@ -115,7 +165,6 @@ export const ChatInterface = () => {
         if (!line.startsWith("data: ")) continue;
 
         const jsonStr = line.slice(6).trim();
-        console.debug("[SSE line]", line);
         
         if (jsonStr === "[DONE]") {
           streamDone = true;
@@ -124,19 +173,15 @@ export const ChatInterface = () => {
 
         try {
           const parsed = JSON.parse(jsonStr);
-          console.debug("[SSE parsed]", parsed);
           
-          // Check for server error
           if (parsed.error) {
             throw new Error(parsed.error);
           }
           
-          // Check for sources in the first chunk
           if (parsed.sources) {
             sources = parsed.sources || [];
           }
           
-          // Accept multiple token shapes
           const content = parsed?.choices?.[0]?.delta?.content || parsed?.content || parsed?.text;
           if (content) {
             assistantContent += content;
@@ -151,18 +196,15 @@ export const ChatInterface = () => {
             });
           }
         } catch (e) {
-          // If it's an error from backend, re-throw it
           if (e instanceof Error && e.message !== "Unexpected token") {
             throw e;
           }
-          // Otherwise it's a JSON parse error, keep the line in buffer
           textBuffer = line + "\n" + textBuffer;
           break;
         }
       }
     }
 
-    // Process any remaining buffer after stream ends
     if (textBuffer.trim()) {
       const lines = textBuffer.split("\n");
       for (const line of lines) {
@@ -171,7 +213,6 @@ export const ChatInterface = () => {
           if (jsonStr !== "[DONE]") {
             try {
               const parsed = JSON.parse(jsonStr);
-              console.debug("[SSE final buffer]", parsed);
               
               if (parsed.error) {
                 throw new Error(parsed.error);
@@ -204,14 +245,23 @@ export const ChatInterface = () => {
       }
     }
 
-    // Check if we got any content
+    // Save assistant message to database
+    if (assistantContent.trim()) {
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        content: assistantContent,
+        sources: sources.length > 0 ? sources : null,
+      });
+    }
+
     if (!assistantContent.trim()) {
       throw new Error("The AI didn't send any content. Please try again.");
     }
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || !selectedClass) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -219,10 +269,47 @@ export const ChatInterface = () => {
     setIsLoading(true);
 
     try {
+      // Create or get conversation
+      let conversationId = activeConversationId;
+      if (!conversationId) {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) throw new Error("Not authenticated");
+
+        const title = userMessage.length > 50 
+          ? userMessage.substring(0, 50) + "..." 
+          : userMessage;
+
+        const { data: newConv, error: convError } = await supabase
+          .from("conversations")
+          .insert({
+            user_id: session.session.user.id,
+            title,
+            class_id: selectedClass,
+            mode: selectedMode,
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConv.id;
+        setActiveConversationId(conversationId);
+      }
+
+      // Save user message
+      const { error: userMsgError } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          role: "user",
+          content: userMessage,
+        });
+
+      if (userMsgError) throw userMsgError;
+
       // Increment prompt counter
       await supabase.rpc('increment_prompt_count');
       
-      await streamChat(userMessage);
+      await streamChat(userMessage, conversationId);
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -242,13 +329,16 @@ export const ChatInterface = () => {
       <div className="border-b bg-card p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col gap-3">
-            {/* Class and Mode Selectors Row */}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-3 flex-1 min-w-[200px]">
                 <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Course:
                 </span>
-                <Select value={selectedClass || ""} onValueChange={setSelectedClass}>
+                <Select 
+                  value={selectedClass || ""} 
+                  onValueChange={setSelectedClass}
+                  disabled={!!activeConversationId}
+                >
                   <SelectTrigger className="w-full max-w-md">
                     <SelectValue placeholder="Select a course" />
                   </SelectTrigger>
@@ -276,7 +366,11 @@ export const ChatInterface = () => {
                 <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Mode:
                 </span>
-                <Select value={selectedMode} onValueChange={(value) => setSelectedMode(value as Mode)}>
+                <Select 
+                  value={selectedMode} 
+                  onValueChange={(value) => setSelectedMode(value as Mode)}
+                  disabled={!!activeConversationId}
+                >
                   <SelectTrigger className="w-full max-w-md">
                     <SelectValue />
                   </SelectTrigger>
@@ -350,4 +444,6 @@ export const ChatInterface = () => {
       </div>
     </div>
   );
-};
+});
+
+ChatInterface.displayName = "ChatInterface";

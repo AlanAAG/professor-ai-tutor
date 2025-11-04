@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatInterface } from "./ChatInterface";
+import { ConversationSidebar } from "./ConversationSidebar";
 import { Button } from "./ui/button";
 import { LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,9 +13,9 @@ export const ProtectedChatInterface = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const chatRef = useRef<any>(null);
 
   useEffect(() => {
-    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -23,7 +24,6 @@ export const ProtectedChatInterface = () => {
       }
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session) {
@@ -35,12 +35,7 @@ export const ProtectedChatInterface = () => {
   }, [navigate]);
 
   const handleLogout = async () => {
-    // Attempt to sign out, but continue regardless of errors
-    await supabase.auth.signOut().catch(() => {
-      // Silently handle errors - session might already be expired
-    });
-    
-    // Always show success and redirect, since the goal is to be logged out
+    await supabase.auth.signOut().catch(() => {});
     toast({
       title: "Logged out",
       description: "Successfully logged out",
@@ -81,8 +76,19 @@ export const ProtectedChatInterface = () => {
           Logout
         </Button>
       </div>
-      <div className="flex-1 overflow-hidden">
-        <ChatInterface />
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-64 flex-shrink-0">
+          <ConversationSidebar
+            activeConversationId={chatRef.current?.activeConversationId || null}
+            onSelectConversation={(conversation) => {
+              chatRef.current?.loadConversation(conversation.id);
+            }}
+            onNewChat={() => chatRef.current?.handleNewChat()}
+          />
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <ChatInterface ref={chatRef} />
+        </div>
       </div>
     </div>
   );
