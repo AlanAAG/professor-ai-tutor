@@ -30,6 +30,26 @@ export const ConversationSidebar = ({
 
   useEffect(() => {
     loadConversations();
+
+    // Subscribe to realtime updates for new conversations
+    const channel = supabase
+      .channel('conversations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'conversations'
+        },
+        () => {
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadConversations = async () => {
