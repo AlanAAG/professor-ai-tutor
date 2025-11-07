@@ -46,7 +46,11 @@ const MODE_DESCRIPTIONS = {
   socratic: "Socratic method - Guides you to discover answers through questions",
 };
 
-export const ChatInterface = forwardRef((_, ref) => {
+interface ChatInterfaceProps {
+  onConversationChange?: (conversationId: string | null) => void;
+}
+
+export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterfaceProps, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +99,7 @@ export const ChatInterface = forwardRef((_, ref) => {
       setSelectedClass(conversation.class_id);
       setSelectedMode(conversation.mode as Mode);
       setActiveConversationId(conversationId);
+      onConversationChange?.(conversationId);
     } catch (error) {
       console.error("Error loading conversation:", error);
       toast({
@@ -111,6 +116,7 @@ export const ChatInterface = forwardRef((_, ref) => {
     setMessages([]);
     setActiveConversationId(null);
     setInput("");
+    onConversationChange?.(null);
   };
 
   useImperativeHandle(ref, () => ({
@@ -293,6 +299,7 @@ export const ChatInterface = forwardRef((_, ref) => {
         if (convError) throw convError;
         conversationId = newConv.id;
         setActiveConversationId(conversationId);
+        onConversationChange?.(conversationId);
       }
 
       // Save user message

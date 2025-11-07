@@ -11,6 +11,7 @@ import type { User } from "@supabase/supabase-js";
 export const ProtectedChatInterface = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const chatRef = useRef<any>(null);
@@ -79,7 +80,7 @@ export const ProtectedChatInterface = () => {
       <div className="flex-1 flex overflow-hidden">
         <div className="w-64 flex-shrink-0">
           <ConversationSidebar
-            activeConversationId={chatRef.current?.activeConversationId || null}
+            activeConversationId={activeConversationId}
             onSelectConversation={(conversation) => {
               chatRef.current?.loadConversation(conversation.id);
             }}
@@ -87,7 +88,10 @@ export const ProtectedChatInterface = () => {
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          <ChatInterface ref={chatRef} />
+          <ChatInterface 
+            ref={chatRef} 
+            onConversationChange={setActiveConversationId}
+          />
         </div>
       </div>
     </div>
