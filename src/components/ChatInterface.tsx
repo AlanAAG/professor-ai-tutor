@@ -333,12 +333,12 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="border-b bg-card p-4">
+      <div className="border-b bg-card p-3 md:p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
                   Course:
                 </span>
                 <Select 
@@ -346,7 +346,7 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
                   onValueChange={setSelectedClass}
                   disabled={!!activeConversationId}
                 >
-                  <SelectTrigger className="w-full max-w-md">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a course" />
                   </SelectTrigger>
                   <SelectContent>
@@ -355,7 +355,7 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
                       return (
                         <SelectItem key={classId} value={classId}>
                           <div className="flex flex-col items-start">
-                            <span className="font-medium">
+                            <span className="font-medium text-sm">
                               {persona.display_name || classId}
                             </span>
                             <span className="text-xs text-muted-foreground">
@@ -369,8 +369,8 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
                 </Select>
               </div>
               
-              <div className="flex items-center gap-3 flex-1 min-w-[200px]">
-                <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
                   Mode:
                 </span>
                 <Select 
@@ -392,15 +392,15 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full max-w-md">
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
                       <SelectItem key={mode} value={mode}>
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium capitalize">{mode}</span>
-                          <span className="text-xs text-muted-foreground">
+                        <div className="flex flex-col items-start max-w-[280px]">
+                          <span className="font-medium capitalize text-sm">{mode}</span>
+                          <span className="text-xs text-muted-foreground line-clamp-2">
                             {MODE_DESCRIPTIONS[mode]}
                           </span>
                         </div>
