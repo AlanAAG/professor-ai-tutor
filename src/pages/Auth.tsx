@@ -20,18 +20,19 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in or resetting password
+    // Check for password recovery hash params first
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery') {
+      setIsResettingPassword(true);
+      return;
+    }
+
+    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        // Check if this is a password recovery session
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const type = hashParams.get('type');
-        
-        if (type === 'recovery') {
-          setIsResettingPassword(true);
-        } else {
-          navigate("/demo");
-        }
+        navigate("/demo");
       }
     });
   }, [navigate]);
@@ -183,6 +184,16 @@ const Auth = () => {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate @tetr.com email domain
+    if (!email.toLowerCase().endsWith('@tetr.com')) {
+      toast({
+        title: "Invalid email domain",
+        description: "Please use your @tetr.com account",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords don't match",
@@ -218,6 +229,7 @@ const Auth = () => {
       setIsResettingPassword(false);
       setNewPassword("");
       setConfirmPassword("");
+      setEmail("");
       navigate("/demo");
     } catch (error: any) {
       toast({
@@ -253,6 +265,16 @@ const Auth = () => {
         <CardContent>
           {isResettingPassword ? (
             <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Enter your @tetr.com email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
               <div className="space-y-2">
                 <Input
                   type="password"
