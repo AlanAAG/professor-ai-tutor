@@ -66,7 +66,9 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
     const [selectedMode, setSelectedMode] = React.useState<Mode>("balanced");
-    const [selectedBatch, setSelectedBatch] = React.useState<string | null>(null);
+    const [selectedBatch, setSelectedBatch] = React.useState<string | null>(() => {
+      return localStorage.getItem("selectedBatch");
+    });
     const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -345,10 +347,15 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
 
     // Show batch selection if not selected
     if (!selectedBatch) {
-      return <BatchSelection onBatchSelect={(batchId) => {
-        setSelectedBatch(batchId);
-        setSelectedClass(null); // Reset course when batch changes
-      }} />;
+      return (
+        <div className="flex flex-col h-full items-center justify-center bg-background p-4">
+          <BatchSelection onBatchSelect={(batchId) => {
+            localStorage.setItem("selectedBatch", batchId);
+            setSelectedBatch(batchId);
+            setSelectedClass(null); // Reset course when batch changes
+          }} />
+        </div>
+      );
     }
 
     return (
