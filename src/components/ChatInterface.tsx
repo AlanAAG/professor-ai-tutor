@@ -56,6 +56,7 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [selectedMode, setSelectedMode] = useState<Mode>("balanced");
+  const [selectedBatch, setSelectedBatch] = useState<string>("2029");
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -138,6 +139,7 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
         messages: [...messages.map(({ role, content }) => ({ role, content })), { role: "user", content: userMessage }],
         class_id: selectedClass,
         persona: selectedMode,
+        cohort_id: selectedBatch,
       }),
     });
 
@@ -406,6 +408,28 @@ export const ChatInterface = forwardRef(({ onConversationChange }: ChatInterface
                         </div>
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
+                  Batch:
+                </span>
+                <Select 
+                  value={selectedBatch} 
+                  onValueChange={setSelectedBatch}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="2029">
+                      <span className="font-medium text-sm">2029 Batch</span>
+                    </SelectItem>
+                    <SelectItem value="2028">
+                      <span className="font-medium text-sm">2028 Batch</span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
