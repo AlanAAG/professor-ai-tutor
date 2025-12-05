@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,7 +10,6 @@ type BatchPersonas = Record<string, Record<string, { display_name?: string; prof
 
 const getDisplayName = (classId: string): string => {
   const batchPersonas = personas as BatchPersonas;
-  // Search across all batches for the class
   for (const batchId of Object.keys(batchPersonas)) {
     if (batchPersonas[batchId][classId]) {
       return batchPersonas[batchId][classId].display_name || classId;
@@ -33,18 +32,34 @@ interface ConversationSidebarProps {
   onNewChat: () => void;
 }
 
-export const ConversationSidebar = ({
+export function ConversationSidebar({
   activeConversationId,
   onSelectConversation,
   onNewChat,
-}: ConversationSidebarProps) => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+}: ConversationSidebarProps) {
+  const [conversations, setConversations] = React.useState<Conversation[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  useEffect(() => {
+  const loadConversations = React.useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      setConversations(data || []);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+      toast.error("Failed to load conversations");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
     loadConversations();
 
-    // Subscribe to realtime updates for new conversations
     const channel = supabase
       .channel('conversations-changes')
       .on(
@@ -63,24 +78,7 @@ export const ConversationSidebar = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
-
-  const loadConversations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("conversations")
-        .select("*")
-        .order("updated_at", { ascending: false });
-
-      if (error) throw error;
-      setConversations(data || []);
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-      toast.error("Failed to load conversations");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [loadConversations]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,4 +134,4 @@ export const ConversationSidebar = ({
       </ScrollArea>
     </div>
   );
-};
+}
