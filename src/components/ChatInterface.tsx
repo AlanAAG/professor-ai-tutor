@@ -420,15 +420,15 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
+                    <SelectTrigger className="w-full md:w-[140px]">
+                      <span className="capitalize truncate">{selectedMode}</span>
                     </SelectTrigger>
-                    <SelectContent className="max-w-[400px]">
+                    <SelectContent className="w-[320px]">
                       {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
                         <SelectItem key={mode} value={mode} className="cursor-pointer">
                           <div className="flex flex-col items-start py-1">
                             <span className="font-medium capitalize text-sm mb-0.5">{mode}</span>
-                            <span className="text-xs text-muted-foreground whitespace-normal leading-tight">
+                            <span className="text-xs text-muted-foreground whitespace-normal leading-tight max-w-[280px]">
                               {MODE_DESCRIPTIONS[mode]}
                             </span>
                           </div>
@@ -438,11 +438,21 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                   </Select>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap">
-                    {selectedBatch === "2029" ? "2029 Batch" : "2028 Batch"}
-                  </span>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem("selectedBatch");
+                    setSelectedBatch(null);
+                    setSelectedClass(null);
+                    setMessages([]);
+                    setActiveConversationId(null);
+                    onConversationChange?.(null);
+                  }}
+                  className="flex-shrink-0"
+                >
+                  {selectedBatch === "2029" ? "2029" : "2028"} Batch
+                </Button>
               </div>
             </div>
           </div>
