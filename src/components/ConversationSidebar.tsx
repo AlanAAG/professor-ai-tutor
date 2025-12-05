@@ -6,6 +6,19 @@ import { Plus, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import personas from "@/data/personas.json";
 
+type BatchPersonas = Record<string, Record<string, { display_name?: string; professor_name: string }>>;
+
+const getDisplayName = (classId: string): string => {
+  const batchPersonas = personas as BatchPersonas;
+  // Search across all batches for the class
+  for (const batchId of Object.keys(batchPersonas)) {
+    if (batchPersonas[batchId][classId]) {
+      return batchPersonas[batchId][classId].display_name || classId;
+    }
+  }
+  return classId;
+};
+
 interface Conversation {
   id: string;
   title: string;
@@ -114,7 +127,7 @@ export const ConversationSidebar = ({
                   {conversation.title}
                 </div>
                 <div className="text-xs opacity-70">
-                  {(personas as Record<string, { display_name?: string }>)[conversation.class_id]?.display_name || conversation.class_id} • {formatDate(conversation.updated_at)}
+                  {getDisplayName(conversation.class_id)} • {formatDate(conversation.updated_at)}
                 </div>
               </button>
             ))
