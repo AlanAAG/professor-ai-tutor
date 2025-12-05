@@ -30,22 +30,13 @@ export const ProtectedChatInterface = () => {
       setLoading(false);
       if (!session) {
         navigate("/auth");
-      } else {
-        // Check if batch is selected
-        const savedBatch = localStorage.getItem("selectedBatch");
-        if (!savedBatch) {
-          navigate("/selectbatch");
-          return;
-        }
-        
-        if (!hasShownWelcomeReminder) {
-          // Show welcome reminder after a short delay
-          setTimeout(() => {
-            setReminderVariant("welcome");
-            setReminderDialogOpen(true);
-            setHasShownWelcomeReminder(true);
-          }, 1000);
-        }
+      } else if (!hasShownWelcomeReminder) {
+        // Show welcome reminder after a short delay
+        setTimeout(() => {
+          setReminderVariant("welcome");
+          setReminderDialogOpen(true);
+          setHasShownWelcomeReminder(true);
+        }, 1000);
       }
     });
 
@@ -53,11 +44,6 @@ export const ProtectedChatInterface = () => {
       setUser(session?.user ?? null);
       if (!session) {
         navigate("/auth");
-      } else {
-        const savedBatch = localStorage.getItem("selectedBatch");
-        if (!savedBatch) {
-          navigate("/selectbatch");
-        }
       }
     });
 
@@ -116,7 +102,6 @@ export const ProtectedChatInterface = () => {
                 variant="ghost" 
                 size="sm"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="md:hidden"
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
@@ -155,10 +140,10 @@ export const ProtectedChatInterface = () => {
           </div>
         </div>
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Mobile Sidebar Overlay */}
+          {/* Sidebar Overlay */}
           {sidebarOpen && (
             <div 
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              className="fixed inset-0 bg-black/50 z-40"
               onClick={() => setSidebarOpen(false)}
             />
           )}
@@ -166,12 +151,10 @@ export const ProtectedChatInterface = () => {
           {/* Sidebar */}
           <div className={`
             ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            md:translate-x-0
-            fixed md:relative
-            z-50 md:z-auto
+            fixed
+            z-50
             w-64 h-full
             transition-transform duration-300 ease-in-out
-            md:flex-shrink-0
           `}>
             <ConversationSidebar
               activeConversationId={activeConversationId}
