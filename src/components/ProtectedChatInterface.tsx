@@ -30,13 +30,22 @@ export const ProtectedChatInterface = () => {
       setLoading(false);
       if (!session) {
         navigate("/auth");
-      } else if (!hasShownWelcomeReminder) {
-        // Show welcome reminder after a short delay
-        setTimeout(() => {
-          setReminderVariant("welcome");
-          setReminderDialogOpen(true);
-          setHasShownWelcomeReminder(true);
-        }, 1000);
+      } else {
+        // Check if batch is selected
+        const savedBatch = localStorage.getItem("selectedBatch");
+        if (!savedBatch) {
+          navigate("/selectbatch");
+          return;
+        }
+        
+        if (!hasShownWelcomeReminder) {
+          // Show welcome reminder after a short delay
+          setTimeout(() => {
+            setReminderVariant("welcome");
+            setReminderDialogOpen(true);
+            setHasShownWelcomeReminder(true);
+          }, 1000);
+        }
       }
     });
 
@@ -44,6 +53,11 @@ export const ProtectedChatInterface = () => {
       setUser(session?.user ?? null);
       if (!session) {
         navigate("/auth");
+      } else {
+        const savedBatch = localStorage.getItem("selectedBatch");
+        if (!savedBatch) {
+          navigate("/selectbatch");
+        }
       }
     });
 

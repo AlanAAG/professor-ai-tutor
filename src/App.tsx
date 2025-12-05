@@ -8,6 +8,7 @@ import Demo from "./pages/Demo";
 import Auth from "./pages/Auth";
 import Full from "./pages/Full";
 import ResetPassword from "./pages/ResetPassword";
+import SelectBatch from "./pages/SelectBatch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/selectbatch" element={<SelectBatch />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/full" element={<Full />} />
           <Route path="/reset-password" element={<ResetPassword />} />
