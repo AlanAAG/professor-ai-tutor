@@ -374,10 +374,14 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                     onValueChange={setSelectedClass}
                     disabled={!!activeConversationId}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a course" />
+                    <SelectTrigger className="w-full md:w-[200px]">
+                      <span className="truncate">
+                        {selectedClass && batchPersonas[selectedClass] 
+                          ? batchPersonas[selectedClass].display_name 
+                          : "Select a course"}
+                      </span>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="w-[320px]">
                       {availableClasses.map((classId) => {
                         const persona = batchPersonas[classId];
                         return (
