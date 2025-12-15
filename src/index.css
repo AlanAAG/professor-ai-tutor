@@ -42,9 +42,18 @@ All colors MUST be HSL.
     --gradient-hero: linear-gradient(135deg, hsl(73 100% 52%), hsl(90 100% 45%), hsl(73 100% 52%));
     --gradient-subtle: linear-gradient(180deg, hsl(120 10% 10%), hsl(120 10% 8%));
     --gradient-card: linear-gradient(135deg, hsl(120 15% 12%), hsl(120 15% 14%));
+    --gradient-input: linear-gradient(135deg, hsl(120 15% 14%), hsl(120 15% 16%));
     --shadow-soft: 0 4px 20px -4px hsl(73 100% 52% / 0.2);
     --shadow-hover: 0 8px 30px -4px hsl(73 100% 52% / 0.35);
+    --shadow-input: 0 2px 20px -2px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px -10px hsl(73 100% 52% / 0.4);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Chat-specific tokens */
+    --chat-user-bg: 73 80% 45%;
+    --chat-user-fg: 0 0% 100%;
+    --chat-ai-bg: 120 15% 15%;
+    --chat-ai-fg: 0 0% 95%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -95,9 +104,17 @@ All colors MUST be HSL.
     --gradient-hero: linear-gradient(135deg, hsl(73 100% 52%), hsl(90 100% 45%), hsl(73 100% 52%));
     --gradient-subtle: linear-gradient(180deg, hsl(120 10% 8%), hsl(120 10% 5%));
     --gradient-card: linear-gradient(135deg, hsl(120 15% 10%), hsl(120 15% 12%));
+    --gradient-input: linear-gradient(135deg, hsl(120 15% 12%), hsl(120 15% 14%));
     --shadow-soft: 0 4px 20px -4px hsl(73 100% 52% / 0.25);
     --shadow-hover: 0 8px 30px -4px hsl(73 100% 52% / 0.4);
-    --sidebar-background: 240 5.9% 10%;
+    --shadow-input: 0 2px 20px -2px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 40px -10px hsl(73 100% 52% / 0.5);
+    
+    /* Chat-specific tokens */
+    --chat-user-bg: 73 80% 45%;
+    --chat-user-fg: 0 0% 100%;
+    --chat-ai-bg: 120 15% 12%;
+    --chat-ai-fg: 0 0% 95%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;

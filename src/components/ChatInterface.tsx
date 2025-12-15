@@ -2,7 +2,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, BookOpen, Paperclip, X, FileText } from "lucide-react";
+import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
@@ -443,150 +443,252 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
       );
     }
 
-    return (
-      <div className="flex flex-col h-full bg-background">
-        {/* Header */}
-        <div className="border-b bg-card p-3 md:p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col md:flex-row md:items-center gap-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
-                    Course:
-                  </span>
-                  <Select 
-                    value={selectedClass || ""} 
-                    onValueChange={setSelectedClass}
-                    disabled={!!activeConversationId}
-                  >
-                    <SelectTrigger className="w-full md:w-[200px]">
-                      <span className="truncate">
-                        {selectedClass && batchPersonas[selectedClass] 
-                          ? batchPersonas[selectedClass].display_name 
-                          : "Select a course"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent className="w-[320px]">
-                      {availableClasses.map((classId) => {
-                        const persona = batchPersonas[classId];
-                        return (
-                          <SelectItem key={classId} value={classId}>
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium text-sm">
-                                {persona.display_name || classId}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {persona.professor_name}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
-                    Mode:
-                  </span>
-                  <Select 
-                    value={selectedMode} 
-                    onValueChange={async (value) => {
-                      const newMode = value as Mode;
-                      setSelectedMode(newMode);
-                      
-                      // Update mode in database if conversation exists
-                      if (activeConversationId) {
-                        try {
-                          await supabase
-                            .from("conversations")
-                            .update({ mode: newMode })
-                            .eq("id", activeConversationId);
-                        } catch (error) {
-                          console.error("Error updating conversation mode:", error);
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full md:w-[140px]">
-                      <span className="capitalize truncate">{selectedMode}</span>
-                    </SelectTrigger>
-                    <SelectContent className="w-[320px]">
-                      {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
-                        <SelectItem key={mode} value={mode} className="cursor-pointer">
-                          <div className="flex flex-col items-start py-1">
-                            <span className="font-medium capitalize text-sm mb-0.5">{mode}</span>
-                            <span className="text-xs text-muted-foreground whitespace-normal leading-tight max-w-[280px]">
-                              {MODE_DESCRIPTIONS[mode]}
+    // Pre-chat welcome screen
+    if (messages.length === 0) {
+      return (
+        <div className="flex flex-col h-full bg-background">
+          {/* Minimal header with controls */}
+          <div className="p-3 md:p-4">
+            <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <Select 
+                  value={selectedClass || ""} 
+                  onValueChange={setSelectedClass}
+                  disabled={!!activeConversationId}
+                >
+                  <SelectTrigger className="w-full md:w-[220px] bg-secondary/50 border-border/50">
+                    <span className="truncate text-sm">
+                      {selectedClass && batchPersonas[selectedClass] 
+                        ? batchPersonas[selectedClass].display_name 
+                        : "Select a course"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent className="w-[320px] bg-popover">
+                    {availableClasses.map((classId) => {
+                      const persona = batchPersonas[classId];
+                      return (
+                        <SelectItem key={classId} value={classId}>
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium text-sm">
+                              {persona.display_name || classId}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {persona.professor_name}
                             </span>
                           </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
                 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    localStorage.removeItem("selectedBatch");
-                    setSelectedBatch(null);
-                    setSelectedClass(null);
-                    setMessages([]);
-                    setActiveConversationId(null);
-                    onConversationChange?.(null);
-                  }}
-                  className="flex-shrink-0"
-                >
-                  {selectedBatch === "2029" ? "2029" : "2028"} Batch
-                </Button>
+                <Select value={selectedMode} onValueChange={(v) => setSelectedMode(v as Mode)}>
+                  <SelectTrigger className="w-[120px] bg-secondary/50 border-border/50">
+                    <span className="capitalize text-sm">{selectedMode}</span>
+                  </SelectTrigger>
+                  <SelectContent className="w-[300px] bg-popover">
+                    {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        <div className="flex flex-col items-start py-1">
+                          <span className="font-medium capitalize text-sm">{mode}</span>
+                          <span className="text-xs text-muted-foreground max-w-[260px]">
+                            {MODE_DESCRIPTIONS[mode]}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem("selectedBatch");
+                  setSelectedBatch(null);
+                  setSelectedClass(null);
+                }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {selectedBatch} Batch
+              </Button>
+            </div>
+          </div>
+          
+          {/* Centered welcome content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
+            <div className="text-center space-y-6 max-w-2xl animate-fade-in">
+              {/* Gradient icon */}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 shadow-lg mx-auto">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              
+              {/* Welcome text */}
+              <div className="space-y-2">
+                <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+                  What would you like to learn?
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  {selectedClass 
+                    ? `Ready to help you with ${batchPersonas[selectedClass]?.display_name || selectedClass}`
+                    : "Select a course to get started"}
+                </p>
+              </div>
+            </div>
+            
+            {/* Input area - positioned lower */}
+            <div className="w-full max-w-3xl mt-12">
+              {uploadedFile && (
+                <div className="flex items-center gap-2 px-4 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50 mx-2">
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearUploadedFile}
+                    className="h-6 w-6 p-0 hover:bg-destructive/20"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+              
+              <div className="relative mx-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileUpload}
+                  accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf"
+                  className="hidden"
+                />
+                
+                <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || !selectedClass}
+                    className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"
+                  >
+                    <Paperclip className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                  
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                    placeholder={selectedClass ? "Ask anything..." : "Select a course first..."}
+                    disabled={isLoading || !selectedClass}
+                    className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
+                  />
+                  
+                  <Button
+                    onClick={handleSend}
+                    disabled={isLoading || !input.trim() || !selectedClass}
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Quick suggestions */}
+              {selectedClass && (
+                <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
+                  {["Explain the key concepts", "Help me study", "Quiz me on this topic"].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => setInput(suggestion)}
+                      className="px-4 py-2 text-sm rounded-full bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
+      );
+    }
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="max-w-4xl mx-auto space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Welcome to Ask TETR</p>
-                <p className="text-sm">
-                  {selectedClass 
-                    ? "Ask your first question to get started!" 
-                    : "Select a course above to begin"}
-                </p>
-              </div>
-            ) : (
-              messages.map((msg, idx) => (
-                <ChatMessage 
-                  key={msg.id || idx} 
-                  role={msg.role} 
-                  content={msg.content}
-                  sources={msg.sources}
-                  messageId={msg.id}
-                />
-              ))
-            )}
+    // Chat mode with messages
+    return (
+      <div className="flex flex-col h-full bg-background">
+        {/* Compact header */}
+        <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm p-3">
+          <div className="max-w-3xl mx-auto flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+              <GraduationCap className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium truncate max-w-[200px]">
+                {selectedClass && batchPersonas[selectedClass]?.display_name}
+              </span>
+            </div>
+            
+            <Select value={selectedMode} onValueChange={async (v) => {
+              const newMode = v as Mode;
+              setSelectedMode(newMode);
+              if (activeConversationId) {
+                await supabase.from("conversations").update({ mode: newMode }).eq("id", activeConversationId);
+              }
+            }}>
+              <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
+                <span className="capitalize text-sm text-muted-foreground">{selectedMode}</span>
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    <span className="capitalize">{mode}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="flex-1" />
+            
+            <span className="text-xs text-muted-foreground">{selectedBatch} Batch</span>
+          </div>
+        </div>
+
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto p-4 space-y-6">
+            {messages.map((msg, idx) => (
+              <ChatMessage 
+                key={msg.id || idx} 
+                role={msg.role} 
+                content={msg.content}
+                sources={msg.sources}
+                messageId={msg.id}
+              />
+            ))}
             {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">AI is thinking...</span>
+              <div className="flex gap-3 animate-fade-in">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Thinking...</span>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* Input */}
-        <div className="border-t bg-card p-4">
-          <div className="max-w-4xl mx-auto space-y-2">
-            {/* Uploaded file indicator */}
+        {/* Input area */}
+        <div className="border-t border-border/50 bg-background/80 backdrop-blur-sm p-4">
+          <div className="max-w-3xl mx-auto">
             {uploadedFile && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50">
                 <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                 <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
                 <Button
@@ -600,8 +702,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
               </div>
             )}
             
-            <div className="flex gap-2">
-              {/* Hidden file input */}
+            <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 transition-all focus-within:border-primary/50">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -610,27 +711,37 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                 className="hidden"
               />
               
-              {/* Upload button */}
               <Button
-                variant="outline"
-                size="icon"
+                variant="ghost"
+                size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || !selectedClass}
-                title="Upload a file"
+                disabled={isLoading}
+                className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"
               >
-                <Paperclip className="w-4 h-4" />
+                <Paperclip className="w-4 h-4 text-muted-foreground" />
               </Button>
               
-              <Input
+              <input
+                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                placeholder={selectedClass ? (uploadedFile ? "Ask about the uploaded file..." : "Ask your question...") : "Select a course first..."}
-                disabled={isLoading || !selectedClass}
-                className="flex-1"
+                placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."}
+                disabled={isLoading}
+                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
               />
-              <Button onClick={handleSend} disabled={isLoading || !input.trim() || !selectedClass}>
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              
+              <Button
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
+                size="sm"
+                className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ArrowUp className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </div>

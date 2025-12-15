@@ -1,4 +1,4 @@
-import { Bot, User, BookOpen, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
   const { toast } = useToast();
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!isUser && messageId) {
@@ -67,7 +68,6 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
       }
 
       if (feedback === type) {
-        // Remove feedback
         await supabase
           .from('message_feedback')
           .delete()
@@ -75,7 +75,6 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
           .eq('user_id', user.id);
         setFeedback(null);
       } else {
-        // Upsert feedback
         await supabase
           .from('message_feedback')
           .upsert({
@@ -93,27 +92,39 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
     }
   };
 
-  return (
-    <div
-      className={cn(
-        "flex gap-3 p-4 rounded-lg animate-fade-in",
-        isUser ? "bg-muted/50 ml-8" : "bg-card mr-8"
-      )}
-    >
-      <div
-        className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"
-        )}
-      >
-        {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end animate-fade-in">
+        <div className="max-w-[85%] md:max-w-[70%]">
+          <div className="bg-[hsl(var(--chat-user-bg))] text-[hsl(var(--chat-user-fg))] px-4 py-3 rounded-2xl rounded-br-md shadow-md">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{content}</p>
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-w-0 space-y-3">
-        <p className="text-sm font-medium">{isUser ? "You" : "AI Tutor"}</p>
-        <div className="text-sm text-foreground whitespace-pre-wrap break-words">{content}</div>
+    );
+  }
+
+  return (
+    <div className="flex gap-3 animate-fade-in">
+      {/* AI Avatar */}
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg">
+        <Sparkles className="w-4 h-4 text-primary-foreground" />
+      </div>
+      
+      {/* Message Content */}
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+          {content}
+        </div>
         
-        {!isUser && sources && sources.length > 0 && (() => {
-          // Deduplicate sources by title + class_name
+        {/* Sources */}
+        {sources && sources.length > 0 && (() => {
           const uniqueSources = sources.reduce((acc, source) => {
             const key = `${source.metadata?.title || 'Document'}-${source.metadata?.class_name || ''}`;
             if (!acc.some(s => `${s.metadata?.title || 'Document'}-${s.metadata?.class_name || ''}` === key)) {
@@ -123,24 +134,28 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
           }, [] as Source[]);
 
           return (
-            <div className="mt-3 pt-3 border-t border-border">
+            <div className="mt-4 p-3 rounded-xl bg-secondary/30 border border-border/50">
               <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="w-4 h-4 text-muted-foreground" />
-                <p className="text-xs font-medium text-muted-foreground">Sources from course materials:</p>
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
+                <p className="text-xs font-medium text-muted-foreground">Sources</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {uniqueSources.map((source, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
-                    [{idx + 1}] {source.metadata?.title || 'Document'}
-                    {source.metadata?.class_name && ` - ${source.metadata.class_name}`}
+                  <Badge 
+                    key={idx} 
+                    variant="outline" 
+                    className="text-xs bg-background/50 hover:bg-background transition-colors"
+                  >
+                    <span className="text-primary font-medium mr-1">[{idx + 1}]</span>
+                    {source.metadata?.title || 'Document'}
                     {source.metadata?.source_url && (
                       <a 
                         href={source.metadata.source_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="ml-1 underline hover:text-primary"
+                        className="ml-1.5 text-primary hover:underline"
                       >
-                        →
+                        ↗
                       </a>
                     )}
                   </Badge>
@@ -150,32 +165,45 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
           );
         })()}
         
-        {!isUser && messageId && (
-          <div className="flex items-center gap-1 mt-3 pt-2">
-            <span className="text-xs text-muted-foreground mr-2">Was this helpful?</span>
+        {/* Action buttons */}
+        {messageId && (
+          <div className="flex items-center gap-1 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground"
+              onClick={handleCopy}
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+            <div className="w-px h-4 bg-border mx-1" />
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                "h-7 w-7 p-0",
-                feedback === 'up' && "text-green-500 bg-green-500/10"
+                "h-7 px-2",
+                feedback === 'up' 
+                  ? "text-primary bg-primary/10" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => handleFeedback('up')}
               disabled={isSubmitting}
             >
-              <ThumbsUp className="h-4 w-4" />
+              <ThumbsUp className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                "h-7 w-7 p-0",
-                feedback === 'down' && "text-red-500 bg-red-500/10"
+                "h-7 px-2",
+                feedback === 'down' 
+                  ? "text-destructive bg-destructive/10" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => handleFeedback('down')}
               disabled={isSubmitting}
             >
-              <ThumbsDown className="h-4 w-4" />
+              <ThumbsDown className="h-3.5 w-3.5" />
             </Button>
           </div>
         )}
