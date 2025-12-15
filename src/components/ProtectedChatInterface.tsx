@@ -69,46 +69,43 @@ export const ProtectedChatInterface = () => {
   return (
     <>
       <div className="flex flex-col h-screen">
-        <div className="bg-card border-b py-3 px-4 md:py-4 md:px-6">
-          <div className="flex justify-between items-center gap-4">
-            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+        {/* Minimal header like Gemini/ChatGPT */}
+        <div className="bg-background border-b border-border/50 py-2 px-3 md:px-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
+                className="h-9 w-9"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
               <img 
                 src="/asktetr-logo.png" 
-                alt="Ask TETR Logo" 
-                className="h-12 md:h-20 w-auto flex-shrink-0"
+                alt="Ask TETR" 
+                className="h-8 w-auto"
               />
-              <p className="text-[10px] md:text-xs text-muted-foreground hidden sm:block">
-                By: Juan Pablo Rocha, Alan Ayala and Samuel Estrada
-              </p>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            
+            <div className="flex items-center gap-1">
               <Button 
-                variant="outline" 
-                size="sm" 
+                variant="ghost" 
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
                 onClick={() => setFeedbackDialogOpen(true)}
-                className="hidden sm:flex"
-              >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Feedback
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setFeedbackDialogOpen(true)}
-                className="sm:hidden"
+                title="Send feedback"
               >
                 <MessageSquare className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Logout</span>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                onClick={handleLogout}
+                title="Log out"
+              >
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
