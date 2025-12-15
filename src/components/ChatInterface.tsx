@@ -120,10 +120,6 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
       reader.onload = (e) => {
         const content = e.target?.result as string;
         setUploadedFile({ name: file.name, content });
-        toast({
-          title: "File uploaded",
-          description: `${file.name} is ready to be sent with your next message`,
-        });
       };
       reader.onerror = () => {
         toast({
