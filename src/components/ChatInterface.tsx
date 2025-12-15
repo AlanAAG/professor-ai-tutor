@@ -2,7 +2,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, BookOpen } from "lucide-react";
+import { Loader2, Send, BookOpen, Paperclip, X, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
@@ -71,11 +71,81 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
       return localStorage.getItem("selectedBatch");
     });
     const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
+    const [uploadedFile, setUploadedFile] = React.useState<{ name: string; content: string } | null>(null);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const batchPersonas = (personas as BatchPersonas)[selectedBatch || "2029"] || {};
     const availableClasses = Object.keys(batchPersonas);
     const { toast } = useToast();
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload a file smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = [
+        'text/plain',
+        'text/markdown',
+        'text/csv',
+        'application/json',
+        'application/pdf',
+        'text/html',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      const isTextFile = file.type.startsWith('text/') || allowedTypes.includes(file.type) || file.name.endsWith('.md') || file.name.endsWith('.txt');
+      
+      if (!isTextFile) {
+        toast({
+          title: "Unsupported file type",
+          description: "Please upload a text-based file (txt, md, csv, json, etc.)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setUploadedFile({ name: file.name, content });
+        toast({
+          title: "File uploaded",
+          description: `${file.name} is ready to be sent with your next message`,
+        });
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Error reading file",
+          description: "Failed to read the file. Please try again.",
+          variant: "destructive",
+        });
+      };
+      reader.readAsText(file);
+      
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    const clearUploadedFile = () => {
+      setUploadedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
 
     const scrollToBottom = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -155,6 +225,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
           class_id: selectedClass,
           persona: selectedMode,
           cohort_id: selectedBatch,
+          file_content: uploadedFile?.content || undefined,
         }),
       });
 
@@ -347,6 +418,9 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         await supabase.rpc('increment_prompt_count');
         
         await streamChat(userMessage, conversationId);
+        
+        // Clear uploaded file after sending
+        clearUploadedFile();
       } catch (error) {
         console.error("Chat error:", error);
         toast({
@@ -513,18 +587,56 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
 
         {/* Input */}
         <div className="border-t bg-card p-4">
-          <div className="max-w-4xl mx-auto flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-              placeholder={selectedClass ? "Ask your question..." : "Select a course first..."}
-              disabled={isLoading || !selectedClass}
-              className="flex-1"
-            />
-            <Button onClick={handleSend} disabled={isLoading || !input.trim() || !selectedClass}>
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
+          <div className="max-w-4xl mx-auto space-y-2">
+            {/* Uploaded file indicator */}
+            {uploadedFile && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg border border-primary/20">
+                <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearUploadedFile}
+                  className="h-6 w-6 p-0 hover:bg-destructive/20"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileUpload}
+                accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf"
+                className="hidden"
+              />
+              
+              {/* Upload button */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || !selectedClass}
+                title="Upload a file"
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+              
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                placeholder={selectedClass ? (uploadedFile ? "Ask about the uploaded file..." : "Ask your question...") : "Select a course first..."}
+                disabled={isLoading || !selectedClass}
+                className="flex-1"
+              />
+              <Button onClick={handleSend} disabled={isLoading || !input.trim() || !selectedClass}>
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
