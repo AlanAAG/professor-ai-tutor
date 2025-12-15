@@ -8,17 +8,12 @@ import { LogOut, MessageSquare, Menu, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 import { FeedbackDialog } from "./FeedbackDialog";
-import { FeedbackReminder } from "./FeedbackReminder";
 
 export const ProtectedChatInterface = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
-  const [reminderDialogOpen, setReminderDialogOpen] = useState(false);
-  const [reminderVariant, setReminderVariant] = useState<"welcome" | "logout">("welcome");
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [hasShownWelcomeReminder, setHasShownWelcomeReminder] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,13 +25,6 @@ export const ProtectedChatInterface = () => {
       setLoading(false);
       if (!session) {
         navigate("/auth");
-      } else if (!hasShownWelcomeReminder) {
-        // Show welcome reminder after a short delay
-        setTimeout(() => {
-          setReminderVariant("welcome");
-          setReminderDialogOpen(true);
-          setHasShownWelcomeReminder(true);
-        }, 1000);
       }
     });
 
@@ -48,33 +36,19 @@ export const ProtectedChatInterface = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, hasShownWelcomeReminder]);
+  }, [navigate]);
 
   const handleLogout = async () => {
-    setPendingAction(() => async () => {
-      await supabase.auth.signOut().catch(() => {});
-      toast({
-        title: "Logged out",
-        description: "Successfully logged out",
-      });
-      navigate("/");
+    await supabase.auth.signOut().catch(() => {});
+    toast({
+      title: "Logged out",
+      description: "Successfully logged out",
     });
-    setReminderVariant("logout");
-    setReminderDialogOpen(true);
+    navigate("/");
   };
 
   const handleStartLearning = () => {
     chatRef.current?.handleNewChat();
-  };
-
-  const executePendingAction = () => {
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
-    } else {
-      // Just close the dialog if no pending action (welcome reminder)
-      setReminderDialogOpen(false);
-    }
   };
 
   if (loading) {
@@ -182,14 +156,6 @@ export const ProtectedChatInterface = () => {
       <FeedbackDialog 
         open={feedbackDialogOpen} 
         onOpenChange={setFeedbackDialogOpen}
-      />
-
-      <FeedbackReminder
-        open={reminderDialogOpen}
-        onOpenChange={setReminderDialogOpen}
-        onFeedbackClick={() => setFeedbackDialogOpen(true)}
-        onContinue={executePendingAction}
-        variant={reminderVariant}
       />
     </>
   );
