@@ -501,18 +501,22 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                 </Select>
               </div>
               
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  localStorage.removeItem("selectedBatch");
-                  setSelectedBatch(null);
+              <Select 
+                value={selectedBatch || "2029"} 
+                onValueChange={(value) => {
+                  localStorage.setItem("selectedBatch", value);
+                  setSelectedBatch(value);
                   setSelectedClass(null);
                 }}
-                className="text-muted-foreground hover:text-foreground"
               >
-                {selectedBatch} Batch
-              </Button>
+                <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50">
+                  <span className="text-sm">{selectedBatch} Batch</span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="2029">2029 Batch</SelectItem>
+                  <SelectItem value="2028">2028 Batch</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -653,7 +657,25 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
             
             <div className="flex-1" />
             
-            <span className="text-xs text-muted-foreground">{selectedBatch} Batch</span>
+            <Select 
+              value={selectedBatch || "2029"} 
+              onValueChange={(value) => {
+                localStorage.setItem("selectedBatch", value);
+                setSelectedBatch(value);
+                setSelectedClass(null);
+                setMessages([]);
+                setActiveConversationId(null);
+                onConversationChange?.(null);
+              }}
+            >
+              <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
+                <span className="text-sm text-muted-foreground">{selectedBatch} Batch</span>
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="2029">2029 Batch</SelectItem>
+                <SelectItem value="2028">2028 Batch</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

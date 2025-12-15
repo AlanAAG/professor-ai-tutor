@@ -81,11 +81,7 @@ export const ProtectedChatInterface = () => {
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
-              <img 
-                src="/asktetr-logo.png" 
-                alt="Ask TETR" 
-                className="h-8 w-auto"
-              />
+              <span className="text-lg font-semibold text-foreground">Ask TETR</span>
             </div>
             
             <div className="flex items-center gap-1">
