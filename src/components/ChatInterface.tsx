@@ -2,7 +2,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap, Search } from "lucide-react";
+import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap, Search, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
@@ -60,6 +60,8 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
   const [uploadedFile, setUploadedFile] = React.useState<{
     name: string;
     content: string;
+    type: 'text' | 'image';
+    imageData?: { media_type: string; data: string };
   } | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -82,24 +84,45 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
       return;
     }
 
-    // Check file type
-    const allowedTypes = ['text/plain', 'text/markdown', 'text/csv', 'application/json', 'application/pdf', 'text/html', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const isTextFile = file.type.startsWith('text/') || allowedTypes.includes(file.type) || file.name.endsWith('.md') || file.name.endsWith('.txt');
-    if (!isTextFile) {
+    // Check if it's an image
+    const isImage = file.type.startsWith('image/');
+    
+    // Check file type for text files
+    const allowedTextTypes = ['text/plain', 'text/markdown', 'text/csv', 'application/json', 'application/pdf', 'text/html', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const isTextFile = file.type.startsWith('text/') || allowedTextTypes.includes(file.type) || file.name.endsWith('.md') || file.name.endsWith('.txt');
+    
+    if (!isTextFile && !isImage) {
       toast({
         title: "Unsupported file type",
-        description: "Please upload a text-based file (txt, md, csv, json, etc.)",
+        description: "Please upload a text file or image (png, jpg, gif, webp)",
         variant: "destructive"
       });
       return;
     }
+
     const reader = new FileReader();
     reader.onload = e => {
-      const content = e.target?.result as string;
-      setUploadedFile({
-        name: file.name,
-        content
-      });
+      const result = e.target?.result as string;
+      
+      if (isImage) {
+        // Extract base64 data from data URL
+        const base64Data = result.split(',')[1];
+        setUploadedFile({
+          name: file.name,
+          content: result, // Keep full data URL for preview
+          type: 'image',
+          imageData: {
+            media_type: file.type,
+            data: base64Data
+          }
+        });
+      } else {
+        setUploadedFile({
+          name: file.name,
+          content: result,
+          type: 'text'
+        });
+      }
     };
     reader.onerror = () => {
       toast({
@@ -108,7 +131,12 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         variant: "destructive"
       });
     };
-    reader.readAsText(file);
+    
+    if (isImage) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
 
     // Reset input
     if (fileInputRef.current) {
@@ -198,7 +226,8 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         class_id: selectedClass,
         persona: selectedMode,
         cohort_id: selectedBatch,
-        file_content: uploadedFile?.content || undefined
+        file_content: uploadedFile?.type === 'text' ? uploadedFile.content : undefined,
+        image_data: uploadedFile?.imageData || undefined
       })
     });
     if (!resp.ok || !resp.body) {
@@ -501,7 +530,11 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
             {/* Input area - positioned lower */}
             <div className="w-full max-w-3xl mt-12">
               {uploadedFile && <div className="flex items-center gap-2 px-4 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50 mx-2">
-                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  {uploadedFile.type === 'image' ? (
+                    <img src={uploadedFile.content} alt={uploadedFile.name} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                  ) : (
+                    <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                  )}
                   <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
                   <Button variant="ghost" size="sm" onClick={clearUploadedFile} className="h-6 w-6 p-0 hover:bg-destructive/20">
                     <X className="w-4 h-4" />
@@ -509,7 +542,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                 </div>}
               
               <div className="relative mx-2">
-                <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf" className="hidden" />
+                <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.webp,image/*" className="hidden" />
                 
                 <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
                   <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading || !selectedClass} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
@@ -608,7 +641,11 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         <div className="border-t border-border/50 bg-background/80 backdrop-blur-sm p-4">
           <div className="max-w-3xl mx-auto">
             {uploadedFile && <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50">
-                <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                {uploadedFile.type === 'image' ? (
+                  <img src={uploadedFile.content} alt={uploadedFile.name} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                ) : (
+                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                )}
                 <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
                 <Button variant="ghost" size="sm" onClick={clearUploadedFile} className="h-6 w-6 p-0 hover:bg-destructive/20">
                   <X className="w-4 h-4" />
@@ -616,7 +653,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
               </div>}
             
             <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 transition-all focus-within:border-primary/50">
-              <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf" className="hidden" />
+              <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.webp,image/*" className="hidden" />
               
               <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
                 <Paperclip className="w-4 h-4 text-muted-foreground" />
