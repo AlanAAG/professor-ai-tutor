@@ -2,19 +2,12 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap } from "lucide-react";
+import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
 import { BatchSelection } from "./BatchSelection";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 type Source = {
   content: string;
   metadata?: {
@@ -25,449 +18,421 @@ type Source = {
   };
   similarity?: number;
 };
-
-type Message = { 
+type Message = {
   id?: string;
-  role: "user" | "assistant"; 
-  content: string; 
+  role: "user" | "assistant";
+  content: string;
   sources?: Source[];
 };
-
 type Persona = {
   display_name?: string;
   professor_name: string;
   style_prompt: string;
 };
-
 type BatchPersonas = Record<string, Record<string, Persona>>;
-
 type Mode = "balanced" | "study" | "professor" | "socratic";
-
 const MODE_DESCRIPTIONS = {
   balanced: "Balanced tutor - A helpful mix of guidance and explanation",
   study: "Study buddy - Helps you review and reinforce material",
   professor: "Professor mode - Authoritative first-person teaching style",
-  socratic: "Socratic method - Guides you to discover answers through questions",
+  socratic: "Socratic method - Guides you to discover answers through questions"
 };
-
 interface ChatInterfaceProps {
   onConversationChange?: (conversationId: string | null) => void;
 }
-
 export interface ChatInterfaceHandle {
   loadConversation: (conversationId: string) => Promise<void>;
   handleNewChat: () => void;
   activeConversationId: string | null;
 }
+export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(function ChatInterface({
+  onConversationChange
+}, ref) {
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [input, setInput] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
+  const [selectedMode, setSelectedMode] = React.useState<Mode>("balanced");
+  const [selectedBatch, setSelectedBatch] = React.useState<string | null>(() => {
+    return localStorage.getItem("selectedBatch");
+  });
+  const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = React.useState<{
+    name: string;
+    content: string;
+  } | null>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const batchPersonas = (personas as BatchPersonas)[selectedBatch || "2029"] || {};
+  const availableClasses = Object.keys(batchPersonas);
+  const {
+    toast
+  } = useToast();
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
-  function ChatInterface({ onConversationChange }, ref) {
-    const [messages, setMessages] = React.useState<Message[]>([]);
-    const [input, setInput] = React.useState("");
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
-    const [selectedMode, setSelectedMode] = React.useState<Mode>("balanced");
-    const [selectedBatch, setSelectedBatch] = React.useState<string | null>(() => {
-      return localStorage.getItem("selectedBatch");
-    });
-    const [activeConversationId, setActiveConversationId] = React.useState<string | null>(null);
-    const [uploadedFile, setUploadedFile] = React.useState<{ name: string; content: string } | null>(null);
-    const messagesEndRef = React.useRef<HTMLDivElement>(null);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-    const batchPersonas = (personas as BatchPersonas)[selectedBatch || "2029"] || {};
-    const availableClasses = Object.keys(batchPersonas);
-    const { toast } = useToast();
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please upload a file smaller than 5MB",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check file type
-      const allowedTypes = [
-        'text/plain',
-        'text/markdown',
-        'text/csv',
-        'application/json',
-        'application/pdf',
-        'text/html',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
-      
-      const isTextFile = file.type.startsWith('text/') || allowedTypes.includes(file.type) || file.name.endsWith('.md') || file.name.endsWith('.txt');
-      
-      if (!isTextFile) {
-        toast({
-          title: "Unsupported file type",
-          description: "Please upload a text-based file (txt, md, csv, json, etc.)",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        setUploadedFile({ name: file.name, content });
-      };
-      reader.onerror = () => {
-        toast({
-          title: "Error reading file",
-          description: "Failed to read the file. Please try again.",
-          variant: "destructive",
-        });
-      };
-      reader.readAsText(file);
-      
-      // Reset input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-
-    const clearUploadedFile = () => {
-      setUploadedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-
-    const scrollToBottom = () => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    React.useEffect(() => {
-      scrollToBottom();
-    }, [messages]);
-
-    const loadConversation = React.useCallback(async (conversationId: string) => {
-      try {
-        setIsLoading(true);
-        
-        const { data: conversation, error: convError } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("id", conversationId)
-          .single();
-
-        if (convError) throw convError;
-
-        const { data: messageData, error: msgError } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", conversationId)
-          .order("created_at", { ascending: true });
-
-        if (msgError) throw msgError;
-
-        setMessages(messageData.map(msg => ({
-          id: msg.id,
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-          sources: msg.sources as Source[] | undefined,
-        })));
-
-        setSelectedClass(conversation.class_id);
-        setSelectedMode(conversation.mode as Mode);
-        setActiveConversationId(conversationId);
-        onConversationChange?.(conversationId);
-      } catch (error) {
-        console.error("Error loading conversation:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load conversation",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }, [onConversationChange, toast]);
-
-    const handleNewChat = React.useCallback(() => {
-      setMessages([]);
-      setActiveConversationId(null);
-      setInput("");
-      onConversationChange?.(null);
-    }, [onConversationChange]);
-
-    React.useImperativeHandle(ref, () => ({
-      loadConversation,
-      handleNewChat,
-      activeConversationId,
-    }), [loadConversation, handleNewChat, activeConversationId]);
-
-    const streamChat = async (userMessage: string, conversationId: string) => {
-      const CHAT_URL = "https://professor-agent-platform.onrender.com/api/chat";
-      
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_API_KEY,
-        },
-        body: JSON.stringify({
-          messages: [...messages.map(({ role, content }) => ({ role, content })), { role: "user", content: userMessage }],
-          class_id: selectedClass,
-          persona: selectedMode,
-          cohort_id: selectedBatch,
-          file_content: uploadedFile?.content || undefined,
-        }),
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please upload a file smaller than 5MB",
+        variant: "destructive"
       });
+      return;
+    }
 
-      if (!resp.ok || !resp.body) {
-        if (resp.status === 429 || resp.status === 402) {
-          const error = await resp.json();
-          throw new Error(error.error);
-        }
-        throw new Error("Failed to start stream");
+    // Check file type
+    const allowedTypes = ['text/plain', 'text/markdown', 'text/csv', 'application/json', 'application/pdf', 'text/html', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const isTextFile = file.type.startsWith('text/') || allowedTypes.includes(file.type) || file.name.endsWith('.md') || file.name.endsWith('.txt');
+    if (!isTextFile) {
+      toast({
+        title: "Unsupported file type",
+        description: "Please upload a text-based file (txt, md, csv, json, etc.)",
+        variant: "destructive"
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const content = e.target?.result as string;
+      setUploadedFile({
+        name: file.name,
+        content
+      });
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Error reading file",
+        description: "Failed to read the file. Please try again.",
+        variant: "destructive"
+      });
+    };
+    reader.readAsText(file);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  const clearUploadedFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth"
+    });
+  };
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+  const loadConversation = React.useCallback(async (conversationId: string) => {
+    try {
+      setIsLoading(true);
+      const {
+        data: conversation,
+        error: convError
+      } = await supabase.from("conversations").select("*").eq("id", conversationId).single();
+      if (convError) throw convError;
+      const {
+        data: messageData,
+        error: msgError
+      } = await supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", {
+        ascending: true
+      });
+      if (msgError) throw msgError;
+      setMessages(messageData.map(msg => ({
+        id: msg.id,
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+        sources: msg.sources as Source[] | undefined
+      })));
+      setSelectedClass(conversation.class_id);
+      setSelectedMode(conversation.mode as Mode);
+      setActiveConversationId(conversationId);
+      onConversationChange?.(conversationId);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onConversationChange, toast]);
+  const handleNewChat = React.useCallback(() => {
+    setMessages([]);
+    setActiveConversationId(null);
+    setInput("");
+    onConversationChange?.(null);
+  }, [onConversationChange]);
+  React.useImperativeHandle(ref, () => ({
+    loadConversation,
+    handleNewChat,
+    activeConversationId
+  }), [loadConversation, handleNewChat, activeConversationId]);
+  const streamChat = async (userMessage: string, conversationId: string) => {
+    const CHAT_URL = "https://professor-agent-platform.onrender.com/api/chat";
+    const resp = await fetch(CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_API_KEY
+      },
+      body: JSON.stringify({
+        messages: [...messages.map(({
+          role,
+          content
+        }) => ({
+          role,
+          content
+        })), {
+          role: "user",
+          content: userMessage
+        }],
+        class_id: selectedClass,
+        persona: selectedMode,
+        cohort_id: selectedBatch,
+        file_content: uploadedFile?.content || undefined
+      })
+    });
+    if (!resp.ok || !resp.body) {
+      if (resp.status === 429 || resp.status === 402) {
+        const error = await resp.json();
+        throw new Error(error.error);
       }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let streamDone = false;
-      let assistantContent = "";
-      let sources: Source[] = [];
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
+      throw new Error("Failed to start stream");
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let textBuffer = "";
+    let streamDone = false;
+    let assistantContent = "";
+    let sources: Source[] = [];
+    while (!streamDone) {
+      const {
+        done,
+        value
+      } = await reader.read();
+      if (done) break;
+      textBuffer += decoder.decode(value, {
+        stream: true
+      });
+      let newlineIndex: number;
+      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+        let line = textBuffer.slice(0, newlineIndex);
+        textBuffer = textBuffer.slice(newlineIndex + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (line.startsWith(":") || line.trim() === "") continue;
+        if (!line.startsWith("data: ")) continue;
+        const jsonStr = line.slice(6).trim();
+        if (jsonStr === "[DONE]") {
+          streamDone = true;
+          break;
+        }
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.sources) {
+            sources = parsed.sources || [];
+          }
+          const content = parsed?.choices?.[0]?.delta?.content || parsed?.content || parsed?.text;
+          if (content) {
+            assistantContent += content;
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last?.role === "assistant") {
+                return prev.map((m, i) => i === prev.length - 1 ? {
+                  ...m,
+                  content: assistantContent,
+                  sources
+                } : m);
+              }
+              return [...prev, {
+                role: "assistant",
+                content: assistantContent,
+                sources
+              }];
+            });
+          }
+        } catch (e) {
+          if (e instanceof Error && e.message !== "Unexpected token") {
+            throw e;
+          }
+          textBuffer = line + "\n" + textBuffer;
+          break;
+        }
+      }
+    }
+    if (textBuffer.trim()) {
+      const lines = textBuffer.split("\n");
+      for (const line of lines) {
+        if (line.trim() && line.startsWith("data: ")) {
           const jsonStr = line.slice(6).trim();
-          
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            
-            if (parsed.error) {
-              throw new Error(parsed.error);
-            }
-            
-            if (parsed.sources) {
-              sources = parsed.sources || [];
-            }
-            
-            const content = parsed?.choices?.[0]?.delta?.content || parsed?.content || parsed?.text;
-            if (content) {
-              assistantContent += content;
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return prev.map((m, i) =>
-                    i === prev.length - 1 ? { ...m, content: assistantContent, sources } : m
-                  );
-                }
-                return [...prev, { role: "assistant", content: assistantContent, sources }];
-              });
-            }
-          } catch (e) {
-            if (e instanceof Error && e.message !== "Unexpected token") {
-              throw e;
-            }
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
-
-      if (textBuffer.trim()) {
-        const lines = textBuffer.split("\n");
-        for (const line of lines) {
-          if (line.trim() && line.startsWith("data: ")) {
-            const jsonStr = line.slice(6).trim();
-            if (jsonStr !== "[DONE]") {
-              try {
-                const parsed = JSON.parse(jsonStr);
-                
-                if (parsed.error) {
-                  throw new Error(parsed.error);
-                }
-                
-                if (parsed.sources && !sources.length) {
-                  sources = parsed.sources;
-                }
-                
-                const content = parsed?.choices?.[0]?.delta?.content || parsed?.content || parsed?.text;
-                if (content) {
-                  assistantContent += content;
-                  setMessages((prev) => {
-                    const last = prev[prev.length - 1];
-                    if (last?.role === "assistant") {
-                      return prev.map((m, i) =>
-                        i === prev.length - 1 ? { ...m, content: assistantContent, sources } : m
-                      );
-                    }
-                    return [...prev, { role: "assistant", content: assistantContent, sources }];
-                  });
-                }
-              } catch (e) {
-                if (e instanceof Error && e.message !== "Unexpected token") {
-                  throw e;
-                }
+          if (jsonStr !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+              if (parsed.sources && !sources.length) {
+                sources = parsed.sources;
+              }
+              const content = parsed?.choices?.[0]?.delta?.content || parsed?.content || parsed?.text;
+              if (content) {
+                assistantContent += content;
+                setMessages(prev => {
+                  const last = prev[prev.length - 1];
+                  if (last?.role === "assistant") {
+                    return prev.map((m, i) => i === prev.length - 1 ? {
+                      ...m,
+                      content: assistantContent,
+                      sources
+                    } : m);
+                  }
+                  return [...prev, {
+                    role: "assistant",
+                    content: assistantContent,
+                    sources
+                  }];
+                });
+              }
+            } catch (e) {
+              if (e instanceof Error && e.message !== "Unexpected token") {
+                throw e;
               }
             }
           }
         }
       }
-
-      // Save assistant message to database
-      if (assistantContent.trim()) {
-        const { data: savedMsg } = await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          role: "assistant",
-          content: assistantContent,
-          sources: sources.length > 0 ? sources : null,
-        }).select('id').single();
-
-        // Update the message with its ID
-        if (savedMsg) {
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant") {
-              return prev.map((m, i) =>
-                i === prev.length - 1 ? { ...m, id: savedMsg.id } : m
-              );
-            }
-            return prev;
-          });
-        }
-      }
-
-      if (!assistantContent.trim()) {
-        throw new Error("The AI didn't send any content. Please try again.");
-      }
-    };
-
-    const handleSend = async () => {
-      if (!input.trim() || isLoading || !selectedClass) return;
-
-      const userMessage = input.trim();
-      setInput("");
-      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
-      setIsLoading(true);
-
-      try {
-        // Create or get conversation
-        let conversationId = activeConversationId;
-        if (!conversationId) {
-          const { data: session } = await supabase.auth.getSession();
-          if (!session.session) throw new Error("Not authenticated");
-
-          const title = userMessage.length > 50 
-            ? userMessage.substring(0, 50) + "..." 
-            : userMessage;
-
-          const { data: newConv, error: convError } = await supabase
-            .from("conversations")
-            .insert({
-              user_id: session.session.user.id,
-              title,
-              class_id: selectedClass,
-              mode: selectedMode,
-            })
-            .select()
-            .single();
-
-          if (convError) throw convError;
-          conversationId = newConv.id;
-          setActiveConversationId(conversationId);
-          onConversationChange?.(conversationId);
-        }
-
-        // Save user message
-        const { error: userMsgError } = await supabase
-          .from("messages")
-          .insert({
-            conversation_id: conversationId,
-            role: "user",
-            content: userMessage,
-          });
-
-        if (userMsgError) throw userMsgError;
-
-        // Increment prompt counter
-        await supabase.rpc('increment_prompt_count');
-        
-        await streamChat(userMessage, conversationId);
-        
-        // Clear uploaded file after sending
-        clearUploadedFile();
-      } catch (error) {
-        console.error("Chat error:", error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to send message",
-          variant: "destructive",
-        });
-        setMessages((prev) => prev.slice(0, -1));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Show batch selection if not selected
-    if (!selectedBatch) {
-      return (
-        <div className="flex flex-col h-full items-center justify-center bg-background p-4">
-          <BatchSelection onBatchSelect={(batchId) => {
-            localStorage.setItem("selectedBatch", batchId);
-            setSelectedBatch(batchId);
-            setSelectedClass(null); // Reset course when batch changes
-          }} />
-        </div>
-      );
     }
 
-    // Pre-chat welcome screen
-    if (messages.length === 0) {
-      return (
-        <div className="flex flex-col h-full bg-background">
+    // Save assistant message to database
+    if (assistantContent.trim()) {
+      const {
+        data: savedMsg
+      } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        content: assistantContent,
+        sources: sources.length > 0 ? sources : null
+      }).select('id').single();
+
+      // Update the message with its ID
+      if (savedMsg) {
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") {
+            return prev.map((m, i) => i === prev.length - 1 ? {
+              ...m,
+              id: savedMsg.id
+            } : m);
+          }
+          return prev;
+        });
+      }
+    }
+    if (!assistantContent.trim()) {
+      throw new Error("The AI didn't send any content. Please try again.");
+    }
+  };
+  const handleSend = async () => {
+    if (!input.trim() || isLoading || !selectedClass) return;
+    const userMessage = input.trim();
+    setInput("");
+    setMessages(prev => [...prev, {
+      role: "user",
+      content: userMessage
+    }]);
+    setIsLoading(true);
+    try {
+      // Create or get conversation
+      let conversationId = activeConversationId;
+      if (!conversationId) {
+        const {
+          data: session
+        } = await supabase.auth.getSession();
+        if (!session.session) throw new Error("Not authenticated");
+        const title = userMessage.length > 50 ? userMessage.substring(0, 50) + "..." : userMessage;
+        const {
+          data: newConv,
+          error: convError
+        } = await supabase.from("conversations").insert({
+          user_id: session.session.user.id,
+          title,
+          class_id: selectedClass,
+          mode: selectedMode
+        }).select().single();
+        if (convError) throw convError;
+        conversationId = newConv.id;
+        setActiveConversationId(conversationId);
+        onConversationChange?.(conversationId);
+      }
+
+      // Save user message
+      const {
+        error: userMsgError
+      } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        role: "user",
+        content: userMessage
+      });
+      if (userMsgError) throw userMsgError;
+
+      // Increment prompt counter
+      await supabase.rpc('increment_prompt_count');
+      await streamChat(userMessage, conversationId);
+
+      // Clear uploaded file after sending
+      clearUploadedFile();
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send message",
+        variant: "destructive"
+      });
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show batch selection if not selected
+  if (!selectedBatch) {
+    return <div className="flex flex-col h-full items-center justify-center bg-background p-4">
+          <BatchSelection onBatchSelect={batchId => {
+        localStorage.setItem("selectedBatch", batchId);
+        setSelectedBatch(batchId);
+        setSelectedClass(null); // Reset course when batch changes
+      }} />
+        </div>;
+  }
+
+  // Pre-chat welcome screen
+  if (messages.length === 0) {
+    return <div className="flex flex-col h-full bg-background">
           {/* Minimal header with controls */}
           <div className="p-3 md:p-4">
             <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 flex-1">
-                <Select 
-                  value={selectedClass || ""} 
-                  onValueChange={setSelectedClass}
-                  disabled={!!activeConversationId}
-                >
+                <Select value={selectedClass || ""} onValueChange={setSelectedClass} disabled={!!activeConversationId}>
                   <SelectTrigger className="w-full md:w-[220px] bg-secondary/50 border-border/50">
                     <span className="truncate text-sm">
-                      {selectedClass && batchPersonas[selectedClass] 
-                        ? batchPersonas[selectedClass].display_name 
-                        : "Select a course"}
+                      {selectedClass && batchPersonas[selectedClass] ? batchPersonas[selectedClass].display_name : "Select a course"}
                     </span>
                   </SelectTrigger>
                   <SelectContent className="w-[320px] bg-popover">
-                    {availableClasses.map((classId) => {
-                      const persona = batchPersonas[classId];
-                      return (
-                        <SelectItem key={classId} value={classId}>
+                    {availableClasses.map(classId => {
+                  const persona = batchPersonas[classId];
+                  return <SelectItem key={classId} value={classId}>
                           <div className="flex flex-col items-start">
                             <span className="font-medium text-sm">
                               {persona.display_name || classId}
@@ -476,39 +441,33 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                               {persona.professor_name}
                             </span>
                           </div>
-                        </SelectItem>
-                      );
-                    })}
+                        </SelectItem>;
+                })}
                   </SelectContent>
                 </Select>
                 
-                <Select value={selectedMode} onValueChange={(v) => setSelectedMode(v as Mode)}>
+                <Select value={selectedMode} onValueChange={v => setSelectedMode(v as Mode)}>
                   <SelectTrigger className="w-[120px] bg-secondary/50 border-border/50">
                     <span className="capitalize text-sm">{selectedMode}</span>
                   </SelectTrigger>
                   <SelectContent className="w-[300px] bg-popover">
-                    {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
-                      <SelectItem key={mode} value={mode}>
+                    {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
                         <div className="flex flex-col items-start py-1">
                           <span className="font-medium capitalize text-sm">{mode}</span>
                           <span className="text-xs text-muted-foreground max-w-[260px]">
                             {MODE_DESCRIPTIONS[mode]}
                           </span>
                         </div>
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               
-              <Select 
-                value={selectedBatch || "2029"} 
-                onValueChange={(value) => {
-                  localStorage.setItem("selectedBatch", value);
-                  setSelectedBatch(value);
-                  setSelectedClass(null);
-                }}
-              >
+              <Select value={selectedBatch || "2029"} onValueChange={value => {
+            localStorage.setItem("selectedBatch", value);
+            setSelectedBatch(value);
+            setSelectedClass(null);
+          }}>
                 <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50">
                   <span className="text-sm">{selectedBatch} Batch</span>
                 </SelectTrigger>
@@ -525,7 +484,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
             <div className="text-center space-y-6 max-w-2xl animate-fade-in">
               {/* Gradient icon */}
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 shadow-lg mx-auto">
-                <Sparkles className="w-8 h-8 text-primary" />
+                <Search className="w-8 h-8 text-primary" />
               </div>
               
               {/* Welcome text */}
@@ -534,98 +493,50 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                   What would you like to learn?
                 </h1>
                 <p className="text-muted-foreground text-lg">
-                  {selectedClass 
-                    ? `Ready to help you with ${batchPersonas[selectedClass]?.display_name || selectedClass}`
-                    : "Select a course to get started"}
+                  {selectedClass ? `Ready to help you with ${batchPersonas[selectedClass]?.display_name || selectedClass}` : "Select a course to get started"}
                 </p>
               </div>
             </div>
             
             {/* Input area - positioned lower */}
             <div className="w-full max-w-3xl mt-12">
-              {uploadedFile && (
-                <div className="flex items-center gap-2 px-4 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50 mx-2">
+              {uploadedFile && <div className="flex items-center gap-2 px-4 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50 mx-2">
                   <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                   <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearUploadedFile}
-                    className="h-6 w-6 p-0 hover:bg-destructive/20"
-                  >
+                  <Button variant="ghost" size="sm" onClick={clearUploadedFile} className="h-6 w-6 p-0 hover:bg-destructive/20">
                     <X className="w-4 h-4" />
                   </Button>
-                </div>
-              )}
+                </div>}
               
               <div className="relative mx-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileUpload}
-                  accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf"
-                  className="hidden"
-                />
+                <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf" className="hidden" />
                 
                 <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || !selectedClass}
-                    className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading || !selectedClass} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
                     <Paperclip className="w-4 h-4 text-muted-foreground" />
                   </Button>
                   
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                    placeholder={selectedClass ? "Ask anything..." : "Select a course first..."}
-                    disabled={isLoading || !selectedClass}
-                    className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
-                  />
+                  <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={selectedClass ? "Ask anything..." : "Select a course first..."} disabled={isLoading || !selectedClass} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm" />
                   
-                  <Button
-                    onClick={handleSend}
-                    disabled={isLoading || !input.trim() || !selectedClass}
-                    size="sm"
-                    className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ArrowUp className="w-4 h-4" />
-                    )}
+                  <Button onClick={handleSend} disabled={isLoading || !input.trim() || !selectedClass} size="sm" className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30">
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
                   </Button>
                 </div>
               </div>
               
               {/* Quick suggestions */}
-              {selectedClass && (
-                <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
-                  {["Explain the key concepts", "Help me study", "Quiz me on this topic"].map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => setInput(suggestion)}
-                      className="px-4 py-2 text-sm rounded-full bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
-                    >
+              {selectedClass && <div className="flex flex-wrap justify-center gap-2 mt-6 px-4">
+                  {["Explain the key concepts", "Help me study", "Quiz me on this topic"].map(suggestion => <button key={suggestion} onClick={() => setInput(suggestion)} className="px-4 py-2 text-sm rounded-full bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all">
                       {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    </button>)}
+                </div>}
             </div>
           </div>
-        </div>
-      );
-    }
+        </div>;
+  }
 
-    // Chat mode with messages
-    return (
-      <div className="flex flex-col h-full bg-background">
+  // Chat mode with messages
+  return <div className="flex flex-col h-full bg-background">
         {/* Compact header */}
         <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm p-3">
           <div className="max-w-3xl mx-auto flex items-center gap-3">
@@ -636,38 +547,35 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
               </span>
             </div>
             
-            <Select value={selectedMode} onValueChange={async (v) => {
-              const newMode = v as Mode;
-              setSelectedMode(newMode);
-              if (activeConversationId) {
-                await supabase.from("conversations").update({ mode: newMode }).eq("id", activeConversationId);
-              }
-            }}>
+            <Select value={selectedMode} onValueChange={async v => {
+          const newMode = v as Mode;
+          setSelectedMode(newMode);
+          if (activeConversationId) {
+            await supabase.from("conversations").update({
+              mode: newMode
+            }).eq("id", activeConversationId);
+          }
+        }}>
               <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
                 <span className="capitalize text-sm text-muted-foreground">{selectedMode}</span>
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map((mode) => (
-                  <SelectItem key={mode} value={mode}>
+                {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
                     <span className="capitalize">{mode}</span>
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
             
             <div className="flex-1" />
             
-            <Select 
-              value={selectedBatch || "2029"} 
-              onValueChange={(value) => {
-                localStorage.setItem("selectedBatch", value);
-                setSelectedBatch(value);
-                setSelectedClass(null);
-                setMessages([]);
-                setActiveConversationId(null);
-                onConversationChange?.(null);
-              }}
-            >
+            <Select value={selectedBatch || "2029"} onValueChange={value => {
+          localStorage.setItem("selectedBatch", value);
+          setSelectedBatch(value);
+          setSelectedClass(null);
+          setMessages([]);
+          setActiveConversationId(null);
+          onConversationChange?.(null);
+        }}>
               <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
                 <span className="text-sm text-muted-foreground">{selectedBatch} Batch</span>
               </SelectTrigger>
@@ -682,17 +590,8 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto p-4 space-y-6">
-            {messages.map((msg, idx) => (
-              <ChatMessage 
-                key={msg.id || idx} 
-                role={msg.role} 
-                content={msg.content}
-                sources={msg.sources}
-                messageId={msg.id}
-              />
-            ))}
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex gap-3 animate-fade-in">
+            {messages.map((msg, idx) => <ChatMessage key={msg.id || idx} role={msg.role} content={msg.content} sources={msg.sources} messageId={msg.id} />)}
+            {isLoading && messages[messages.length - 1]?.role !== "assistant" && <div className="flex gap-3 animate-fade-in">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-primary-foreground" />
                 </div>
@@ -700,8 +599,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Thinking...</span>
                 </div>
-              </div>
-            )}
+              </div>}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -709,68 +607,29 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
         {/* Input area */}
         <div className="border-t border-border/50 bg-background/80 backdrop-blur-sm p-4">
           <div className="max-w-3xl mx-auto">
-            {uploadedFile && (
-              <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50">
+            {uploadedFile && <div className="flex items-center gap-2 px-3 py-2 mb-3 bg-secondary/50 rounded-xl border border-border/50">
                 <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                 <span className="text-sm text-foreground truncate flex-1">{uploadedFile.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearUploadedFile}
-                  className="h-6 w-6 p-0 hover:bg-destructive/20"
-                >
+                <Button variant="ghost" size="sm" onClick={clearUploadedFile} className="h-6 w-6 p-0 hover:bg-destructive/20">
                   <X className="w-4 h-4" />
                 </Button>
-              </div>
-            )}
+              </div>}
             
             <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 transition-all focus-within:border-primary/50">
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileUpload}
-                accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf"
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf" className="hidden" />
               
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"
-              >
+              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
                 <Paperclip className="w-4 h-4 text-muted-foreground" />
               </Button>
               
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."}
-                disabled={isLoading}
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
-              />
+              <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."} disabled={isLoading} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm" />
               
-              <Button
-                onClick={handleSend}
-                disabled={isLoading || !input.trim()}
-                size="sm"
-                className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="w-4 h-4" />
-                )}
+              <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="sm" className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30">
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
               </Button>
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-);
-
+      </div>;
+});
 ChatInterface.displayName = "ChatInterface";
