@@ -2,12 +2,13 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatMessage } from "./ChatMessage";
-import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap, Search, Image } from "lucide-react";
+import { Loader2, Send, Sparkles, Paperclip, X, FileText, ArrowUp, GraduationCap, Search, Image, Camera, Plus, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import personas from "@/data/personas.json";
 import { BatchSelection } from "./BatchSelection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 type Source = {
   content: string;
   metadata?: {
@@ -65,6 +66,9 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
   } | null>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const galleryInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const [attachMenuOpen, setAttachMenuOpen] = React.useState(false);
   const batchPersonas = (personas as BatchPersonas)[selectedBatch || "2029"] || {};
   const availableClasses = Object.keys(batchPersonas);
   const {
@@ -543,11 +547,40 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
               
               <div className="relative mx-2">
                 <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.webp,image/*" className="hidden" />
+                <input ref={galleryInputRef} type="file" onChange={handleFileUpload} accept="image/*" className="hidden" />
+                <input ref={cameraInputRef} type="file" onChange={handleFileUpload} accept="image/*" capture="environment" className="hidden" />
                 
                 <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
-                  <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading || !selectedClass} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
-                    <Paperclip className="w-4 h-4 text-muted-foreground" />
-                  </Button>
+                  <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={isLoading || !selectedClass} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
+                        <Plus className="w-4 h-4 text-muted-foreground" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" align="start">
+                      <button
+                        onClick={() => { fileInputRef.current?.click(); setAttachMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        Upload file
+                      </button>
+                      <button
+                        onClick={() => { galleryInputRef.current?.click(); setAttachMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        Photos
+                      </button>
+                      <button
+                        onClick={() => { cameraInputRef.current?.click(); setAttachMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Camera
+                      </button>
+                    </PopoverContent>
+                  </Popover>
                   
                   <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={selectedClass ? "Ask anything..." : "Select a course first..."} disabled={isLoading || !selectedClass} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm" />
                   
@@ -653,11 +686,36 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
               </div>}
             
             <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 transition-all focus-within:border-primary/50">
-              <input ref={fileInputRef} type="file" onChange={handleFileUpload} accept=".txt,.md,.csv,.json,.html,.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.webp,image/*" className="hidden" />
-              
-              <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isLoading} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
-                <Paperclip className="w-4 h-4 text-muted-foreground" />
-              </Button>
+              <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" disabled={isLoading} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50">
+                    <Plus className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-1" align="start">
+                  <button
+                    onClick={() => { fileInputRef.current?.click(); setAttachMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Upload file
+                  </button>
+                  <button
+                    onClick={() => { galleryInputRef.current?.click(); setAttachMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    Photos
+                  </button>
+                  <button
+                    onClick={() => { cameraInputRef.current?.click(); setAttachMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
+                    Camera
+                  </button>
+                </PopoverContent>
+              </Popover>
               
               <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."} disabled={isLoading} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm" />
               
