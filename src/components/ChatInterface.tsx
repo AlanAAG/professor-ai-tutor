@@ -723,7 +723,7 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                 </PopoverContent>
               </Popover>
               
-              <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."} disabled={isLoading} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm" />
+              <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()} placeholder={uploadedFile ? "Ask about the file..." : "Ask anything..."} disabled={isLoading} className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-foreground/60 text-sm" />
               
               <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="sm" className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30">
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
