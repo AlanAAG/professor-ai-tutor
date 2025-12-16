@@ -209,12 +209,18 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
     activeConversationId
   }), [loadConversation, handleNewChat, activeConversationId]);
   const streamChat = async (userMessage: string, conversationId: string) => {
-    const CHAT_URL = "https://professor-agent-platform.onrender.com/api/chat";
+    // Get the user's session for authentication
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("You must be logged in to use the chat");
+    }
+
+    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-proxy`;
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": import.meta.env.VITE_API_KEY
+        "Authorization": `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
         messages: [...messages.map(({
