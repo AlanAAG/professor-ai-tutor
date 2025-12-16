@@ -458,20 +458,81 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
   // Pre-chat welcome screen
   if (messages.length === 0) {
     return <div className="flex flex-col h-full bg-background">
-          {/* Minimal header with controls */}
+          {/* Minimal header with controls - mobile responsive */}
           <div className="p-3 md:p-4">
-            <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1">
+            <div className="max-w-3xl mx-auto space-y-2 md:space-y-0">
+              {/* Course selector - full width on mobile */}
+              <div className="w-full md:hidden">
                 <Select value={selectedClass || ""} onValueChange={setSelectedClass} disabled={!!activeConversationId}>
-                  <SelectTrigger className="w-full md:w-[220px] bg-secondary/50 border-border/50">
+                  <SelectTrigger className="w-full bg-secondary/50 border-border/50">
                     <span className="truncate text-sm">
                       {selectedClass && batchPersonas[selectedClass] ? batchPersonas[selectedClass].display_name : "Select a course"}
                     </span>
                   </SelectTrigger>
-                  <SelectContent className="w-[320px] bg-popover">
+                  <SelectContent className="w-[calc(100vw-2rem)] max-w-[320px] bg-popover">
                     {availableClasses.map(classId => {
-                  const persona = batchPersonas[classId];
-                  return <SelectItem key={classId} value={classId}>
+                      const persona = batchPersonas[classId];
+                      return <SelectItem key={classId} value={classId}>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium text-sm">
+                            {persona.display_name || classId}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {persona.professor_name}
+                          </span>
+                        </div>
+                      </SelectItem>;
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Mode and Batch selectors - row on mobile */}
+              <div className="flex items-center gap-2 md:hidden">
+                <Select value={selectedMode} onValueChange={v => setSelectedMode(v as Mode)}>
+                  <SelectTrigger className="flex-1 bg-secondary/50 border-border/50">
+                    <span className="capitalize text-sm">{selectedMode}</span>
+                  </SelectTrigger>
+                  <SelectContent className="w-[calc(100vw-2rem)] max-w-[300px] bg-popover">
+                    {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
+                      <div className="flex flex-col items-start py-1">
+                        <span className="font-medium capitalize text-sm">{mode}</span>
+                        <span className="text-xs text-muted-foreground max-w-[260px]">
+                          {MODE_DESCRIPTIONS[mode]}
+                        </span>
+                      </div>
+                    </SelectItem>)}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedBatch || "2029"} onValueChange={value => {
+                  localStorage.setItem("selectedBatch", value);
+                  setSelectedBatch(value);
+                  setSelectedClass(null);
+                }}>
+                  <SelectTrigger className="flex-1 bg-secondary/50 border-border/50">
+                    <span className="text-sm">{selectedBatch} Batch</span>
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="2029">2029 Batch</SelectItem>
+                    <SelectItem value="2028">2028 Batch</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Desktop layout - all in one row */}
+              <div className="hidden md:flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <Select value={selectedClass || ""} onValueChange={setSelectedClass} disabled={!!activeConversationId}>
+                    <SelectTrigger className="w-[220px] bg-secondary/50 border-border/50">
+                      <span className="truncate text-sm">
+                        {selectedClass && batchPersonas[selectedClass] ? batchPersonas[selectedClass].display_name : "Select a course"}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent className="w-[320px] bg-popover">
+                      {availableClasses.map(classId => {
+                        const persona = batchPersonas[classId];
+                        return <SelectItem key={classId} value={classId}>
                           <div className="flex flex-col items-start">
                             <span className="font-medium text-sm">
                               {persona.display_name || classId}
@@ -481,16 +542,16 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                             </span>
                           </div>
                         </SelectItem>;
-                })}
-                  </SelectContent>
-                </Select>
-                
-                <Select value={selectedMode} onValueChange={v => setSelectedMode(v as Mode)}>
-                  <SelectTrigger className="w-[120px] bg-secondary/50 border-border/50">
-                    <span className="capitalize text-sm">{selectedMode}</span>
-                  </SelectTrigger>
-                  <SelectContent className="w-[300px] bg-popover">
-                    {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
+                      })}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedMode} onValueChange={v => setSelectedMode(v as Mode)}>
+                    <SelectTrigger className="w-[120px] bg-secondary/50 border-border/50">
+                      <span className="capitalize text-sm">{selectedMode}</span>
+                    </SelectTrigger>
+                    <SelectContent className="w-[300px] bg-popover">
+                      {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
                         <div className="flex flex-col items-start py-1">
                           <span className="font-medium capitalize text-sm">{mode}</span>
                           <span className="text-xs text-muted-foreground max-w-[260px]">
@@ -498,23 +559,24 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                           </span>
                         </div>
                       </SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Select value={selectedBatch || "2029"} onValueChange={value => {
+                  localStorage.setItem("selectedBatch", value);
+                  setSelectedBatch(value);
+                  setSelectedClass(null);
+                }}>
+                  <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50">
+                    <span className="text-sm">{selectedBatch} Batch</span>
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="2029">2029 Batch</SelectItem>
+                    <SelectItem value="2028">2028 Batch</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
-              <Select value={selectedBatch || "2029"} onValueChange={value => {
-            localStorage.setItem("selectedBatch", value);
-            setSelectedBatch(value);
-            setSelectedClass(null);
-          }}>
-                <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50">
-                  <span className="text-sm">{selectedBatch} Batch</span>
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="2029">2029 Batch</SelectItem>
-                  <SelectItem value="2028">2028 Batch</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           
@@ -609,53 +671,102 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
 
   // Chat mode with messages
   return <div className="flex flex-col h-full bg-background">
-        {/* Compact header */}
+        {/* Compact header - mobile responsive */}
         <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm p-3">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
-              <GraduationCap className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium truncate max-w-[200px]">
-                {selectedClass && batchPersonas[selectedClass]?.display_name}
-              </span>
-            </div>
-            
-            <Select value={selectedMode} onValueChange={async v => {
-          const newMode = v as Mode;
-          setSelectedMode(newMode);
-          if (activeConversationId) {
-            await supabase.from("conversations").update({
-              mode: newMode
-            }).eq("id", activeConversationId);
-          }
-        }}>
-              <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
-                <span className="capitalize text-sm text-muted-foreground">{selectedMode}</span>
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
+          <div className="max-w-3xl mx-auto">
+            {/* Mobile layout */}
+            <div className="flex md:hidden items-center justify-between gap-2">
+              <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/50 min-w-0 flex-1">
+                <GraduationCap className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-xs font-medium truncate">
+                  {selectedClass && batchPersonas[selectedClass]?.display_name}
+                </span>
+              </div>
+              
+              <Select value={selectedMode} onValueChange={async v => {
+                const newMode = v as Mode;
+                setSelectedMode(newMode);
+                if (activeConversationId) {
+                  await supabase.from("conversations").update({
+                    mode: newMode
+                  }).eq("id", activeConversationId);
+                }
+              }}>
+                <SelectTrigger className="w-auto gap-1 bg-transparent border-none hover:bg-secondary/50 px-2">
+                  <span className="capitalize text-xs text-muted-foreground">{selectedMode}</span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
                     <span className="capitalize">{mode}</span>
                   </SelectItem>)}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedBatch || "2029"} onValueChange={value => {
+                localStorage.setItem("selectedBatch", value);
+                setSelectedBatch(value);
+                setSelectedClass(null);
+                setMessages([]);
+                setActiveConversationId(null);
+                onConversationChange?.(null);
+              }}>
+                <SelectTrigger className="w-auto gap-1 bg-transparent border-none hover:bg-secondary/50 px-2">
+                  <span className="text-xs text-muted-foreground">{selectedBatch}</span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="2029">2029 Batch</SelectItem>
+                  <SelectItem value="2028">2028 Batch</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
-            <div className="flex-1" />
-            
-            <Select value={selectedBatch || "2029"} onValueChange={value => {
-          localStorage.setItem("selectedBatch", value);
-          setSelectedBatch(value);
-          setSelectedClass(null);
-          setMessages([]);
-          setActiveConversationId(null);
-          onConversationChange?.(null);
-        }}>
-              <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
-                <span className="text-sm text-muted-foreground">{selectedBatch} Batch</span>
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="2029">2029 Batch</SelectItem>
-                <SelectItem value="2028">2028 Batch</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Desktop layout */}
+            <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+                <GraduationCap className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium truncate max-w-[200px]">
+                  {selectedClass && batchPersonas[selectedClass]?.display_name}
+                </span>
+              </div>
+              
+              <Select value={selectedMode} onValueChange={async v => {
+                const newMode = v as Mode;
+                setSelectedMode(newMode);
+                if (activeConversationId) {
+                  await supabase.from("conversations").update({
+                    mode: newMode
+                  }).eq("id", activeConversationId);
+                }
+              }}>
+                <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
+                  <span className="capitalize text-sm text-muted-foreground">{selectedMode}</span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {(Object.keys(MODE_DESCRIPTIONS) as Mode[]).map(mode => <SelectItem key={mode} value={mode}>
+                    <span className="capitalize">{mode}</span>
+                  </SelectItem>)}
+                </SelectContent>
+              </Select>
+              
+              <div className="flex-1" />
+              
+              <Select value={selectedBatch || "2029"} onValueChange={value => {
+                localStorage.setItem("selectedBatch", value);
+                setSelectedBatch(value);
+                setSelectedClass(null);
+                setMessages([]);
+                setActiveConversationId(null);
+                onConversationChange?.(null);
+              }}>
+                <SelectTrigger className="w-auto gap-2 bg-transparent border-none hover:bg-secondary/50 px-3">
+                  <span className="text-sm text-muted-foreground">{selectedBatch} Batch</span>
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="2029">2029 Batch</SelectItem>
+                  <SelectItem value="2028">2028 Batch</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
