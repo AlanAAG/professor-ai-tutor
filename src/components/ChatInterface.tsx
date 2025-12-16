@@ -473,11 +473,11 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                     {availableClasses.map(classId => {
                       const persona = batchPersonas[classId];
                       return <SelectItem key={classId} value={classId}>
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium text-sm">
+                        <div className="flex flex-col items-start max-w-[280px]">
+                          <span className="font-medium text-sm truncate w-full">
                             {persona.display_name || classId}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground truncate w-full">
                             {persona.professor_name}
                           </span>
                         </div>
@@ -533,11 +533,11 @@ export const ChatInterface = React.forwardRef<ChatInterfaceHandle, ChatInterface
                       {availableClasses.map(classId => {
                         const persona = batchPersonas[classId];
                         return <SelectItem key={classId} value={classId}>
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium text-sm">
+                          <div className="flex flex-col items-start max-w-[280px]">
+                            <span className="font-medium text-sm truncate w-full">
                               {persona.display_name || classId}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-xs text-muted-foreground truncate w-full">
                               {persona.professor_name}
                             </span>
                           </div>
