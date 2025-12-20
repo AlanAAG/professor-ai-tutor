@@ -61,7 +61,7 @@ const ResetPassword = () => {
       setEmail("");
       setNewPassword("");
       setConfirmPassword("");
-      navigate("/demo");
+      navigate("/professor");
     } catch (error: any) {
       toast({
         title: "Password reset failed",

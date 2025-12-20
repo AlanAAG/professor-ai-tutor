@@ -53,7 +53,7 @@ const Index = () => {
                   onClick={async () => {
                     const { data: { session } } = await supabase.auth.getSession();
                     if (session) {
-                      navigate('/demo');
+                      navigate('/professor');
                     } else {
                       navigate('/auth');
                     }
@@ -187,7 +187,7 @@ const Index = () => {
                 onClick={async () => {
                   const { data: { session } } = await supabase.auth.getSession();
                   if (session) {
-                    navigate('/demo');
+                    navigate('/professor');
                   } else {
                     navigate('/auth');
                   }

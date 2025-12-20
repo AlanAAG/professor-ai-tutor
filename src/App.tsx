@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Demo from "./pages/Demo";
 import Auth from "./pages/Auth";
 import Full from "./pages/Full";
 import ResetPassword from "./pages/ResetPassword";
@@ -24,7 +23,6 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/professor" element={<ProfessorAI />} />
-          <Route path="/demo" element={<Demo />} />
           <Route path="/full" element={<Full />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

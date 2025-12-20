@@ -32,7 +32,7 @@ const Auth = () => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/demo");
+        navigate("/professor");
       }
     });
   }, [navigate]);
@@ -64,7 +64,7 @@ const Auth = () => {
         title: "Welcome back!",
         description: "Successfully logged in.",
       });
-      navigate("/demo");
+      navigate("/professor");
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -105,7 +105,7 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/demo`;
+      const redirectUrl = `${window.location.origin}/professor`;
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -129,7 +129,7 @@ const Auth = () => {
       });
 
       if (!signInError) {
-        navigate("/demo");
+        navigate("/professor");
       }
     } catch (error: any) {
       toast({
@@ -230,7 +230,7 @@ const Auth = () => {
       setNewPassword("");
       setConfirmPassword("");
       setEmail("");
-      navigate("/demo");
+      navigate("/professor");
     } catch (error: any) {
       toast({
         title: "Password reset failed",
