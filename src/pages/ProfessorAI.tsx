@@ -13,7 +13,7 @@ export interface Message {
 export interface Lecture {
   id: string;
   title: string;
-  course_id?: string;
+  class_name?: string;
 }
 
 // Define courses per batch
@@ -47,9 +47,9 @@ const ProfessorAI = () => {
   // Get available courses for selected batch
   const availableCourses = selectedBatch ? COURSES_BY_BATCH[selectedBatch] || [] : [];
   
-  // Filter lectures by selected course
+  // Filter lectures by selected course (matching class_name)
   const filteredLectures = selectedCourse 
-    ? lectures.filter(lecture => lecture.course_id === selectedCourse)
+    ? lectures.filter(lecture => lecture.class_name === selectedCourse)
     : [];
 
   // Fetch lectures when batch is selected
@@ -131,7 +131,7 @@ const ProfessorAI = () => {
           body: JSON.stringify({
             messages: [...messages, userMessage],
             mode,
-            selectedLecture,
+            selectedLecture, // Pass the lecture title/name as selectedLecture
             cohort_id: selectedBatch,
           }),
         }

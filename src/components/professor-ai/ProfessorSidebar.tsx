@@ -70,13 +70,13 @@ export const ProfessorSidebar = ({
 }: ProfessorSidebarProps) => {
   const hasLectures = lectures.length > 0;
   const hasCourses = courses.length > 0;
-  const isLectureDisabled = lecturesLoading || !hasLectures || !selectedCourse;
+  const isLectureDisabled = lecturesLoading || !selectedCourse;
   
   const getLecturePlaceholderText = () => {
     if (!selectedCourse) return "Select a course first";
     if (lecturesLoading) return "Loading lectures...";
     if (lecturesError) return "Failed to load lectures";
-    if (!hasLectures) return "No lectures found";
+    if (!hasLectures) return "No specific sessions found for this course";
     return "Select a Lecture...";
   };
   return (
@@ -158,7 +158,7 @@ export const ProfessorSidebar = ({
           {hasLectures && (
             <SelectContent className="bg-card border-border max-h-[300px]">
               {lectures.map((lecture) => (
-                <SelectItem key={lecture.id} value={lecture.id}>
+                <SelectItem key={lecture.id} value={lecture.title}>
                   <span className="text-sm">{lecture.title}</span>
                 </SelectItem>
               ))}
