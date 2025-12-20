@@ -1,4 +1,4 @@
-import { BookOpen, Brain, GraduationCap, FileText } from "lucide-react";
+import { BookOpen, Brain, GraduationCap, FileText, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -10,21 +10,15 @@ import {
 } from "@/components/ui/select";
 import type { Mode } from "@/pages/ProfessorAI";
 
-type Persona = {
-  display_name?: string;
-  professor_name: string;
-  style_prompt: string;
-};
-
 interface ProfessorSidebarProps {
   mode: Mode;
   setMode: (mode: Mode) => void;
-  selectedClass: string | null;
-  setSelectedClass: (classId: string) => void;
+  selectedLecture: string | null;
+  setSelectedLecture: (lecture: string) => void;
   selectedBatch: string;
   setSelectedBatch: (batchId: string) => void;
-  batchPersonas: Record<string, Persona>;
-  availableClasses: string[];
+  lectures: string[];
+  lecturesLoading: boolean;
 }
 
 const modeConfig = [
@@ -54,35 +48,35 @@ const modeConfig = [
 export const ProfessorSidebar = ({
   mode,
   setMode,
-  selectedClass,
-  setSelectedClass,
+  selectedLecture,
+  setSelectedLecture,
   selectedBatch,
   setSelectedBatch,
-  batchPersonas,
-  availableClasses,
+  lectures,
+  lecturesLoading,
 }: ProfessorSidebarProps) => {
   return (
-    <aside className="w-72 min-w-72 h-full bg-professor-sidebar border-r border-professor-border flex flex-col">
+    <aside className="w-72 min-w-72 h-full bg-card border-r border-border flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-professor-border">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-professor-accent/20 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-professor-accent" />
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-professor-fg">Professor AI</h1>
-            <p className="text-xs text-professor-muted">Your Academic Assistant</p>
+            <h1 className="text-lg font-semibold text-foreground">Professor AI</h1>
+            <p className="text-xs text-muted-foreground">Your Academic Assistant</p>
           </div>
         </div>
       </div>
 
       {/* Batch Selector */}
-      <div className="p-4 border-b border-professor-border">
-        <Label className="text-xs text-professor-muted uppercase tracking-wider mb-2 block">
+      <div className="p-4 border-b border-border">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
           Batch
         </Label>
         <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-          <SelectTrigger className="w-full bg-professor-input border-professor-border text-professor-fg">
+          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
             <SelectValue placeholder="Select Batch..." />
           </SelectTrigger>
           <SelectContent className="bg-card border-border">
@@ -92,38 +86,45 @@ export const ProfessorSidebar = ({
         </Select>
       </div>
 
-      {/* Course Selector */}
-      <div className="p-4 border-b border-professor-border">
-        <Label className="text-xs text-professor-muted uppercase tracking-wider mb-2 block">
-          Select Course
+      {/* Lecture Selector */}
+      <div className="p-4 border-b border-border">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+          Select Lecture
         </Label>
-        <Select value={selectedClass || ""} onValueChange={setSelectedClass}>
-          <SelectTrigger className="w-full bg-professor-input border-professor-border text-professor-fg">
-            <SelectValue placeholder="Select a Course..." />
+        <Select 
+          value={selectedLecture || ""} 
+          onValueChange={setSelectedLecture}
+          disabled={lecturesLoading}
+        >
+          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
+            {lecturesLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading lectures...</span>
+              </div>
+            ) : (
+              <SelectValue placeholder="Select a Lecture..." />
+            )}
           </SelectTrigger>
           <SelectContent className="bg-card border-border max-h-[300px]">
-            {availableClasses.map((classId) => {
-              const persona = batchPersonas[classId];
-              return (
-                <SelectItem key={classId} value={classId}>
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium text-sm">
-                      {persona.display_name || classId}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {persona.professor_name}
-                    </span>
-                  </div>
+            {lectures.length === 0 && !lecturesLoading ? (
+              <SelectItem value="" disabled>
+                No lectures available
+              </SelectItem>
+            ) : (
+              lectures.map((lecture) => (
+                <SelectItem key={lecture} value={lecture}>
+                  <span className="text-sm">{lecture}</span>
                 </SelectItem>
-              );
-            })}
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
 
       {/* Mode Selector */}
       <div className="p-4 flex-1 overflow-y-auto">
-        <Label className="text-xs text-professor-muted uppercase tracking-wider mb-3 block">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block">
           Learning Mode
         </Label>
         <RadioGroup
@@ -136,20 +137,20 @@ export const ProfessorSidebar = ({
               key={item.value}
               className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                 mode === item.value
-                  ? "bg-professor-accent/15 border border-professor-accent/50"
-                  : "bg-professor-input border border-transparent hover:bg-professor-input/80"
+                  ? "bg-primary/15 border border-primary/50"
+                  : "bg-secondary/50 border border-transparent hover:bg-secondary/80"
               }`}
             >
               <RadioGroupItem
                 value={item.value}
                 id={item.value}
-                className="border-professor-border text-professor-accent"
+                className="border-border text-primary"
               />
               <div className="flex items-center gap-2 flex-1">
                 <span className="text-lg">{item.emoji}</span>
                 <div>
-                  <p className="text-sm font-medium text-professor-fg">{item.label}</p>
-                  <p className="text-xs text-professor-muted">{item.description}</p>
+                  <p className="text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
                 </div>
               </div>
             </label>
@@ -158,8 +159,8 @@ export const ProfessorSidebar = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-professor-border">
-        <p className="text-xs text-professor-muted text-center">
+      <div className="p-4 border-t border-border">
+        <p className="text-xs text-muted-foreground text-center">
           Powered by RAG Technology
         </p>
       </div>

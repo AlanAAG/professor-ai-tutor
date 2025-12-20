@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { ProfessorSidebar } from "@/components/professor-ai/ProfessorSidebar";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
-import personas from "@/data/personas.json";
 
 export type Mode = "Notes Creator" | "Quiz" | "Study";
 
@@ -11,44 +10,66 @@ export interface Message {
   content: string;
 }
 
-type Persona = {
-  display_name?: string;
-  professor_name: string;
-  style_prompt: string;
-};
-
-type BatchPersonas = Record<string, Record<string, Persona>>;
-
 const ProfessorAI = () => {
   const [mode, setMode] = useState<Mode>("Study");
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string | null>(() => {
     return localStorage.getItem("professorSelectedBatch");
   });
+  const [lectures, setLectures] = useState<string[]>([]);
+  const [lecturesLoading, setLecturesLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const hasAutoTriggered = useRef(false);
 
-  // Get courses for selected batch
-  const batchPersonas = (personas as BatchPersonas)[selectedBatch || "2029"] || {};
-  const availableClasses = Object.keys(batchPersonas);
+  // Fetch lectures when batch is selected
+  useEffect(() => {
+    if (!selectedBatch) return;
 
-  // Clear chat when mode or class changes
+    const fetchLectures = async () => {
+      setLecturesLoading(true);
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures`,
+          {
+            headers: {
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setLectures(data.lectures || []);
+        } else {
+          console.error("Failed to fetch lectures:", response.status);
+        }
+      } catch (error) {
+        console.error("Failed to fetch lectures:", error);
+      } finally {
+        setLecturesLoading(false);
+      }
+    };
+
+    fetchLectures();
+  }, [selectedBatch]);
+
+  // Clear chat when mode or lecture changes
   useEffect(() => {
     setMessages([]);
     hasAutoTriggered.current = false;
-  }, [mode, selectedClass]);
+  }, [mode, selectedLecture]);
 
   // Auto-trigger for Notes Creator mode
   useEffect(() => {
-    if (mode === "Notes Creator" && selectedClass && !hasAutoTriggered.current && !isLoading) {
+    if (mode === "Notes Creator" && selectedLecture && !hasAutoTriggered.current && !isLoading) {
       hasAutoTriggered.current = true;
       sendMessage("Summarize this lecture", true);
     }
-  }, [mode, selectedClass]);
+  }, [mode, selectedLecture]);
 
   const sendMessage = async (content: string, isHidden = false) => {
-    if (!selectedClass) return;
+    if (!selectedLecture) return;
 
     const userMessage: Message = { role: "user", content };
     
@@ -71,7 +92,7 @@ const ProfessorAI = () => {
           body: JSON.stringify({
             messages: [...messages, userMessage],
             mode,
-            selectedLecture: selectedClass,
+            selectedLecture,
             cohort_id: selectedBatch,
           }),
         }
@@ -106,40 +127,39 @@ const ProfessorAI = () => {
   const handleBatchSelect = (batchId: string) => {
     localStorage.setItem("professorSelectedBatch", batchId);
     setSelectedBatch(batchId);
-    setSelectedClass(null);
+    setSelectedLecture(null);
     setMessages([]);
   };
 
   // Show batch selection if not selected
   if (!selectedBatch) {
     return (
-      <div className="flex h-screen items-center justify-center bg-professor-bg">
+      <div className="flex h-screen items-center justify-center bg-background">
         <ProfessorBatchSelection onBatchSelect={handleBatchSelect} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-professor-bg text-professor-fg">
+    <div className="flex h-screen bg-background text-foreground">
       <ProfessorSidebar
         mode={mode}
         setMode={setMode}
-        selectedClass={selectedClass}
-        setSelectedClass={setSelectedClass}
+        selectedLecture={selectedLecture}
+        setSelectedLecture={setSelectedLecture}
         selectedBatch={selectedBatch}
         setSelectedBatch={handleBatchSelect}
-        batchPersonas={batchPersonas}
-        availableClasses={availableClasses}
+        lectures={lectures}
+        lecturesLoading={lecturesLoading}
       />
       
       <ProfessorChat
         messages={messages}
         isLoading={isLoading}
-        selectedClass={selectedClass}
+        selectedLecture={selectedLecture}
         mode={mode}
         onSendMessage={sendMessage}
         onStartQuiz={handleStartQuiz}
-        courseName={selectedClass ? batchPersonas[selectedClass]?.display_name : undefined}
       />
     </div>
   );

@@ -13,7 +13,7 @@ const renderMarkdown = (content: string) => {
     // H2 headers
     if (line.startsWith("## ")) {
       return (
-        <h2 key={index} className="text-lg font-bold text-professor-accent mt-4 mb-2 first:mt-0">
+        <h2 key={index} className="text-lg font-bold text-primary mt-4 mb-2 first:mt-0">
           {line.slice(3)}
         </h2>
       );
@@ -22,7 +22,7 @@ const renderMarkdown = (content: string) => {
     // H3 headers
     if (line.startsWith("### ")) {
       return (
-        <h3 key={index} className="text-base font-semibold text-professor-fg mt-3 mb-1">
+        <h3 key={index} className="text-base font-semibold text-foreground mt-3 mb-1">
           {line.slice(4)}
         </h3>
       );
@@ -36,7 +36,7 @@ const renderMarkdown = (content: string) => {
           {parts.map((part, i) => {
             if (part.startsWith("**") && part.endsWith("**")) {
               return (
-                <strong key={i} className="font-semibold text-professor-fg">
+                <strong key={i} className="font-semibold text-foreground">
                   {part.slice(2, -2)}
                 </strong>
               );
@@ -50,7 +50,7 @@ const renderMarkdown = (content: string) => {
     // Bullet points
     if (line.startsWith("- ") || line.startsWith("* ")) {
       return (
-        <li key={index} className="ml-4 mb-1 text-professor-fg/90">
+        <li key={index} className="ml-4 mb-1 text-foreground/90">
           {line.slice(2)}
         </li>
       );
@@ -59,7 +59,7 @@ const renderMarkdown = (content: string) => {
     // Numbered lists
     if (/^\d+\.\s/.test(line)) {
       return (
-        <li key={index} className="ml-4 mb-1 list-decimal text-professor-fg/90">
+        <li key={index} className="ml-4 mb-1 list-decimal text-foreground/90">
           {line.replace(/^\d+\.\s/, "")}
         </li>
       );
@@ -72,7 +72,7 @@ const renderMarkdown = (content: string) => {
     
     // Regular paragraphs
     return (
-      <p key={index} className="mb-2 leading-relaxed text-professor-fg/90">
+      <p key={index} className="mb-2 leading-relaxed text-foreground/90">
         {line}
       </p>
     );
@@ -88,14 +88,14 @@ export const ProfessorMessage = ({ message }: ProfessorMessageProps) => {
       <div
         className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
           isUser
-            ? "bg-professor-user-bg"
-            : "bg-professor-accent/20"
+            ? "bg-white"
+            : "bg-primary/20"
         }`}
       >
         {isUser ? (
-          <User className="w-5 h-5 text-professor-user-fg" />
+          <User className="w-5 h-5 text-black" />
         ) : (
-          <Bot className="w-5 h-5 text-professor-accent" />
+          <Bot className="w-5 h-5 text-primary" />
         )}
       </div>
 
@@ -103,14 +103,14 @@ export const ProfessorMessage = ({ message }: ProfessorMessageProps) => {
       <div
         className={`max-w-[75%] rounded-2xl px-4 py-3 ${
           isUser
-            ? "bg-professor-user-bg text-professor-user-fg rounded-br-md"
-            : "bg-professor-assistant-bg text-professor-fg rounded-bl-md"
+            ? "bg-white text-black rounded-br-md"
+            : "bg-card text-foreground rounded-bl-md border border-border"
         }`}
       >
         {isUser ? (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
-          <div className="text-sm prose-professor">
+          <div className="text-sm">
             {renderMarkdown(message.content)}
           </div>
         )}

@@ -26,15 +26,15 @@ export const ProfessorBatchSelection = ({ onBatchSelect }: ProfessorBatchSelecti
     <div className="w-full max-w-2xl px-4">
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 rounded-2xl bg-professor-accent/20 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-professor-accent" />
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+            <BookOpen className="w-8 h-8 text-primary" />
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-professor-fg mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Welcome to Professor AI
         </h1>
-        <p className="text-professor-muted text-lg">
-          Select your batch to access your courses
+        <p className="text-muted-foreground text-lg">
+          Select your batch to access your lectures
         </p>
       </div>
 
@@ -44,19 +44,19 @@ export const ProfessorBatchSelection = ({ onBatchSelect }: ProfessorBatchSelecti
           return (
             <Card
               key={batch.id}
-              className="cursor-pointer transition-all bg-professor-sidebar border-professor-border hover:border-professor-accent hover:shadow-lg"
+              className="cursor-pointer transition-all bg-card border-border hover:border-primary hover:shadow-lg"
               onClick={() => onBatchSelect(batch.id)}
             >
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-3 p-3 rounded-full bg-professor-accent/10">
-                  <Icon className="h-8 w-8 text-professor-accent" />
+                <div className="mx-auto mb-3 p-3 rounded-full bg-primary/10">
+                  <Icon className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl text-professor-fg">{batch.name}</CardTitle>
-                <CardDescription className="text-professor-muted">{batch.description}</CardDescription>
+                <CardTitle className="text-xl text-foreground">{batch.name}</CardTitle>
+                <CardDescription className="text-muted-foreground">{batch.description}</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <Button 
-                  className="w-full bg-professor-accent text-professor-bg hover:bg-professor-accent/90" 
+                  className="w-full" 
                   variant="outline"
                 >
                   Select {batch.name}
