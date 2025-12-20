@@ -1,4 +1,6 @@
-import { User, Bot } from "lucide-react";
+import { Sparkles, User, Copy, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import type { Message } from "@/pages/ProfessorAI";
 
 interface ProfessorMessageProps {
@@ -6,7 +8,7 @@ interface ProfessorMessageProps {
   isStreaming?: boolean;
 }
 
-// Simple markdown renderer for headers and basic formatting
+// Enhanced markdown renderer
 const renderMarkdown = (content: string) => {
   const lines = content.split("\n");
   
@@ -29,7 +31,7 @@ const renderMarkdown = (content: string) => {
       );
     }
     
-    // Bold text
+    // Bold text with inline processing
     if (line.includes("**")) {
       const parts = line.split(/(\*\*[^*]+\*\*)/g);
       return (
@@ -51,7 +53,7 @@ const renderMarkdown = (content: string) => {
     // Bullet points
     if (line.startsWith("- ") || line.startsWith("* ")) {
       return (
-        <li key={index} className="ml-4 mb-1 text-foreground/90">
+        <li key={index} className="ml-4 mb-1 text-foreground/90 list-disc">
           {line.slice(2)}
         </li>
       );
@@ -82,40 +84,54 @@ const renderMarkdown = (content: string) => {
 
 export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMessageProps) => {
   const isUser = message.role === "user";
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end animate-fade-in">
+        <div className="max-w-[85%] md:max-w-[70%]">
+          <div className="bg-white text-black px-4 py-3 rounded-2xl rounded-br-md shadow-md">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""} animate-fade-in`}>
-      {/* Avatar */}
-      <div
-        className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isUser
-            ? "bg-white"
-            : "bg-primary/20"
-        }`}
-      >
-        {isUser ? (
-          <User className="w-5 h-5 text-black" />
-        ) : (
-          <Bot className="w-5 h-5 text-primary" />
-        )}
+    <div className="flex gap-3 animate-fade-in">
+      {/* AI Avatar */}
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg">
+        <Sparkles className="w-4 h-4 text-primary-foreground" />
       </div>
-
-      {/* Message Bubble */}
-      <div
-        className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-          isUser
-            ? "bg-white text-black rounded-br-md"
-            : "bg-card text-foreground rounded-bl-md border border-border"
-        }`}
-      >
-        {isUser ? (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        ) : (
-          <div className="text-sm">
-            {renderMarkdown(message.content)}
-            {isStreaming && (
-              <span className="inline-block w-2 h-4 bg-primary/60 animate-pulse ml-0.5" />
-            )}
+      
+      {/* Message Content */}
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+          {renderMarkdown(message.content)}
+          {isStreaming && (
+            <span className="inline-block w-2 h-4 bg-primary/60 animate-pulse ml-0.5" />
+          )}
+        </div>
+        
+        {/* Action buttons - only show when not streaming */}
+        {!isStreaming && message.content.length > 0 && (
+          <div className="flex items-center gap-1 pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-muted-foreground hover:text-foreground"
+              onClick={handleCopy}
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              <span className="ml-1 text-xs">{copied ? "Copied" : "Copy"}</span>
+            </Button>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { BookOpen, Brain, GraduationCap, FileText, Loader2 } from "lucide-react";
+import { BookOpen, Brain, GraduationCap, FileText, Loader2, Sparkles } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -82,8 +82,8 @@ export const ProfessorSidebar = ({
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center shadow-lg">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">Professor AI</h1>
@@ -93,15 +93,15 @@ export const ProfessorSidebar = ({
       </div>
 
       {/* Batch Selector */}
-      <div className="p-4 border-b border-border">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+      <div className="p-4 border-b border-border/50">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block font-medium">
           Batch
         </Label>
         <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
+          <SelectTrigger className="w-full bg-secondary/50 border-border/50 text-foreground hover:bg-secondary/70 transition-colors">
             <SelectValue placeholder="Select Batch..." />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border">
+          <SelectContent className="bg-popover border-border">
             <SelectItem value="2029">2029 Batch</SelectItem>
             <SelectItem value="2028">2028 Batch</SelectItem>
           </SelectContent>
@@ -109,20 +109,20 @@ export const ProfessorSidebar = ({
       </div>
 
       {/* Course Selector */}
-      <div className="p-4 border-b border-border">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-          Select Course
+      <div className="p-4 border-b border-border/50">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block font-medium">
+          Course
         </Label>
         <Select 
           value={selectedCourse || ""} 
           onValueChange={setSelectedCourse}
           disabled={!hasCourses}
         >
-          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
+          <SelectTrigger className="w-full bg-secondary/50 border-border/50 text-foreground hover:bg-secondary/70 transition-colors">
             <SelectValue placeholder={hasCourses ? "Select a Course..." : "No courses available"} />
           </SelectTrigger>
           {hasCourses && (
-            <SelectContent className="bg-card border-border max-h-[300px]">
+            <SelectContent className="bg-popover border-border max-h-[300px]">
               {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   <span className="text-sm">{course.name}</span>
@@ -134,28 +134,28 @@ export const ProfessorSidebar = ({
       </div>
 
       {/* Lecture Selector */}
-      <div className="p-4 border-b border-border">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
-          Select Lecture
+      <div className="p-4 border-b border-border/50">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block font-medium">
+          Lecture
         </Label>
         <Select 
           value={selectedLecture || ""} 
           onValueChange={setSelectedLecture}
           disabled={isLectureDisabled}
         >
-          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
+          <SelectTrigger className="w-full bg-secondary/50 border-border/50 text-foreground hover:bg-secondary/70 transition-colors">
             {lecturesLoading ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Loading lectures...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span className="text-muted-foreground">Loading...</span>
               </div>
             ) : (
               <SelectValue placeholder={getLecturePlaceholderText()} />
             )}
           </SelectTrigger>
           {selectedCourse && (
-            <SelectContent className="bg-card border-border max-h-[300px]">
-              {/* All Lectures option - always show when course is selected */}
+            <SelectContent className="bg-popover border-border max-h-[300px]">
+              {/* All Lectures option */}
               <SelectItem value="__all__">
                 <span className="text-sm font-medium">All Lectures</span>
               </SelectItem>
@@ -180,16 +180,16 @@ export const ProfessorSidebar = ({
 
         {/* Transcript indicator for Notes Creator mode */}
         {mode === "Notes Creator" && hasSpecificLecture && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+          <div className="mt-3 flex items-center gap-2 text-xs bg-green-500/10 text-green-500 px-3 py-2 rounded-lg border border-green-500/20">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span>Transcript Available</span>
+            <span className="font-medium">Transcript Available</span>
           </div>
         )}
       </div>
 
       {/* Mode Selector */}
       <div className="p-4 flex-1 overflow-y-auto">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block font-medium">
           Learning Mode
         </Label>
         <RadioGroup
@@ -200,10 +200,10 @@ export const ProfessorSidebar = ({
           {modeConfig.map((item) => (
             <label
               key={item.value}
-              className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 ${
                 mode === item.value
-                  ? "bg-primary/15 border border-primary/50"
-                  : "bg-secondary/50 border border-transparent hover:bg-secondary/80"
+                  ? "bg-primary/15 border border-primary/40 shadow-[var(--shadow-soft)]"
+                  : "bg-secondary/30 border border-transparent hover:bg-secondary/50 hover:border-border/50"
               }`}
             >
               <RadioGroupItem
@@ -224,10 +224,11 @@ export const ProfessorSidebar = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
-          Powered by RAG Technology
-        </p>
+      <div className="p-4 border-t border-border/50">
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Powered by RAG Technology</span>
+        </div>
       </div>
     </aside>
   );
