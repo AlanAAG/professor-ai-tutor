@@ -28,21 +28,50 @@ serve(async (req) => {
     // Fetch lectures endpoint
     if (endpoint === "lectures") {
       console.log(`Fetching lectures for cohort: ${cohortId}`);
-      const response = await fetch(`${PROFESSOR_API_URL}/api/lectures`, {
-        headers: {
-          "x-api-key": apiKey,
-          "x-cohort-id": cohortId,
-        },
-      });
 
-      if (!response.ok) {
-        console.error("Failed to fetch lectures:", response.status);
-        throw new Error(`Backend returned ${response.status}`);
+      const fetchLectures = async (cohortHeaderValue: string) => {
+        const res = await fetch(`${PROFESSOR_API_URL}/api/lectures`, {
+          headers: {
+            "x-api-key": apiKey,
+            "x-cohort-id": cohortHeaderValue,
+            "Accept": "application/json",
+          },
+        });
+
+        const text = await res.text();
+        console.log(
+          `Lectures response for x-cohort-id=${cohortHeaderValue}: status=${res.status} bodyPreview=${text.slice(0, 500)}`
+        );
+
+        let json: any = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (e) {
+          console.error("Failed to parse lectures JSON:", e);
+        }
+
+        return { res, json, rawText: text };
+      };
+
+      // First attempt: pass through cohort as-is
+      let { res, json } = await fetchLectures(cohortId);
+
+      // If backend expects a prefixed cohort id, retry once
+      const lectures = (json?.lectures ?? []) as unknown[];
+      if (res.ok && Array.isArray(lectures) && lectures.length === 0 && !cohortId.startsWith("cohort_")) {
+        console.log(`Empty lectures for cohort ${cohortId}; retrying with cohort_${cohortId}`);
+        const retry = await fetchLectures(`cohort_${cohortId}`);
+        res = retry.res;
+        json = retry.json;
       }
 
-      const data = await response.json();
-      console.log("Lectures fetched:", JSON.stringify(data));
-      return new Response(JSON.stringify(data), {
+      if (!res.ok) {
+        console.error("Failed to fetch lectures:", res.status);
+        throw new Error(`Backend returned ${res.status}`);
+      }
+
+      console.log("Lectures fetched:", JSON.stringify(json));
+      return new Response(JSON.stringify(json ?? { lectures: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
