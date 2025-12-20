@@ -10,13 +10,21 @@ import {
 } from "@/components/ui/select";
 import type { Mode, Lecture } from "@/pages/ProfessorAI";
 
+interface Course {
+  id: string;
+  name: string;
+}
+
 interface ProfessorSidebarProps {
   mode: Mode;
   setMode: (mode: Mode) => void;
   selectedLecture: string | null;
   setSelectedLecture: (lecture: string) => void;
+  selectedCourse: string | null;
+  setSelectedCourse: (course: string) => void;
   selectedBatch: string;
   setSelectedBatch: (batchId: string) => void;
+  courses: Course[];
   lectures: Lecture[];
   lecturesLoading: boolean;
   lecturesError: boolean;
@@ -51,16 +59,21 @@ export const ProfessorSidebar = ({
   setMode,
   selectedLecture,
   setSelectedLecture,
+  selectedCourse,
+  setSelectedCourse,
   selectedBatch,
   setSelectedBatch,
+  courses,
   lectures,
   lecturesLoading,
   lecturesError,
 }: ProfessorSidebarProps) => {
   const hasLectures = lectures.length > 0;
-  const isDisabled = lecturesLoading || !hasLectures;
+  const hasCourses = courses.length > 0;
+  const isLectureDisabled = lecturesLoading || !hasLectures || !selectedCourse;
   
-  const getPlaceholderText = () => {
+  const getLecturePlaceholderText = () => {
+    if (!selectedCourse) return "Select a course first";
     if (lecturesLoading) return "Loading lectures...";
     if (lecturesError) return "Failed to load lectures";
     if (!hasLectures) return "No lectures found";
@@ -97,6 +110,31 @@ export const ProfessorSidebar = ({
         </Select>
       </div>
 
+      {/* Course Selector */}
+      <div className="p-4 border-b border-border">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
+          Select Course
+        </Label>
+        <Select 
+          value={selectedCourse || ""} 
+          onValueChange={setSelectedCourse}
+          disabled={!hasCourses}
+        >
+          <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
+            <SelectValue placeholder={hasCourses ? "Select a Course..." : "No courses available"} />
+          </SelectTrigger>
+          {hasCourses && (
+            <SelectContent className="bg-card border-border max-h-[300px]">
+              {courses.map((course) => (
+                <SelectItem key={course.id} value={course.id}>
+                  <span className="text-sm">{course.name}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          )}
+        </Select>
+      </div>
+
       {/* Lecture Selector */}
       <div className="p-4 border-b border-border">
         <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">
@@ -105,7 +143,7 @@ export const ProfessorSidebar = ({
         <Select 
           value={selectedLecture || ""} 
           onValueChange={setSelectedLecture}
-          disabled={isDisabled}
+          disabled={isLectureDisabled}
         >
           <SelectTrigger className="w-full bg-secondary/50 border-border text-foreground">
             {lecturesLoading ? (
@@ -114,7 +152,7 @@ export const ProfessorSidebar = ({
                 <span>Loading lectures...</span>
               </div>
             ) : (
-              <SelectValue placeholder={getPlaceholderText()} />
+              <SelectValue placeholder={getLecturePlaceholderText()} />
             )}
           </SelectTrigger>
           {hasLectures && (
