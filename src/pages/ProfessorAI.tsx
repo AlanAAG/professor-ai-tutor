@@ -16,17 +16,42 @@ export interface Lecture {
   class_name?: string;
 }
 
-// Define courses per batch
+// Define courses per batch (id = class_name key, name = display_name)
 const COURSES_BY_BATCH: Record<string, { id: string; name: string }[]> = {
   "2029": [
-    { id: "anatomy", name: "Anatomy" },
-    { id: "physiology", name: "Physiology" },
-    { id: "biochemistry", name: "Biochemistry" },
+    { id: "AIML", name: "How do machines see, hear or speak" },
+    { id: "Excel", name: "How to get comfortable with excel" },
+    { id: "Statistics", name: "How to use statistics to build a better business" },
+    { id: "Calculus", name: "Calculus" },
+    { id: "Dropshipping", name: "How to build a dropshipping business" },
+    { id: "PublicSpeaking", name: "How to own a stage" },
+    { id: "Startup", name: "How to validate, shape, and launch a startup" },
+    { id: "Networking", name: "How to network effortlessly" },
+    { id: "OOP", name: "Object-Oriented Programming" },
+    { id: "MarketAnalysis", name: "How to read market for better decision making" },
+    { id: "MarketGaps", name: "How to identify gaps in the market" },
+    { id: "MetaMarketing", name: "How to execute digital marketing on Meta" },
+    { id: "CRO", name: "How to execute CRO and increase AOV" },
+    { id: "FinanceBasics", name: "How to understand basic financial terminology" },
+    { id: "HowToDecodeGlobalTrendsAndNavigateEconomicTransformations", name: "How to decode global trends and navigate economic transformations" },
   ],
   "2028": [
-    { id: "pathology", name: "Pathology" },
-    { id: "pharmacology", name: "Pharmacology" },
-    { id: "microbiology", name: "Microbiology" },
+    { id: "Web3Innovation", name: "How to leverage web3 for entrepreneurial innovation" },
+    { id: "BusinessMetrics", name: "How to use business metrics to enhance efficiency and drive innovation" },
+    { id: "FundraisingStartups", name: "How can founders raise money for their start-ups" },
+    { id: "IPProtection", name: "How to protect your ideas and innovations" },
+    { id: "AIPython", name: "How to design AI-powered solutions with Python" },
+    { id: "KickstarterCampaign", name: "How to build a Kickstarter campaign?" },
+    { id: "ProductDesignKickstarter", name: "How to develop and design a product for kickstarter success?" },
+    { id: "FundraisingVideo", name: "How to craft a fundraising video that converts?" },
+    { id: "CapstoneHours", name: "Capstone Hours" },
+    { id: "PublicSpeakingLevel2", name: "How to own a stage - Level 2" },
+    { id: "CopywritingSells", name: "How to craft compelling copy that sells and builds trust" },
+    { id: "CompetitiveStrategy", name: "How can my business win against the competition" },
+    { id: "NUSImmersion", name: "Strategy and innovation immersion at NUS" },
+    { id: "SingaporePolicy", name: "Understanding modern Southeast Asia through Singaporean public policy" },
+    { id: "EconomicForces", name: "How to understand economic forces that shape the world" },
+    { id: "CustomerInsights", name: "How to uncover what customers really want" },
   ],
 };
 
@@ -99,16 +124,22 @@ const ProfessorAI = () => {
     hasAutoTriggered.current = false;
   }, [mode, selectedLecture]);
 
-  // Auto-trigger for Notes Creator mode
+  // Auto-trigger for Notes Creator mode - only when BOTH course AND lecture are selected
   useEffect(() => {
-    if (mode === "Notes Creator" && selectedLecture && !hasAutoTriggered.current && !isLoading) {
+    if (mode === "Notes Creator" && selectedCourse && selectedLecture && !hasAutoTriggered.current && !isLoading) {
       hasAutoTriggered.current = true;
       sendMessage("Summarize this lecture", true);
     }
-  }, [mode, selectedLecture]);
+  }, [mode, selectedCourse, selectedLecture]);
+
+  // Get the display name for selected course
+  const getSelectedCourseDisplayName = () => {
+    const course = availableCourses.find(c => c.id === selectedCourse);
+    return course?.name || selectedCourse;
+  };
 
   const sendMessage = async (content: string, isHidden = false) => {
-    if (!selectedLecture) return;
+    if (!selectedLecture || !selectedCourse) return;
 
     const userMessage: Message = { role: "user", content };
     
@@ -131,7 +162,8 @@ const ProfessorAI = () => {
           body: JSON.stringify({
             messages: [...messages, userMessage],
             mode,
-            selectedLecture, // Pass the lecture title/name as selectedLecture
+            selectedCourse: getSelectedCourseDisplayName(), // Send the display name
+            selectedLecture, // The lecture title
             cohort_id: selectedBatch,
           }),
         }
