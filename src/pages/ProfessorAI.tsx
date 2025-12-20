@@ -6,6 +6,7 @@ import { ProfessorDrawer } from "@/components/professor-ai/ProfessorDrawer";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
 import { QuizResults } from "@/components/professor-ai/QuizResults";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export type Mode = "Notes Creator" | "Quiz" | "Study";
@@ -87,6 +88,7 @@ const ProfessorAI = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const hasAutoTriggered = useRef(false);
 
   // Quiz-specific state
@@ -412,6 +414,44 @@ const ProfessorAI = () => {
     setCurrentQuiz(null);
     setQuizResults(null);
     setLastQuizTopic("");
+    setActiveConversationId(null);
+  };
+
+  // Handle selecting a conversation from history
+  const handleSelectConversation = async (conversation: { id: string; class_id: string; mode: string; title: string }) => {
+    try {
+      // Set the course and mode based on conversation
+      setSelectedCourse(conversation.class_id);
+      setMode(conversation.mode as Mode);
+      setActiveConversationId(conversation.id);
+      
+      // Load messages for this conversation
+      const { data: messagesData, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversation.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Convert to Message format
+      const loadedMessages: Message[] = (messagesData || []).map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+
+      setMessages(loadedMessages);
+      setStreamingContent("");
+      setCurrentQuiz(null);
+      setQuizResults(null);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleQuizComplete = (score: number, total: number) => {
@@ -467,6 +507,8 @@ const ProfessorAI = () => {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onNewChat={handleNewChat}
+            onSelectConversation={handleSelectConversation}
+            activeConversationId={activeConversationId}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
@@ -497,6 +539,8 @@ const ProfessorAI = () => {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onNewChat={handleNewChat}
+            onSelectConversation={handleSelectConversation}
+            activeConversationId={activeConversationId}
           />
           <div className="flex-1 flex items-center justify-center p-4">
             <QuizResults
@@ -529,6 +573,8 @@ const ProfessorAI = () => {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             onNewChat={handleNewChat}
+            onSelectConversation={handleSelectConversation}
+            activeConversationId={activeConversationId}
           />
           <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
             <QuizCard
@@ -562,6 +608,8 @@ const ProfessorAI = () => {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
+        onSelectConversation={handleSelectConversation}
+        activeConversationId={activeConversationId}
       />
 
       {/* Chat area */}

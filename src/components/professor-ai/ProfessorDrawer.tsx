@@ -1,21 +1,116 @@
+import { useEffect, useState, useCallback } from "react";
 import { Plus, MessageSquare, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import personas from "@/data/personas.json";
+
+type BatchPersonas = Record<string, Record<string, { display_name?: string; professor_name: string }>>;
+
+interface Conversation {
+  id: string;
+  title: string;
+  class_id: string;
+  mode: string;
+  updated_at: string;
+}
 
 interface ProfessorDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onNewChat: () => void;
+  onSelectConversation?: (conversation: Conversation) => void;
+  activeConversationId?: string | null;
 }
+
+const getDisplayName = (classId: string): string => {
+  const batchPersonas = personas as BatchPersonas;
+  for (const batchId of Object.keys(batchPersonas)) {
+    if (batchPersonas[batchId][classId]) {
+      return batchPersonas[batchId][classId].display_name || classId;
+    }
+  }
+  return classId;
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString();
+};
 
 export const ProfessorDrawer = ({
   isOpen,
   onClose,
   onNewChat,
+  onSelectConversation,
+  activeConversationId,
 }: ProfessorDrawerProps) => {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+      setConversations(data || []);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+      toast.error("Failed to load conversations");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadConversations();
+    }
+  }, [isOpen, loadConversations]);
+
+  // Subscribe to realtime changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('professor-conversations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations'
+        },
+        () => {
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadConversations]);
+
   const handleNewChat = () => {
     onNewChat();
     onClose();
+  };
+
+  const handleSelectConversation = (conversation: Conversation) => {
+    if (onSelectConversation) {
+      onSelectConversation(conversation);
+      onClose();
+    }
   };
 
   return (
@@ -34,7 +129,7 @@ export const ProfessorDrawer = ({
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           fixed
           z-50
-          w-64 h-full
+          w-72 h-full
           transition-transform duration-300 ease-in-out
           bg-card border-r border-border
           flex flex-col
@@ -48,7 +143,7 @@ export const ProfessorDrawer = ({
             </div>
             <div>
               <h2 className="font-semibold text-foreground">Professor AI</h2>
-              <p className="text-xs text-muted-foreground">Academic Assistant</p>
+              <p className="text-xs text-muted-foreground">Chat History</p>
             </div>
           </div>
         </div>
@@ -65,17 +160,48 @@ export const ProfessorDrawer = ({
           </Button>
         </div>
 
-        {/* Conversation History Placeholder */}
+        {/* Conversation History */}
         <ScrollArea className="flex-1 px-3">
           <div className="py-2">
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-2">
-              Recent
+              Recent Chats
             </p>
-            <div className="text-center py-8 text-muted-foreground">
-              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No conversations yet</p>
-              <p className="text-xs mt-1">Start a new chat to begin</p>
-            </div>
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">Loading...</p>
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No conversations yet</p>
+                <p className="text-xs mt-1">Start a new chat to begin</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {conversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    onClick={() => handleSelectConversation(conversation)}
+                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                      activeConversationId === conversation.id
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-secondary/70"
+                    }`}
+                  >
+                    <div className="font-medium truncate text-sm mb-1">
+                      {conversation.title}
+                    </div>
+                    <div className={`text-xs ${
+                      activeConversationId === conversation.id 
+                        ? "opacity-80" 
+                        : "text-muted-foreground"
+                    }`}>
+                      {getDisplayName(conversation.class_id)} • {formatDate(conversation.updated_at)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </ScrollArea>
 
