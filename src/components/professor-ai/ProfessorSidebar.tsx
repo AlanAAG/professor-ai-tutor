@@ -1,4 +1,4 @@
-import { BookOpen, Brain, GraduationCap, FileText, Key, Loader2 } from "lucide-react";
+import { BookOpen, Brain, GraduationCap, FileText, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -8,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import type { Mode } from "@/pages/ProfessorAI";
 
 interface ProfessorSidebarProps {
@@ -18,8 +17,6 @@ interface ProfessorSidebarProps {
   setSelectedLecture: (lecture: string) => void;
   lectures: string[];
   lecturesLoading: boolean;
-  apiKey: string;
-  setApiKey: (key: string) => void;
 }
 
 const modeConfig = [
@@ -53,8 +50,6 @@ export const ProfessorSidebar = ({
   setSelectedLecture,
   lectures,
   lecturesLoading,
-  apiKey,
-  setApiKey,
 }: ProfessorSidebarProps) => {
   return (
     <aside className="w-72 min-w-72 h-full bg-professor-sidebar border-r border-professor-border flex flex-col">
@@ -68,23 +63,6 @@ export const ProfessorSidebar = ({
             <h1 className="text-lg font-semibold text-professor-fg">Professor AI</h1>
             <p className="text-xs text-professor-muted">Your Academic Assistant</p>
           </div>
-        </div>
-      </div>
-
-      {/* API Key Input */}
-      <div className="p-4 border-b border-professor-border">
-        <Label className="text-xs text-professor-muted uppercase tracking-wider mb-2 block">
-          API Key
-        </Label>
-        <div className="relative">
-          <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-professor-muted" />
-          <Input
-            type="password"
-            placeholder="Enter API key..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            className="pl-10 bg-professor-input border-professor-border text-professor-fg placeholder:text-professor-muted focus:ring-professor-accent"
-          />
         </div>
       </div>
 
@@ -132,7 +110,7 @@ export const ProfessorSidebar = ({
         <Select
           value={selectedLecture}
           onValueChange={setSelectedLecture}
-          disabled={lecturesLoading || !apiKey}
+          disabled={lecturesLoading}
         >
           <SelectTrigger className="w-full bg-professor-input border-professor-border text-professor-fg">
             {lecturesLoading ? (
@@ -156,12 +134,6 @@ export const ProfessorSidebar = ({
             ))}
           </SelectContent>
         </Select>
-        
-        {!apiKey && (
-          <p className="text-xs text-professor-muted mt-2">
-            Enter your API key to load lectures
-          </p>
-        )}
       </div>
 
       {/* Footer */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ProfessorSidebar } from "@/components/professor-ai/ProfessorSidebar";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Mode = "Notes Creator" | "Quiz" | "Study";
 
@@ -9,8 +10,6 @@ export interface Message {
   content: string;
 }
 
-const PROFESSOR_API_URL = import.meta.env.VITE_PROFESSOR_API_URL || "https://professor-agent-platform.onrender.com";
-
 const ProfessorAI = () => {
   const [mode, setMode] = useState<Mode>("Study");
   const [selectedLecture, setSelectedLecture] = useState<string>("");
@@ -18,27 +17,30 @@ const ProfessorAI = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lecturesLoading, setLecturesLoading] = useState(true);
-  const [apiKey, setApiKey] = useState("");
   const hasAutoTriggered = useRef(false);
 
   // Fetch lectures on mount
   useEffect(() => {
     const fetchLectures = async () => {
-      if (!PROFESSOR_API_URL) {
-        setLecturesLoading(false);
-        return;
-      }
-      
       try {
-        const response = await fetch(`${PROFESSOR_API_URL}/api/lectures`, {
-          headers: {
-            "x-api-key": apiKey,
-          },
+        const { data, error } = await supabase.functions.invoke("professor-chat", {
+          body: {},
+          headers: {},
         });
-        
+
+        // Use query param approach for lectures
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures`,
+          {
+            headers: {
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+          }
+        );
+
         if (response.ok) {
-          const data = await response.json();
-          setLectures(data.lectures || []);
+          const result = await response.json();
+          setLectures(result.lectures || []);
         }
       } catch (error) {
         console.error("Failed to fetch lectures:", error);
@@ -47,12 +49,8 @@ const ProfessorAI = () => {
       }
     };
 
-    if (apiKey) {
-      fetchLectures();
-    } else {
-      setLecturesLoading(false);
-    }
-  }, [apiKey]);
+    fetchLectures();
+  }, []);
 
   // Clear chat when mode or lecture changes
   useEffect(() => {
@@ -69,7 +67,7 @@ const ProfessorAI = () => {
   }, [mode, selectedLecture]);
 
   const sendMessage = async (content: string, isHidden = false) => {
-    if (!selectedLecture || !PROFESSOR_API_URL) return;
+    if (!selectedLecture) return;
 
     const userMessage: Message = { role: "user", content };
     
@@ -81,18 +79,21 @@ const ProfessorAI = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${PROFESSOR_API_URL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage],
-          mode,
-          selectedLecture,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            messages: [...messages, userMessage],
+            mode,
+            selectedLecture,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to get response");
@@ -129,8 +130,6 @@ const ProfessorAI = () => {
         setSelectedLecture={setSelectedLecture}
         lectures={lectures}
         lecturesLoading={lecturesLoading}
-        apiKey={apiKey}
-        setApiKey={setApiKey}
       />
       
       <ProfessorChat
