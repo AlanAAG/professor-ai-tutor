@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { ProfessorSidebar } from "@/components/professor-ai/ProfessorSidebar";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
+import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
+import { ProfessorDrawer } from "@/components/professor-ai/ProfessorDrawer";
 import { toast } from "@/hooks/use-toast";
 
 export type Mode = "Notes Creator" | "Quiz" | "Study";
@@ -82,6 +83,7 @@ const ProfessorAI = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string>("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const hasAutoTriggered = useRef(false);
 
   // Get available courses for selected batch
@@ -175,7 +177,7 @@ const ProfessorAI = () => {
     setStreamingContent("");
 
     try {
-      // Send selectedLecture as null or empty string if "All Lectures" is selected
+      // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
       const lectureToSend = selectedLecture === "__all__" ? null : selectedLecture;
 
       const response = await fetch(
@@ -308,10 +310,11 @@ const ProfessorAI = () => {
     setStreamingContent("");
   };
 
-  const handleLectureSelect = (lectureValue: string) => {
-    setSelectedLecture(lectureValue);
+  const handleModeChange = (newMode: Mode) => {
+    setMode(newMode);
     setMessages([]);
     setStreamingContent("");
+    hasAutoTriggered.current = false;
   };
 
   const handleBatchSelect = (batchId: string) => {
@@ -321,6 +324,12 @@ const ProfessorAI = () => {
     setSelectedLecture(null);
     setMessages([]);
     setStreamingContent("");
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setStreamingContent("");
+    hasAutoTriggered.current = false;
   };
 
   // Show batch selection if not selected
@@ -333,32 +342,43 @@ const ProfessorAI = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <ProfessorSidebar
-        mode={mode}
-        setMode={setMode}
-        selectedLecture={selectedLecture}
-        setSelectedLecture={handleLectureSelect}
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      {/* Header with selectors */}
+      <ProfessorHeader
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         selectedCourse={selectedCourse}
-        setSelectedCourse={handleCourseSelect}
+        onCourseChange={handleCourseSelect}
+        selectedMode={mode}
+        onModeChange={handleModeChange}
         selectedBatch={selectedBatch}
-        setSelectedBatch={handleBatchSelect}
+        onBatchChange={handleBatchSelect}
         courses={availableCourses}
-        lectures={filteredLectures}
-        lecturesLoading={lecturesLoading}
-        lecturesError={lecturesError}
       />
-      
-      <ProfessorChat
-        messages={messages}
-        isLoading={isLoading}
-        streamingContent={streamingContent}
-        selectedLecture={selectedLecture}
-        selectedCourse={selectedCourse}
-        mode={mode}
-        onSendMessage={sendMessage}
-        onStartQuiz={handleStartQuiz}
+
+      {/* Drawer */}
+      <ProfessorDrawer
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onNewChat={handleNewChat}
       />
+
+      {/* Chat area */}
+      <div className="flex-1 overflow-hidden">
+        <ProfessorChat
+          messages={messages}
+          isLoading={isLoading}
+          streamingContent={streamingContent}
+          selectedLecture={selectedLecture}
+          selectedCourse={selectedCourse}
+          mode={mode}
+          onSendMessage={sendMessage}
+          onStartQuiz={handleStartQuiz}
+          lectures={filteredLectures}
+          onLectureChange={(lecture) => setSelectedLecture(lecture)}
+          lecturesLoading={lecturesLoading}
+        />
+      </div>
     </div>
   );
 };

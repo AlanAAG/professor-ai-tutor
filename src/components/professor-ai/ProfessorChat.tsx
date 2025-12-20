@@ -1,8 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, PlayCircle, MessageSquare, ArrowUp, GraduationCap, Search } from "lucide-react";
+import { Sparkles, Loader2, PlayCircle, MessageSquare, ArrowUp, GraduationCap, Search, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
-import type { Mode, Message } from "@/pages/ProfessorAI";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Mode, Message, Lecture } from "@/pages/ProfessorAI";
 
 interface ProfessorChatProps {
   messages: Message[];
@@ -13,6 +20,9 @@ interface ProfessorChatProps {
   mode: Mode;
   onSendMessage: (content: string) => void;
   onStartQuiz: () => void;
+  lectures: Lecture[];
+  onLectureChange: (lecture: string) => void;
+  lecturesLoading: boolean;
 }
 
 const modeDescriptions: Record<Mode, string> = {
@@ -30,6 +40,9 @@ export const ProfessorChat = ({
   mode,
   onSendMessage,
   onStartQuiz,
+  lectures,
+  onLectureChange,
+  lecturesLoading,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,16 +70,18 @@ export const ProfessorChat = ({
     }
   };
 
-  // Disable input if no course selected
-  const isInputDisabled = !selectedCourse || isLoading;
-  
-  // Check if we have a specific lecture selected (not "All Lectures")
+  // Study and Quiz modes only need course selection
+  // Notes Creator mode requires both course and specific lecture
+  const needsLecture = mode === "Notes Creator";
   const hasSpecificLecture = selectedLecture && selectedLecture !== "__all__";
-  const hasAnyLectureSelection = selectedLecture !== null;
+  
+  // Can chat if: course selected AND (not Notes Creator OR has specific lecture)
+  const canChat = selectedCourse && (!needsLecture || hasSpecificLecture);
+  const isInputDisabled = !canChat || isLoading;
 
   // Display text for lecture
   const getLectureDisplayText = () => {
-    if (!selectedLecture) return "No lecture selected";
+    if (!selectedLecture) return "All Lectures";
     if (selectedLecture === "__all__") return "All Lectures";
     return selectedLecture;
   };
@@ -75,21 +90,6 @@ export const ProfessorChat = ({
   if (messages.length === 0 && !streamingContent) {
     return (
       <main className="flex-1 flex flex-col h-full bg-background">
-        {/* Minimal header */}
-        <div className="p-3 md:p-4">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            {selectedCourse && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
-                <GraduationCap className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground capitalize">{mode}</span>
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground bg-secondary/30 px-3 py-1.5 rounded-full">
-              {modeDescriptions[mode]}
-            </div>
-          </div>
-        </div>
-
         {/* Centered welcome content */}
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col items-center justify-center px-4 py-6 md:py-8">
@@ -109,30 +109,61 @@ export const ProfessorChat = ({
               <div className="space-y-2">
                 <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
                   {!selectedCourse
-                    ? "Select a Course to Begin"
-                    : !hasAnyLectureSelection
-                    ? "Select a Lecture"
+                    ? "What would you like to learn?"
                     : mode === "Notes Creator" && !hasSpecificLecture
-                    ? "Select a Specific Lecture"
+                    ? "Select a Lecture for Notes"
                     : mode === "Quiz"
                     ? "Ready to Test Your Knowledge?"
                     : "What would you like to learn?"}
                 </h1>
                 <p className="text-muted-foreground text-base md:text-lg px-2">
                   {!selectedCourse
-                    ? "Choose a course from the sidebar to start your learning session."
-                    : !hasAnyLectureSelection
-                    ? "Select a lecture or 'All Lectures' from the sidebar."
+                    ? "Select a course to get started"
                     : mode === "Notes Creator" && !hasSpecificLecture
-                    ? "Notes Creator requires a specific lecture, not 'All Lectures'."
+                    ? "Notes Creator requires a specific lecture selection"
                     : mode === "Quiz"
-                    ? "Click the button below to start your quiz session."
-                    : `Ready to help you with ${getLectureDisplayText()}`}
+                    ? "Click the button below to start your quiz session"
+                    : `Ready to help you learn about ${getLectureDisplayText()}`}
                 </p>
               </div>
+
+              {/* Lecture selector for Notes Creator mode */}
+              {mode === "Notes Creator" && selectedCourse && (
+                <div className="max-w-xs mx-auto">
+                  <Select
+                    value={selectedLecture || ""}
+                    onValueChange={onLectureChange}
+                    disabled={lecturesLoading}
+                  >
+                    <SelectTrigger className="w-full bg-secondary/50 border-border/50">
+                      {lecturesLoading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Loading lectures...</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Select a lecture..." />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border max-h-[300px]">
+                      {lectures.length > 0 ? (
+                        lectures.map((lecture) => (
+                          <SelectItem key={lecture.id} value={lecture.title}>
+                            {lecture.title}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                          No lectures found for this course
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               {/* Quiz Start Button */}
-              {mode === "Quiz" && hasAnyLectureSelection && !isLoading && (
+              {mode === "Quiz" && selectedCourse && !isLoading && (
                 <Button
                   onClick={onStartQuiz}
                   size="lg"
@@ -145,7 +176,7 @@ export const ProfessorChat = ({
             </div>
             
             {/* Input area */}
-            {selectedCourse && hasAnyLectureSelection && mode !== "Notes Creator" && (
+            {canChat && mode !== "Notes Creator" && (
               <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
                   <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
@@ -189,6 +220,18 @@ export const ProfessorChat = ({
                 )}
               </div>
             )}
+
+            {/* Show input placeholder when no course selected */}
+            {!selectedCourse && (
+              <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
+                <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 opacity-50">
+                  <span className="flex-1 text-muted-foreground text-sm">Select a course first...</span>
+                  <div className="h-8 w-8 p-0 rounded-lg bg-primary/30 flex items-center justify-center">
+                    <ArrowUp className="w-4 h-4 text-primary-foreground/50" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -198,29 +241,6 @@ export const ProfessorChat = ({
   // Chat mode with messages
   return (
     <main className="flex-1 flex flex-col h-full bg-background">
-      {/* Compact header */}
-      <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm p-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
-            <GraduationCap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium truncate max-w-[200px]">
-              {getLectureDisplayText()}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium capitalize">{mode}</span>
-          </div>
-          
-          <div className="flex-1" />
-          
-          <div className="text-xs text-muted-foreground">
-            {modeDescriptions[mode]}
-          </div>
-        </div>
-      </div>
-
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
@@ -285,12 +305,6 @@ export const ProfessorChat = ({
               </Button>
             </div>
           </form>
-          
-          {!selectedCourse && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Please select a course from the sidebar to enable chat
-            </p>
-          )}
         </div>
       </div>
     </main>
