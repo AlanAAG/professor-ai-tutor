@@ -57,6 +57,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Professor AI theme colors
+        professor: {
+          bg: "hsl(var(--professor-bg))",
+          fg: "hsl(var(--professor-fg))",
+          sidebar: "hsl(var(--professor-sidebar))",
+          border: "hsl(var(--professor-border))",
+          input: "hsl(var(--professor-input))",
+          accent: "hsl(var(--professor-accent))",
+          muted: "hsl(var(--professor-muted))",
+          "user-bg": "hsl(var(--professor-user-bg))",
+          "user-fg": "hsl(var(--professor-user-fg))",
+          "assistant-bg": "hsl(var(--professor-assistant-bg))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

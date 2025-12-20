@@ -55,6 +55,18 @@ All colors MUST be HSL.
     --chat-ai-bg: 120 15% 15%;
     --chat-ai-fg: 0 0% 95%;
 
+    /* Professor AI Design Tokens - Academic Dark Theme */
+    --professor-bg: 220 20% 10%;
+    --professor-fg: 220 15% 95%;
+    --professor-sidebar: 220 25% 12%;
+    --professor-border: 220 20% 18%;
+    --professor-input: 220 25% 15%;
+    --professor-accent: 210 100% 60%;
+    --professor-muted: 220 15% 55%;
+    --professor-user-bg: 0 0% 100%;
+    --professor-user-fg: 220 20% 10%;
+    --professor-assistant-bg: 220 25% 16%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -115,6 +127,19 @@ All colors MUST be HSL.
     --chat-user-fg: 0 0% 100%;
     --chat-ai-bg: 120 15% 12%;
     --chat-ai-fg: 0 0% 95%;
+
+    /* Professor AI Design Tokens - Academic Dark Theme */
+    --professor-bg: 220 20% 8%;
+    --professor-fg: 220 15% 95%;
+    --professor-sidebar: 220 25% 10%;
+    --professor-border: 220 20% 16%;
+    --professor-input: 220 25% 13%;
+    --professor-accent: 210 100% 60%;
+    --professor-muted: 220 15% 50%;
+    --professor-user-bg: 0 0% 100%;
+    --professor-user-fg: 220 20% 10%;
+    --professor-assistant-bg: 220 25% 14%;
+
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
