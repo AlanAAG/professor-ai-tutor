@@ -19,33 +19,31 @@ serve(async (req) => {
       throw new Error("API key not configured");
     }
 
-    const url = new URL(req.url);
-    const endpoint = url.searchParams.get("endpoint") || "chat";
-
-    // Handle different endpoints
-    if (endpoint === "lectures") {
-      const response = await fetch(`${PROFESSOR_API_URL}/api/lectures`, {
-        headers: {
-          "x-api-key": apiKey,
-        },
-      });
-
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Chat endpoint
+    // Chat endpoint - POST requests
     const body = await req.json();
+    
+    // Map the frontend data to the Python backend expected format
+    const payload = {
+      messages: body.messages || [],
+      mode: body.mode || "Study",
+      selectedLecture: body.selectedLecture || "",
+      cohort_id: body.cohort_id || "2029",
+    };
+
     const response = await fetch(`${PROFESSOR_API_URL}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Backend error:", errorText);
+      throw new Error(`Backend returned ${response.status}`);
+    }
 
     const data = await response.json();
     return new Response(JSON.stringify(data), {

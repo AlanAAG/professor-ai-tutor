@@ -8,14 +8,15 @@ import type { Mode, Message } from "@/pages/ProfessorAI";
 interface ProfessorChatProps {
   messages: Message[];
   isLoading: boolean;
-  selectedLecture: string;
+  selectedClass: string | null;
   mode: Mode;
   onSendMessage: (content: string) => void;
   onStartQuiz: () => void;
+  courseName?: string;
 }
 
 const modeDescriptions: Record<Mode, string> = {
-  "Notes Creator": "Select a lecture to auto-generate comprehensive notes",
+  "Notes Creator": "Select a course to auto-generate comprehensive notes",
   "Quiz": "Test your understanding with interactive quizzes",
   "Study": "Ask questions and learn through guided discovery",
 };
@@ -23,10 +24,11 @@ const modeDescriptions: Record<Mode, string> = {
 export const ProfessorChat = ({
   messages,
   isLoading,
-  selectedLecture,
+  selectedClass,
   mode,
   onSendMessage,
   onStartQuiz,
+  courseName,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -42,7 +44,7 @@ export const ProfessorChat = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || !selectedLecture) return;
+    if (!input.trim() || isLoading || !selectedClass) return;
     
     onSendMessage(input.trim());
     setInput("");
@@ -55,7 +57,7 @@ export const ProfessorChat = ({
     }
   };
 
-  const isInputDisabled = !selectedLecture || isLoading;
+  const isInputDisabled = !selectedClass || isLoading;
 
   return (
     <main className="flex-1 flex flex-col h-full bg-professor-bg">
@@ -68,7 +70,7 @@ export const ProfessorChat = ({
               {mode} Mode
             </h2>
             <p className="text-sm text-professor-muted">
-              {selectedLecture || "No lecture selected"}
+              {courseName || "No course selected"}
             </p>
           </div>
           <div className="text-xs text-professor-muted bg-professor-input px-3 py-1.5 rounded-full">
@@ -85,8 +87,8 @@ export const ProfessorChat = ({
               <MessageSquare className="w-10 h-10 text-professor-accent" />
             </div>
             <h3 className="text-xl font-semibold text-professor-fg mb-2">
-              {!selectedLecture
-                ? "Select a Lecture to Begin"
+              {!selectedClass
+                ? "Select a Course to Begin"
                 : mode === "Notes Creator"
                 ? "Generating Notes..."
                 : mode === "Quiz"
@@ -94,8 +96,8 @@ export const ProfessorChat = ({
                 : "Ask Away!"}
             </h3>
             <p className="text-professor-muted max-w-md mb-6">
-              {!selectedLecture
-                ? "Choose a lecture from the sidebar to start your learning session."
+              {!selectedClass
+                ? "Choose a course from the sidebar to start your learning session."
                 : mode === "Quiz"
                 ? "Click the button below to start your quiz session."
                 : mode === "Study"
@@ -104,7 +106,7 @@ export const ProfessorChat = ({
             </p>
             
             {/* Quiz Start Button */}
-            {mode === "Quiz" && selectedLecture && messages.length === 0 && !isLoading && (
+            {mode === "Quiz" && selectedClass && messages.length === 0 && !isLoading && (
               <Button
                 onClick={onStartQuiz}
                 size="lg"
@@ -144,8 +146,8 @@ export const ProfessorChat = ({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={
-                !selectedLecture
-                  ? "Select a lecture first..."
+                !selectedClass
+                  ? "Select a course first..."
                   : mode === "Quiz"
                   ? "Type your answer (A, B, C, or D)..."
                   : "Type your question..."
@@ -164,9 +166,9 @@ export const ProfessorChat = ({
           </Button>
         </form>
         
-        {!selectedLecture && (
+        {!selectedClass && (
           <p className="text-xs text-professor-muted mt-2 text-center">
-            ⚠️ Please select a lecture from the sidebar to enable chat
+            ⚠️ Please select a course from the sidebar to enable chat
           </p>
         )}
       </div>
