@@ -158,13 +158,12 @@ const ProfessorAI = () => {
     }
   }, [mode, selectedLecture]);
 
-  // Auto-trigger for Notes Creator mode - only when BOTH course AND lecture are selected
-  useEffect(() => {
-    if (mode === "Notes Creator" && selectedCourse && selectedLecture && !hasAutoTriggered.current && !isLoading) {
-      hasAutoTriggered.current = true;
+  // Handle create notes action (called from ProfessorChat)
+  const handleCreateNotes = () => {
+    if (mode === "Notes Creator" && selectedCourse && selectedLecture) {
       sendMessage("Summarize this lecture", true);
     }
-  }, [mode, selectedCourse, selectedLecture]);
+  };
 
   // Get the display name for selected course
   const getSelectedCourseDisplayName = () => {
@@ -576,6 +575,7 @@ const ProfessorAI = () => {
           mode={mode}
           onSendMessage={sendMessage}
           onStartQuiz={handleStartQuiz}
+          onCreateNotes={handleCreateNotes}
           lectures={filteredLectures}
           onLectureChange={(lecture) => setSelectedLecture(lecture)}
           lecturesLoading={lecturesLoading}

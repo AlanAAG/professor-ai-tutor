@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain } from "lucide-react";
+import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import {
@@ -20,6 +20,7 @@ interface ProfessorChatProps {
   mode: Mode;
   onSendMessage: (content: string) => void;
   onStartQuiz: () => void;
+  onCreateNotes: () => void;
   lectures: Lecture[];
   onLectureChange: (lecture: string) => void;
   lecturesLoading: boolean;
@@ -47,6 +48,7 @@ export const ProfessorChat = ({
   mode,
   onSendMessage,
   onStartQuiz,
+  onCreateNotes,
   lectures,
   onLectureChange,
   lecturesLoading,
@@ -140,36 +142,60 @@ export const ProfessorChat = ({
 
               {/* Lecture selector for Notes Creator mode */}
               {mode === "Notes Creator" && selectedCourse && (
-                <div className="max-w-xs mx-auto">
-                  <Select
-                    value={selectedLecture || ""}
-                    onValueChange={onLectureChange}
-                    disabled={lecturesLoading}
-                  >
-                    <SelectTrigger className="w-full bg-secondary/50 border-border/50">
-                      {lecturesLoading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Loading lectures...</span>
-                        </div>
+                <div className="space-y-4">
+                  <div className="max-w-xs mx-auto">
+                    <Select
+                      value={selectedLecture || ""}
+                      onValueChange={onLectureChange}
+                      disabled={lecturesLoading}
+                    >
+                      <SelectTrigger className="w-full bg-secondary/50 border-border/50">
+                        {lecturesLoading ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Loading lectures...</span>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Select a lecture..." />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border max-h-[300px]">
+                        {lectures.length > 0 ? (
+                          lectures.map((lecture) => (
+                            <SelectItem key={lecture.id} value={lecture.title}>
+                              {lecture.title}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                            No lectures found for this course
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Create Notes button */}
+                  {hasSpecificLecture && (
+                    <Button
+                      onClick={onCreateNotes}
+                      disabled={isLoading}
+                      size="lg"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-lg hover:shadow-[var(--shadow-hover)] transition-all"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Creating notes...
+                        </>
                       ) : (
-                        <SelectValue placeholder="Select a lecture..." />
+                        <>
+                          <FileText className="w-5 h-5" />
+                          Create Notes
+                        </>
                       )}
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border-border max-h-[300px]">
-                      {lectures.length > 0 ? (
-                        lectures.map((lecture) => (
-                          <SelectItem key={lecture.id} value={lecture.title}>
-                            {lecture.title}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
-                          No lectures found for this course
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
