@@ -13,11 +13,27 @@ export interface Message {
 export interface Lecture {
   id: string;
   title: string;
+  course_id?: string;
 }
+
+// Define courses per batch
+const COURSES_BY_BATCH: Record<string, { id: string; name: string }[]> = {
+  "2029": [
+    { id: "anatomy", name: "Anatomy" },
+    { id: "physiology", name: "Physiology" },
+    { id: "biochemistry", name: "Biochemistry" },
+  ],
+  "2028": [
+    { id: "pathology", name: "Pathology" },
+    { id: "pharmacology", name: "Pharmacology" },
+    { id: "microbiology", name: "Microbiology" },
+  ],
+};
 
 const ProfessorAI = () => {
   const [mode, setMode] = useState<Mode>("Study");
   const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string | null>(() => {
     return localStorage.getItem("professorSelectedBatch");
   });
@@ -27,6 +43,14 @@ const ProfessorAI = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const hasAutoTriggered = useRef(false);
+
+  // Get available courses for selected batch
+  const availableCourses = selectedBatch ? COURSES_BY_BATCH[selectedBatch] || [] : [];
+  
+  // Filter lectures by selected course
+  const filteredLectures = selectedCourse 
+    ? lectures.filter(lecture => lecture.course_id === selectedCourse)
+    : [];
 
   // Fetch lectures when batch is selected
   useEffect(() => {
@@ -139,9 +163,16 @@ const ProfessorAI = () => {
     sendMessage("Start Quiz");
   };
 
+  const handleCourseSelect = (courseId: string) => {
+    setSelectedCourse(courseId);
+    setSelectedLecture(null);
+    setMessages([]);
+  };
+
   const handleBatchSelect = (batchId: string) => {
     localStorage.setItem("professorSelectedBatch", batchId);
     setSelectedBatch(batchId);
+    setSelectedCourse(null);
     setSelectedLecture(null);
     setMessages([]);
   };
@@ -162,9 +193,12 @@ const ProfessorAI = () => {
         setMode={setMode}
         selectedLecture={selectedLecture}
         setSelectedLecture={setSelectedLecture}
+        selectedCourse={selectedCourse}
+        setSelectedCourse={handleCourseSelect}
         selectedBatch={selectedBatch}
         setSelectedBatch={handleBatchSelect}
-        lectures={lectures}
+        courses={availableCourses}
+        lectures={filteredLectures}
         lecturesLoading={lecturesLoading}
         lecturesError={lecturesError}
       />
