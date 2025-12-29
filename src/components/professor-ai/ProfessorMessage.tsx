@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type { Message } from "@/pages/ProfessorAI";
+import { MermaidDiagram } from "./MermaidDiagram";
 
 interface ProfessorMessageProps {
   message: Message;
@@ -46,6 +47,34 @@ export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMess
           <ReactMarkdown
             remarkPlugins={[remarkMath]}
             rehypePlugins={[rehypeKatex]}
+            components={{
+              code({ className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || "");
+                const language = match ? match[1] : "";
+                const codeContent = String(children).replace(/\n$/, "");
+
+                // Render mermaid diagrams
+                if (language === "mermaid") {
+                  return <MermaidDiagram chart={codeContent} />;
+                }
+
+                // Inline code
+                if (!className) {
+                  return (
+                    <code className="bg-secondary/50 px-1.5 py-0.5 rounded text-sm" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+
+                // Code blocks
+                return (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
           >
             {message.content}
           </ReactMarkdown>
