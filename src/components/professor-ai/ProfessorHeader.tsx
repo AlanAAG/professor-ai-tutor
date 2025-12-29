@@ -1,4 +1,4 @@
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,6 +19,8 @@ interface ProfessorHeaderProps {
   selectedBatch: string;
   onBatchChange: (batch: string) => void;
   courses: Course[];
+  onLogout: () => void;
+  onFeedbackClick: () => void;
 }
 
 const modeOptions: { value: Mode; label: string }[] = [
@@ -37,6 +39,8 @@ export const ProfessorHeader = ({
   selectedBatch,
   onBatchChange,
   courses,
+  onLogout,
+  onFeedbackClick,
 }: ProfessorHeaderProps) => {
   const selectedCourseDisplay = courses.find(c => c.id === selectedCourse)?.name;
 
@@ -103,10 +107,32 @@ export const ProfessorHeader = ({
               <SelectItem value="2028">2028 Batch</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Feedback Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onFeedbackClick}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <MessageSquare className="w-4 h-4 mr-1" />
+            Feedback
+          </Button>
+
+          {/* Logout Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onLogout}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4 mr-1" />
+            Logout
+          </Button>
         </div>
 
-        {/* Mobile: Only batch selector in header */}
-        <div className="flex md:hidden items-center">
+        {/* Mobile: Batch selector and action buttons */}
+        <div className="flex md:hidden items-center gap-1">
           <Select value={selectedBatch} onValueChange={onBatchChange}>
             <SelectTrigger className="w-[80px] bg-secondary/50 border-border/50 text-xs h-8">
               <span className="truncate">{selectedBatch}</span>
@@ -116,6 +142,26 @@ export const ProfessorHeader = ({
               <SelectItem value="2028">2028</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Mobile Feedback Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onFeedbackClick}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <MessageSquare className="w-4 h-4" />
+          </Button>
+
+          {/* Mobile Logout Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onLogout}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
