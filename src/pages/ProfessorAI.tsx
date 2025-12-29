@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
 import { ProfessorDrawer } from "@/components/professor-ai/ProfessorDrawer";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
 import { QuizResults } from "@/components/professor-ai/QuizResults";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -75,6 +77,7 @@ const NO_MATERIALS_FALLBACK_PHRASES = [
 ];
 
 const ProfessorAI = () => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>("Study");
   const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
@@ -96,6 +99,9 @@ const ProfessorAI = () => {
   const [quizLoading, setQuizLoading] = useState(false);
   const [quizResults, setQuizResults] = useState<{ score: number; total: number } | null>(null);
   const [lastQuizTopic, setLastQuizTopic] = useState<string>("");
+  
+  // Feedback dialog state
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Get available courses for selected batch
   const availableCourses = selectedBatch ? COURSES_BY_BATCH[selectedBatch] || [] : [];
@@ -477,7 +483,15 @@ const ProfessorAI = () => {
     setMessages([]);
   };
 
-  // Show batch selection if not selected
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  const handleFeedback = () => {
+    setFeedbackOpen(true);
+  };
+
   if (!selectedBatch) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -509,6 +523,8 @@ const ProfessorAI = () => {
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
+            onLogout={handleLogout}
+            onFeedback={handleFeedback}
           />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4">
@@ -541,6 +557,8 @@ const ProfessorAI = () => {
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
+            onLogout={handleLogout}
+            onFeedback={handleFeedback}
           />
           <div className="flex-1 flex items-center justify-center p-4">
             <QuizResults
@@ -575,6 +593,8 @@ const ProfessorAI = () => {
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
+            onLogout={handleLogout}
+            onFeedback={handleFeedback}
           />
           <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
             <QuizCard
@@ -610,6 +630,8 @@ const ProfessorAI = () => {
         onNewChat={handleNewChat}
         onSelectConversation={handleSelectConversation}
         activeConversationId={activeConversationId}
+        onLogout={handleLogout}
+        onFeedback={handleFeedback}
       />
 
       {/* Chat area */}
@@ -629,6 +651,9 @@ const ProfessorAI = () => {
           lecturesLoading={lecturesLoading}
         />
       </div>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
   );
 };

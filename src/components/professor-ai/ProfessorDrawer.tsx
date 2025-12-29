@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Plus, MessageSquare, Sparkles } from "lucide-react";
+import { Plus, MessageSquare, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,8 @@ interface ProfessorDrawerProps {
   onNewChat: () => void;
   onSelectConversation?: (conversation: Conversation) => void;
   activeConversationId?: string | null;
+  onLogout: () => void;
+  onFeedback: () => void;
 }
 
 const getDisplayName = (classId: string): string => {
@@ -52,6 +54,8 @@ export const ProfessorDrawer = ({
   onNewChat,
   onSelectConversation,
   activeConversationId,
+  onLogout,
+  onFeedback,
 }: ProfessorDrawerProps) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +133,7 @@ export const ProfessorDrawer = ({
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           fixed
           z-50
-          w-72 h-full
+          w-72 md:w-80 h-full
           transition-transform duration-300 ease-in-out
           bg-card border-r border-border
           flex flex-col
@@ -138,11 +142,11 @@ export const ProfessorDrawer = ({
         {/* Header */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary" />
+            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
+              <span className="text-primary font-bold text-sm">AT</span>
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Professor AI</h2>
+              <h2 className="font-bold text-primary">AskTETR</h2>
               <p className="text-xs text-muted-foreground">Chat History</p>
             </div>
           </div>
@@ -153,7 +157,7 @@ export const ProfessorDrawer = ({
           <Button
             onClick={handleNewChat}
             variant="outline"
-            className="w-full justify-start gap-2 bg-secondary/50 hover:bg-secondary border-border/50"
+            className="w-full justify-start gap-2 bg-secondary/50 hover:bg-secondary border-border/50 h-10"
           >
             <Plus className="w-4 h-4" />
             New Chat
@@ -205,11 +209,24 @@ export const ProfessorDrawer = ({
           </div>
         </ScrollArea>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-border">
-          <p className="text-xs text-center text-muted-foreground">
-            Powered by RAG Technology
-          </p>
+        {/* Footer with Feedback and Logout */}
+        <div className="p-3 border-t border-border space-y-2">
+          <Button
+            onClick={onFeedback}
+            variant="ghost"
+            className="w-full justify-start gap-2 h-10 text-muted-foreground hover:text-foreground"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Send Feedback
+          </Button>
+          <Button
+            onClick={onLogout}
+            variant="ghost"
+            className="w-full justify-start gap-2 h-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
       </div>
     </>
