@@ -55,9 +55,8 @@ export const ProfessorHeader = ({
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
           <div className="flex items-center gap-2 min-w-0">
-            <Sparkles className="w-5 h-5 text-primary flex-shrink-0 hidden sm:block" />
-            <span className="text-base sm:text-lg font-semibold text-foreground truncate">
-              Professor AI
+            <span className="text-base sm:text-lg font-semibold text-green-500 truncate">
+              AskTETR
             </span>
           </div>
         </div>
