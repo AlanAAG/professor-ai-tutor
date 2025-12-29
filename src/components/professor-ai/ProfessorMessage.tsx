@@ -43,11 +43,37 @@ export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMess
       
       {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-2">
-        <div className="text-sm leading-relaxed text-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-li:my-1 prose-pre:my-2 [&_.katex]:text-foreground [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:py-2">
+        <div className="text-sm leading-relaxed text-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-3 prose-li:my-1 prose-pre:my-3 prose-ul:my-2 prose-ol:my-2 [&_.katex]:text-foreground [&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:py-2">
           <ReactMarkdown
             remarkPlugins={[remarkMath]}
             rehypePlugins={[rehypeKatex]}
             components={{
+              h1({ children, ...props }) {
+                return (
+                  <h1 className="text-xl font-bold text-primary mt-6 mb-3 first:mt-0" {...props}>
+                    {children}
+                  </h1>
+                );
+              },
+              h2({ children, ...props }) {
+                return (
+                  <h2 className="text-lg font-semibold text-white mt-5 mb-2" {...props}>
+                    {children}
+                  </h2>
+                );
+              },
+              h3({ children, ...props }) {
+                return (
+                  <h3 className="text-base font-semibold text-foreground/90 mt-4 mb-2" {...props}>
+                    {children}
+                  </h3>
+                );
+              },
+              hr({ ...props }) {
+                return (
+                  <hr className="my-4 border-t border-muted-foreground/30" {...props} />
+                );
+              },
               code({ className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || "");
                 const language = match ? match[1] : "";
