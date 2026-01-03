@@ -268,7 +268,7 @@ export const ProfessorChat = ({
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
           {messages.map((message, index) => (
-            <ProfessorMessage key={index} message={message} />
+            <ProfessorMessage key={message.id || index} message={message} messageId={message.id} />
           ))}
           
           {/* Streaming content display */}

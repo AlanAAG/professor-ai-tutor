@@ -14,6 +14,7 @@ import { Loader2 } from "lucide-react";
 export type Mode = "Notes Creator" | "Quiz" | "Study";
 
 export interface Message {
+  id?: string; // Database ID for feedback tracking
   role: "user" | "assistant";
   content: string;
 }
@@ -233,6 +234,59 @@ const ProfessorAI = () => {
     }
   };
 
+  const saveConversationAndMessage = async (userContent: string, assistantContent: string) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const userId = session.session.user.id;
+      let conversationId = activeConversationId;
+
+      // Create conversation if it doesn't exist
+      if (!conversationId) {
+        const title = userContent.slice(0, 50) + (userContent.length > 50 ? "..." : "");
+        const { data: newConversation, error: convError } = await supabase
+          .from("conversations")
+          .insert({
+            user_id: userId,
+            title,
+            class_id: selectedCourse || "",
+            mode,
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConversation.id;
+        setActiveConversationId(conversationId);
+      }
+
+      // Save user message
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        role: "user",
+        content: userContent,
+      });
+
+      // Save assistant message and get its ID
+      const { data: assistantMsg, error: msgError } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          role: "assistant",
+          content: assistantContent,
+        })
+        .select()
+        .single();
+
+      if (msgError) throw msgError;
+      return assistantMsg.id;
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      return null;
+    }
+  };
+
   const sendMessage = async (content: string, isHidden = false) => {
     // In Quiz mode, treat the message as a quiz topic request
     if (mode === "Quiz") {
@@ -308,9 +362,9 @@ const ProfessorAI = () => {
                 
                 try {
                   const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
-                  if (typeof content === 'string') {
-                    accumulatedContent += content;
+                  const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
+                  if (typeof msgContent === 'string') {
+                    accumulatedContent += msgContent;
                     setStreamingContent(accumulatedContent);
                   }
                 } catch {
@@ -340,9 +394,12 @@ const ProfessorAI = () => {
             });
           }
 
+          // Save to database and get message ID
+          const messageId = await saveConversationAndMessage(content, accumulatedContent);
+
           setMessages(prev => [
             ...prev,
-            { role: "assistant", content: accumulatedContent },
+            { id: messageId || undefined, role: "assistant", content: accumulatedContent },
           ]);
         }
         setStreamingContent("");
@@ -360,7 +417,11 @@ const ProfessorAI = () => {
           });
         }
 
+        // Save to database and get message ID
+        const messageId = await saveConversationAndMessage(content, responseContent);
+
         const assistantMessage: Message = {
+          id: messageId || undefined,
           role: "assistant",
           content: responseContent,
         };
@@ -440,8 +501,9 @@ const ProfessorAI = () => {
 
       if (error) throw error;
 
-      // Convert to Message format
+      // Convert to Message format with IDs
       const loadedMessages: Message[] = (messagesData || []).map((msg) => ({
+        id: msg.id,
         role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
