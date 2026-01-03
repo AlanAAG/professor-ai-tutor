@@ -1,21 +1,22 @@
-import { Sparkles, Copy, Check } from "lucide-react";
+import { Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
+import ReactMarkdown from 'react-markdown';
 import type { Message } from "@/pages/ProfessorAI";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProfessorMessageProps {
   message: Message;
   isStreaming?: boolean;
+  messageId?: string;
 }
 
 // Parse and render content with LaTeX support
 const renderContentWithLatex = (content: string) => {
-  // Split by block math ($$...$$) first, then inline math ($...$)
   const parts: React.ReactNode[] = [];
-  let remaining = content;
-  let keyIndex = 0;
 
   // Process block math first ($$...$$)
   const blockMathRegex = /\$\$([\s\S]*?)\$\$/g;
@@ -24,16 +25,16 @@ const renderContentWithLatex = (content: string) => {
 
   const segments: { type: 'text' | 'blockMath'; content: string }[] = [];
   
-  while ((match = blockMathRegex.exec(remaining)) !== null) {
+  while ((match = blockMathRegex.exec(content)) !== null) {
     if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: remaining.slice(lastIndex, match.index) });
+      segments.push({ type: 'text', content: content.slice(lastIndex, match.index) });
     }
     segments.push({ type: 'blockMath', content: match[1] });
     lastIndex = match.index + match[0].length;
   }
   
-  if (lastIndex < remaining.length) {
-    segments.push({ type: 'text', content: remaining.slice(lastIndex) });
+  if (lastIndex < content.length) {
+    segments.push({ type: 'text', content: content.slice(lastIndex) });
   }
 
   // Now process each segment
@@ -58,7 +59,7 @@ const renderContentWithLatex = (content: string) => {
   return parts;
 };
 
-// Process inline math and markdown
+// Process inline math and render markdown
 const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[] => {
   const parts: React.ReactNode[] = [];
   const inlineMathRegex = /\$([^$\n]+?)\$/g;
@@ -69,7 +70,47 @@ const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[
   while ((match = inlineMathRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       const textPart = text.slice(lastIndex, match.index);
-      parts.push(...renderMarkdownLines(textPart, `${segmentIndex}-${partIndex++}`));
+      parts.push(
+        <span key={`md-${segmentIndex}-${partIndex++}`}>
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <span className="inline">{children}</span>,
+              h1: ({ children }) => <h1 className="text-xl font-bold text-primary mt-4 mb-2">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-lg font-bold text-primary mt-4 mb-2">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-base font-semibold text-foreground mt-3 mb-1">{children}</h3>,
+              strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+              em: ({ children }) => <em className="italic">{children}</em>,
+              ul: ({ children }) => <ul className="list-disc ml-4 my-2 space-y-1">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal ml-4 my-2 space-y-1">{children}</ol>,
+              li: ({ children }) => <li className="text-foreground/90">{children}</li>,
+              code: ({ children, className }) => {
+                const isInline = !className;
+                if (isInline) {
+                  return <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary">{children}</code>;
+                }
+                return (
+                  <pre className="bg-muted p-3 rounded-lg my-2 overflow-x-auto">
+                    <code className="text-sm font-mono">{children}</code>
+                  </pre>
+                );
+              },
+              pre: ({ children }) => <>{children}</>,
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-4 border-primary pl-4 my-2 italic text-muted-foreground">
+                  {children}
+                </blockquote>
+              ),
+              a: ({ children, href }) => (
+                <a href={href} className="text-primary underline hover:text-primary/80" target="_blank" rel="noopener noreferrer">
+                  {children}
+                </a>
+              ),
+            }}
+          >
+            {textPart}
+          </ReactMarkdown>
+        </span>
+      );
     }
     try {
       parts.push(
@@ -82,96 +123,136 @@ const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[
   }
 
   if (lastIndex < text.length) {
-    parts.push(...renderMarkdownLines(text.slice(lastIndex), `${segmentIndex}-${partIndex}`));
+    const remainingText = text.slice(lastIndex);
+    parts.push(
+      <span key={`md-${segmentIndex}-${partIndex}`}>
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <span className="inline">{children}</span>,
+            h1: ({ children }) => <h1 className="text-xl font-bold text-primary mt-4 mb-2">{children}</h1>,
+            h2: ({ children }) => <h2 className="text-lg font-bold text-primary mt-4 mb-2">{children}</h2>,
+            h3: ({ children }) => <h3 className="text-base font-semibold text-foreground mt-3 mb-1">{children}</h3>,
+            strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+            em: ({ children }) => <em className="italic">{children}</em>,
+            ul: ({ children }) => <ul className="list-disc ml-4 my-2 space-y-1">{children}</ul>,
+            ol: ({ children }) => <ol className="list-decimal ml-4 my-2 space-y-1">{children}</ol>,
+            li: ({ children }) => <li className="text-foreground/90">{children}</li>,
+            code: ({ children, className }) => {
+              const isInline = !className;
+              if (isInline) {
+                return <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary">{children}</code>;
+              }
+              return (
+                <pre className="bg-muted p-3 rounded-lg my-2 overflow-x-auto">
+                  <code className="text-sm font-mono">{children}</code>
+                </pre>
+              );
+            },
+            pre: ({ children }) => <>{children}</>,
+            blockquote: ({ children }) => (
+              <blockquote className="border-l-4 border-primary pl-4 my-2 italic text-muted-foreground">
+                {children}
+              </blockquote>
+            ),
+            a: ({ children, href }) => (
+              <a href={href} className="text-primary underline hover:text-primary/80" target="_blank" rel="noopener noreferrer">
+                {children}
+              </a>
+            ),
+          }}
+        >
+          {remainingText}
+        </ReactMarkdown>
+      </span>
+    );
   }
 
   return parts;
 };
 
-// Enhanced markdown renderer
-const renderMarkdownLines = (content: string, keyPrefix: string): React.ReactNode[] => {
-  const lines = content.split("\n");
-  
-  return lines.map((line, index) => {
-    const key = `${keyPrefix}-${index}`;
-    
-    // H2 headers
-    if (line.startsWith("## ")) {
-      return (
-        <h2 key={key} className="text-lg font-bold text-primary mt-4 mb-2 first:mt-0">
-          {line.slice(3)}
-        </h2>
-      );
-    }
-    
-    // H3 headers
-    if (line.startsWith("### ")) {
-      return (
-        <h3 key={key} className="text-base font-semibold text-foreground mt-3 mb-1">
-          {line.slice(4)}
-        </h3>
-      );
-    }
-    
-    // Bold text with inline processing
-    if (line.includes("**")) {
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      return (
-        <p key={key} className="mb-2 leading-relaxed">
-          {parts.map((part, i) => {
-            if (part.startsWith("**") && part.endsWith("**")) {
-              return (
-                <strong key={i} className="font-semibold text-foreground">
-                  {part.slice(2, -2)}
-                </strong>
-              );
-            }
-            return part;
-          })}
-        </p>
-      );
-    }
-    
-    // Bullet points
-    if (line.startsWith("- ") || line.startsWith("* ")) {
-      return (
-        <li key={key} className="ml-4 mb-1 text-foreground/90 list-disc">
-          {line.slice(2)}
-        </li>
-      );
-    }
-    
-    // Numbered lists
-    if (/^\d+\.\s/.test(line)) {
-      return (
-        <li key={key} className="ml-4 mb-1 list-decimal text-foreground/90">
-          {line.replace(/^\d+\.\s/, "")}
-        </li>
-      );
-    }
-    
-    // Empty lines
-    if (line.trim() === "") {
-      return <br key={key} />;
-    }
-    
-    // Regular paragraphs
-    return (
-      <span key={key} className="leading-relaxed text-foreground/90">
-        {line}
-      </span>
-    );
-  });
-};
-
-export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMessageProps) => {
+export const ProfessorMessage = ({ message, isStreaming = false, messageId }: ProfessorMessageProps) => {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load existing feedback on mount
+  useEffect(() => {
+    if (!messageId || isUser) return;
+
+    const loadFeedback = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) return;
+
+        const { data } = await supabase
+          .from("message_feedback")
+          .select("feedback_type")
+          .eq("message_id", messageId)
+          .eq("user_id", session.session.user.id)
+          .maybeSingle();
+
+        if (data) {
+          setFeedback(data.feedback_type as 'up' | 'down');
+        }
+      } catch (error) {
+        console.error("Error loading feedback:", error);
+      }
+    };
+
+    loadFeedback();
+  }, [messageId, isUser]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleFeedback = async (type: 'up' | 'down') => {
+    if (!messageId || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.error("Please sign in to provide feedback");
+        return;
+      }
+
+      const userId = session.session.user.id;
+
+      if (feedback === type) {
+        // Remove feedback
+        await supabase
+          .from("message_feedback")
+          .delete()
+          .eq("message_id", messageId)
+          .eq("user_id", userId);
+        setFeedback(null);
+      } else {
+        // Upsert feedback
+        const { error } = await supabase
+          .from("message_feedback")
+          .upsert(
+            {
+              message_id: messageId,
+              user_id: userId,
+              feedback_type: type,
+            },
+            { onConflict: "message_id,user_id" }
+          );
+
+        if (error) throw error;
+        setFeedback(type);
+        toast.success("Thanks for your feedback!");
+      }
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isUser) {
@@ -195,7 +276,7 @@ export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMess
       
       {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-2">
-        <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+        <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words prose prose-sm max-w-none dark:prose-invert prose-headings:text-primary prose-strong:text-foreground">
           {renderContentWithLatex(message.content)}
           {isStreaming && (
             <span className="inline-block w-2 h-4 bg-primary/60 animate-pulse ml-0.5" />
@@ -214,6 +295,29 @@ export const ProfessorMessage = ({ message, isStreaming = false }: ProfessorMess
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               <span className="ml-1 text-xs">{copied ? "Copied" : "Copy"}</span>
             </Button>
+            
+            {messageId && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 px-2 ${feedback === 'up' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => handleFeedback('up')}
+                  disabled={isSubmitting}
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-7 px-2 ${feedback === 'down' ? 'text-destructive' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => handleFeedback('down')}
+                  disabled={isSubmitting}
+                >
+                  <ThumbsDown className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
