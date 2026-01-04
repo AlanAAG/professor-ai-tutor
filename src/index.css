@@ -54,6 +54,10 @@ All colors MUST be HSL.
     --chat-user-fg: 0 0% 100%;
     --chat-ai-bg: 120 15% 15%;
     --chat-ai-fg: 0 0% 95%;
+    
+    /* Modern chat text colors - off-white for reduced eye strain */
+    --chat-text: 220 10% 96%;
+    --chat-text-secondary: 220 10% 70%;
 
     /* Professor AI Design Tokens - Academic Dark Theme */
     --professor-bg: 220 20% 10%;
@@ -127,6 +131,10 @@ All colors MUST be HSL.
     --chat-user-fg: 0 0% 100%;
     --chat-ai-bg: 120 15% 12%;
     --chat-ai-fg: 0 0% 95%;
+    
+    /* Modern chat text colors - off-white for reduced eye strain */
+    --chat-text: 220 10% 96%;
+    --chat-text-secondary: 220 10% 65%;
 
     /* Professor AI Design Tokens - Academic Dark Theme */
     --professor-bg: 220 20% 8%;

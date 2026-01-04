@@ -26,12 +26,6 @@ interface ProfessorChatProps {
   lecturesLoading: boolean;
 }
 
-const modeDescriptions: Record<Mode, string> = {
-  "Notes Creator": "Auto-generate comprehensive lecture notes",
-  "Quiz": "Test your understanding with interactive quizzes",
-  "Study": "Ask questions and learn through guided discovery",
-};
-
 const quizSuggestions = [
   "Quiz me on machine learning basics",
   "I need a quiz on elasticity",
@@ -120,7 +114,7 @@ export const ProfessorChat = ({
               
               {/* Welcome text */}
               <div className="space-y-2">
-                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
+                <h1 className="text-2xl md:text-4xl font-semibold text-chat-text">
                   {mode === "Quiz"
                     ? "What topic should I quiz you on?"
                     : !selectedCourse
@@ -129,7 +123,7 @@ export const ProfessorChat = ({
                     ? "Select a Lecture for Notes"
                     : "What would you like to learn?"}
                 </h1>
-                <p className="text-muted-foreground text-base md:text-lg px-2">
+                <p className="text-chat-text-secondary text-base md:text-lg px-2">
                   {mode === "Quiz"
                     ? "Type any topic and I'll generate a quiz for you"
                     : !selectedCourse
@@ -204,7 +198,7 @@ export const ProfessorChat = ({
             {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && (
               <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
-                  <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 shadow-lg backdrop-blur-sm transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
+                  <div className="relative">
                     <input
                       type="text"
                       value={input}
@@ -212,13 +206,13 @@ export const ProfessorChat = ({
                       onKeyDown={handleKeyDown}
                       placeholder={mode === "Quiz" ? "What topic should I quiz you on?" : "Ask anything..."}
                       disabled={isLoading}
-                      className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
+                      className="w-full bg-secondary/60 backdrop-blur-md border border-border/50 rounded-full px-6 py-4 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                     <Button
                       type="submit"
                       disabled={isLoading || !input.trim()}
                       size="sm"
-                      className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
                     >
                       {isLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -235,7 +229,7 @@ export const ProfessorChat = ({
                     <button
                       key={suggestion}
                       onClick={() => setInput(suggestion)}
-                      className="px-3 md:px-4 py-2 text-xs md:text-sm rounded-full bg-secondary/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all whitespace-nowrap"
+                      className="px-3 md:px-4 py-2 text-xs md:text-sm rounded-full bg-secondary/40 border border-border/30 text-chat-text-secondary hover:text-chat-text hover:border-primary/30 hover:bg-secondary/60 transition-all"
                     >
                       {suggestion}
                     </button>
@@ -247,9 +241,11 @@ export const ProfessorChat = ({
             {/* Show input placeholder when no course selected (not for Quiz mode) */}
             {!selectedCourse && mode !== "Quiz" && (
               <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
-                <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 opacity-50">
-                  <span className="flex-1 text-muted-foreground text-sm">Select a course first...</span>
-                  <div className="h-8 w-8 p-0 rounded-lg bg-primary/30 flex items-center justify-center">
+                <div className="relative">
+                  <div className="w-full bg-secondary/40 border border-border/30 rounded-full px-6 py-4 pr-14 opacity-50">
+                    <span className="text-chat-text-secondary text-sm">Select a course first...</span>
+                  </div>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-full bg-primary/30 flex items-center justify-center">
                     <ArrowUp className="w-4 h-4 text-primary-foreground/50" />
                   </div>
                 </div>
@@ -266,7 +262,7 @@ export const ProfessorChat = ({
     <main className="flex-1 flex flex-col h-full bg-background">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {messages.map((message, index) => (
             <ProfessorMessage key={message.id || index} message={message} messageId={message.id} />
           ))}
@@ -280,11 +276,11 @@ export const ProfessorChat = ({
           )}
           
           {isLoading && !streamingContent && (
-            <div className="flex gap-3 animate-fade-in">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg">
+            <div className="flex gap-4 animate-fade-in">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-chat-text-secondary">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="text-sm">
                   {mode === "Quiz" ? "Generating quiz..." : "Thinking..."}
@@ -292,15 +288,15 @@ export const ProfessorChat = ({
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
       </div>
 
-      {/* Input area */}
-      <div className="border-t border-border/50 bg-background/80 backdrop-blur-sm p-4">
+      {/* Sticky input area with glassmorphism */}
+      <div className="sticky bottom-0 border-t border-border/30 bg-background/60 backdrop-blur-xl p-4">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center gap-2 bg-secondary/80 rounded-2xl border border-border/50 px-4 py-3 transition-all focus-within:border-primary/50 focus-within:shadow-[var(--shadow-glow)]">
+            <div className="relative">
               <input
                 type="text"
                 value={input}
@@ -314,13 +310,13 @@ export const ProfessorChat = ({
                     : "Ask anything..."
                 }
                 disabled={isInputDisabled}
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
+                className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-full px-6 py-3.5 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
               />
               <Button
                 type="submit"
                 disabled={isInputDisabled || !input.trim()}
                 size="sm"
-                className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-30"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

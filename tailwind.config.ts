@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -70,6 +73,15 @@ export default {
           "user-fg": "hsl(var(--professor-user-fg))",
           "assistant-bg": "hsl(var(--professor-assistant-bg))",
         },
+        // Chat-specific semantic colors
+        chat: {
+          text: "hsl(var(--chat-text))",
+          "text-secondary": "hsl(var(--chat-text-secondary))",
+          "user-bg": "hsl(var(--chat-user-bg))",
+          "user-fg": "hsl(var(--chat-user-fg))",
+          "ai-bg": "hsl(var(--chat-ai-bg))",
+          "ai-fg": "hsl(var(--chat-ai-fg))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -103,12 +115,17 @@ export default {
             transform: "translateY(0)",
           },
         },
+        "blink": {
+          "0%, 50%": { opacity: "1" },
+          "51%, 100%": { opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.6s ease-out",
         "fade-in-delay": "fade-in 0.6s ease-out 0.2s backwards",
+        "blink": "blink 1s step-end infinite",
       },
     },
   },
