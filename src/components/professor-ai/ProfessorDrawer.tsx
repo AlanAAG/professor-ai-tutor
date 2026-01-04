@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Plus, MessageSquare, LogOut, MessageCircle, Search, Pin, Archive } from "lucide-react";
+import { Plus, MessageSquare, LogOut, MessageCircle, Search, Pin, Archive, Settings, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import personas from "@/data/personas.json";
 import { ChatActionsMenu } from "./ChatActionsMenu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type BatchPersonas = Record<string, Record<string, { display_name?: string; professor_name: string }>>;
 
@@ -52,6 +59,20 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString();
 };
 
+const getInitials = (email: string | undefined, name?: string): string => {
+  if (name) {
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (email) {
+    return email.slice(0, 2).toUpperCase();
+  }
+  return "U";
+};
+
 export const ProfessorDrawer = ({
   isOpen,
   onClose,
@@ -65,6 +86,20 @@ export const ProfessorDrawer = ({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | undefined>();
+  const [userName, setUserName] = useState<string | undefined>();
+
+  // Load user info
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email);
+        setUserName(user.user_metadata?.full_name || user.user_metadata?.name);
+      }
+    };
+    loadUser();
+  }, []);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -250,6 +285,9 @@ export const ProfessorDrawer = ({
     </div>
   );
 
+  const userInitials = getInitials(userEmail, userName);
+  const displayName = userName || userEmail?.split('@')[0] || 'User';
+
   return (
     <>
       {/* Overlay */}
@@ -368,26 +406,50 @@ export const ProfessorDrawer = ({
           </div>
         </ScrollArea>
 
-        {/* Footer with Feedback and Logout */}
-        <div className="p-3 border-t border-border space-y-2">
-          <Button
-            onClick={onFeedback}
-            variant="ghost"
-            className="w-full justify-start gap-2 h-10 text-muted-foreground hover:text-foreground"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Send Feedback
-          </Button>
-          <Button
-            onClick={onLogout}
-            variant="ghost"
-            className="w-full justify-start gap-2 h-10 text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+        {/* User Profile Footer - ChatGPT Style */}
+        <div className="p-3 border-t border-border">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/70 transition-colors text-left">
+                {/* User Avatar with Initials */}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0">
+                  <span className="text-primary-foreground font-semibold text-sm">
+                    {userInitials}
+                  </span>
+                </div>
+                {/* User Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {displayName}
+                  </p>
+                  {userEmail && userName && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {userEmail}
+                    </p>
+                  )}
+                </div>
+                {/* Chevron */}
+                <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="top" className="w-[calc(100%-1.5rem)] mb-1">
+              <DropdownMenuItem onClick={onFeedback} className="cursor-pointer">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Send Feedback
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={onLogout} 
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </>
   );
 };
+
