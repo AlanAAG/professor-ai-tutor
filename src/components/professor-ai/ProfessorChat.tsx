@@ -346,10 +346,10 @@ export const ProfessorChat = ({
 
   // Chat mode with messages
   return (
-    <main className="flex-1 flex flex-col h-full bg-background overflow-hidden">
-      {/* Messages area - takes available space and scrolls */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 pb-4 space-y-8">
+    <main className="relative flex flex-col h-full bg-background overflow-hidden">
+      {/* Messages area - scrollable with padding at bottom for fixed input */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 pb-32 space-y-8">
           {messages.map((message, index) => {
             // Find the preceding user message for feedback context
             const precedingUserQuery = message.role === "assistant" 
@@ -390,12 +390,12 @@ export const ProfessorChat = ({
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} className="h-4" />
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Fixed input area at bottom - never scrolls */}
-      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
+      {/* Fixed input area at bottom - absolutely positioned */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Uploaded file indicator */}
           {uploadedFile && (
