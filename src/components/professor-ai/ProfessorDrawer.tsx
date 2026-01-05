@@ -249,7 +249,7 @@ export const ProfessorDrawer = ({
     <div
       key={conversation.id}
       onClick={() => handleSelectConversation(conversation)}
-      className={`group w-full text-left p-3 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+      className={`group/chat w-full text-left p-3 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
         activeConversationId === conversation.id
           ? "bg-primary text-primary-foreground"
           : "hover:bg-secondary/70"
@@ -303,6 +303,7 @@ export const ProfessorDrawer = ({
         className={`
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           fixed
+          left-14
           z-50
           w-72 md:w-80 h-full
           transition-transform duration-300 ease-in-out

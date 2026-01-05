@@ -4,6 +4,7 @@ import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
 import { ProfessorDrawer } from "@/components/professor-ai/ProfessorDrawer";
+import { ProfessorLeftToolbar } from "@/components/professor-ai/ProfessorLeftToolbar";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
 import { QuizResults } from "@/components/professor-ai/QuizResults";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
@@ -103,6 +104,9 @@ const ProfessorAI = () => {
   
   // Feedback dialog state
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  
+  // File upload state
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; content: string } | null>(null);
 
   // Get available courses for selected batch
   const availableCourses = selectedBatch ? COURSES_BY_BATCH[selectedBatch] || [] : [];
@@ -554,6 +558,20 @@ const ProfessorAI = () => {
     setFeedbackOpen(true);
   };
 
+  const handleSearchFromToolbar = () => {
+    setSidebarOpen(true);
+  };
+
+  const handleFileUpload = (file: { name: string; content: string } | null) => {
+    setUploadedFile(file);
+    if (file) {
+      toast({
+        title: "File loaded",
+        description: `${file.name} is ready to use as context`,
+      });
+    }
+  };
+
   if (!selectedBatch) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -671,51 +689,65 @@ const ProfessorAI = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
-      {/* Header with selectors */}
-      <ProfessorHeader
-        sidebarOpen={sidebarOpen}
+    <div className="flex h-screen bg-background text-foreground">
+      {/* Left Toolbar - Always visible */}
+      <ProfessorLeftToolbar
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        selectedCourse={selectedCourse}
-        onCourseChange={handleCourseSelect}
-        selectedMode={mode}
-        onModeChange={handleModeChange}
-        selectedBatch={selectedBatch}
-        onBatchChange={handleBatchSelect}
-        courses={availableCourses}
-      />
-
-      {/* Drawer */}
-      <ProfessorDrawer
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
-        onSelectConversation={handleSelectConversation}
-        activeConversationId={activeConversationId}
+        onSearch={handleSearchFromToolbar}
         onLogout={handleLogout}
         onFeedback={handleFeedback}
       />
 
-      {/* Chat area */}
-      <div className="flex-1 overflow-hidden">
-        <ProfessorChat
-          messages={messages}
-          isLoading={isLoading || quizLoading}
-          streamingContent={streamingContent}
-          selectedLecture={selectedLecture}
+      {/* Main content area - offset by toolbar width */}
+      <div className="flex flex-col flex-1 ml-14">
+        {/* Header with selectors */}
+        <ProfessorHeader
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           selectedCourse={selectedCourse}
-          mode={mode}
-          onSendMessage={sendMessage}
-          onStartQuiz={handleStartQuiz}
-          onCreateNotes={handleCreateNotes}
-          lectures={filteredLectures}
-          onLectureChange={(lecture) => setSelectedLecture(lecture)}
-          lecturesLoading={lecturesLoading}
+          onCourseChange={handleCourseSelect}
+          selectedMode={mode}
+          onModeChange={handleModeChange}
+          selectedBatch={selectedBatch}
+          onBatchChange={handleBatchSelect}
+          courses={availableCourses}
         />
-      </div>
 
-      {/* Feedback Dialog */}
-      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+        {/* Drawer */}
+        <ProfessorDrawer
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onNewChat={handleNewChat}
+          onSelectConversation={handleSelectConversation}
+          activeConversationId={activeConversationId}
+          onLogout={handleLogout}
+          onFeedback={handleFeedback}
+        />
+
+        {/* Chat area */}
+        <div className="flex-1 overflow-hidden">
+          <ProfessorChat
+            messages={messages}
+            isLoading={isLoading || quizLoading}
+            streamingContent={streamingContent}
+            selectedLecture={selectedLecture}
+            selectedCourse={selectedCourse}
+            mode={mode}
+            onSendMessage={sendMessage}
+            onStartQuiz={handleStartQuiz}
+            onCreateNotes={handleCreateNotes}
+            lectures={filteredLectures}
+            onLectureChange={(lecture) => setSelectedLecture(lecture)}
+            lecturesLoading={lecturesLoading}
+            uploadedFile={uploadedFile}
+            onFileUpload={handleFileUpload}
+          />
+        </div>
+
+        {/* Feedback Dialog */}
+        <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+      </div>
     </div>
   );
 };

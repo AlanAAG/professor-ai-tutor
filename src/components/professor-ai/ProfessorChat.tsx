@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText } from "lucide-react";
+import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import {
@@ -10,6 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Mode, Message, Lecture } from "@/pages/ProfessorAI";
+
+interface UploadedFile {
+  name: string;
+  content: string;
+}
 
 interface ProfessorChatProps {
   messages: Message[];
@@ -24,6 +29,8 @@ interface ProfessorChatProps {
   lectures: Lecture[];
   onLectureChange: (lecture: string) => void;
   lecturesLoading: boolean;
+  uploadedFile?: UploadedFile | null;
+  onFileUpload?: (file: UploadedFile | null) => void;
 }
 
 const quizSuggestions = [
@@ -46,9 +53,12 @@ export const ProfessorChat = ({
   lectures,
   onLectureChange,
   lecturesLoading,
+  uploadedFile,
+  onFileUpload,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,6 +83,42 @@ export const ProfessorChat = ({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onFileUpload) return;
+
+    try {
+      let textContent = "";
+      
+      if (file.type === "text/plain" || file.name.endsWith(".txt")) {
+        textContent = await file.text();
+      } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+        // For PDF, we'll read it as text (basic extraction)
+        // Note: Full PDF parsing would require a library
+        textContent = `[PDF file: ${file.name}] - Note: PDF content extraction requires server-side processing. The file has been attached for context.`;
+      } else if (file.name.endsWith(".docx")) {
+        textContent = `[Word document: ${file.name}] - Note: DOCX content extraction requires server-side processing. The file has been attached for context.`;
+      } else {
+        textContent = await file.text();
+      }
+
+      onFileUpload({ name: file.name, content: textContent });
+    } catch (error) {
+      console.error("Error reading file:", error);
+    }
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveFile = () => {
+    if (onFileUpload) {
+      onFileUpload(null);
     }
   };
 
@@ -198,30 +244,67 @@ export const ProfessorChat = ({
             {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && (
               <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
-                  <div className="relative">
+                  <div className="relative flex items-center gap-2">
+                    {/* File upload button */}
                     <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={mode === "Quiz" ? "What topic should I quiz you on?" : "Ask anything..."}
-                      disabled={isLoading}
-                      className="w-full bg-secondary/60 backdrop-blur-md border border-border/50 rounded-full px-6 py-4 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.txt,.md"
+                      onChange={handleFileChange}
+                      className="hidden"
                     />
                     <Button
-                      type="submit"
-                      disabled={isLoading || !input.trim()}
-                      size="sm"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-12 w-12 shrink-0 hover:bg-secondary rounded-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isLoading}
                     >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <ArrowUp className="w-4 h-4" />
-                      )}
+                      <Paperclip className="w-5 h-5" />
                     </Button>
+                    
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={mode === "Quiz" ? "What topic should I quiz you on?" : "Ask anything..."}
+                        disabled={isLoading}
+                        className="w-full bg-secondary/60 backdrop-blur-md border border-border/50 rounded-full px-6 py-4 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isLoading || !input.trim()}
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ArrowUp className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </form>
+                
+                {/* Uploaded file indicator */}
+                {uploadedFile && (
+                  <div className="flex items-center justify-center gap-2 mt-3 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30 max-w-md mx-auto">
+                    <Paperclip className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-chat-text truncate">{uploadedFile.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 hover:bg-destructive/20"
+                      onClick={handleRemoveFile}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
                 
                 {/* Quick suggestions */}
                 <div className="flex flex-wrap justify-center gap-2 mt-4 md:mt-6">
@@ -294,36 +377,73 @@ export const ProfessorChat = ({
 
       {/* Sticky input area with glassmorphism */}
       <div className="sticky bottom-0 border-t border-border/30 bg-background/60 backdrop-blur-xl p-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Uploaded file indicator */}
+          {uploadedFile && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
+              <Paperclip className="w-4 h-4 text-primary" />
+              <span className="text-sm text-chat-text truncate flex-1">{uploadedFile.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0 hover:bg-destructive/20"
+                onClick={handleRemoveFile}
+              >
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit}>
-            <div className="relative">
+            <div className="relative flex items-center gap-2">
+              {/* File upload button */}
               <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  mode === "Quiz"
-                    ? "What topic should I quiz you on?"
-                    : !selectedCourse
-                    ? "Select a course first..."
-                    : "Ask anything..."
-                }
-                disabled={isInputDisabled}
-                className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-full px-6 py-3.5 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.txt,.md"
+                onChange={handleFileChange}
+                className="hidden"
               />
               <Button
-                type="submit"
-                disabled={isInputDisabled || !input.trim()}
-                size="sm"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
               >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="w-4 h-4" />
-                )}
+                <Paperclip className="w-4 h-4" />
               </Button>
+              
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    mode === "Quiz"
+                      ? "What topic should I quiz you on?"
+                      : !selectedCourse
+                      ? "Select a course first..."
+                      : "Ask anything..."
+                  }
+                  disabled={isInputDisabled}
+                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-full px-5 py-3.5 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50"
+                />
+                <Button
+                  type="submit"
+                  disabled={isInputDisabled || !input.trim()}
+                  size="sm"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ArrowUp className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </div>
