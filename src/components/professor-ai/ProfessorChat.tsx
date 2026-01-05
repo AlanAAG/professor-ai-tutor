@@ -342,10 +342,10 @@ export const ProfessorChat = ({
 
   // Chat mode with messages
   return (
-    <main className="flex-1 flex flex-col h-full bg-background">
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
+    <main className="flex-1 flex flex-col h-full bg-background overflow-hidden">
+      {/* Messages area - takes available space and scrolls */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 pb-4 space-y-8">
           {messages.map((message, index) => (
             <ProfessorMessage key={message.id || index} message={message} messageId={message.id} />
           ))}
@@ -375,8 +375,8 @@ export const ProfessorChat = ({
         </div>
       </div>
 
-      {/* Sticky input area with glassmorphism */}
-      <div className="sticky bottom-0 border-t border-border/30 bg-background/60 backdrop-blur-xl p-4">
+      {/* Fixed input area at bottom - never scrolls */}
+      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Uploaded file indicator */}
           {uploadedFile && (

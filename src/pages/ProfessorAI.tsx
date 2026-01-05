@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
-import { ProfessorDrawer } from "@/components/professor-ai/ProfessorDrawer";
-import { ProfessorLeftToolbar } from "@/components/professor-ai/ProfessorLeftToolbar";
+import { ProfessorSidebarNew } from "@/components/professor-ai/ProfessorSidebarNew";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
 import { QuizResults } from "@/components/professor-ai/QuizResults";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
@@ -585,31 +584,33 @@ const ProfessorAI = () => {
     // Show quiz loading
     if (quizLoading) {
       return (
-        <div className="flex flex-col h-screen bg-background text-foreground">
-          <ProfessorHeader
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            selectedCourse={selectedCourse}
-            onCourseChange={handleCourseSelect}
-            selectedMode={mode}
-            onModeChange={handleModeChange}
-            selectedBatch={selectedBatch}
-            onBatchChange={handleBatchSelect}
-            courses={availableCourses}
-          />
-          <ProfessorDrawer
+        <div className="flex h-screen bg-background text-foreground">
+          <ProfessorSidebarNew
             isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-              <p className="text-muted-foreground">Generating your quiz...</p>
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "ml-72 md:ml-80" : "ml-14"}`}>
+            <ProfessorHeader
+              sidebarOpen={sidebarOpen}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              selectedCourse={selectedCourse}
+              onCourseChange={handleCourseSelect}
+              selectedMode={mode}
+              onModeChange={handleModeChange}
+              selectedBatch={selectedBatch}
+              onBatchChange={handleBatchSelect}
+              courses={availableCourses}
+            />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+                <p className="text-muted-foreground">Generating your quiz...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -619,34 +620,36 @@ const ProfessorAI = () => {
     // Show quiz results
     if (quizResults) {
       return (
-        <div className="flex flex-col h-screen bg-background text-foreground">
-          <ProfessorHeader
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            selectedCourse={selectedCourse}
-            onCourseChange={handleCourseSelect}
-            selectedMode={mode}
-            onModeChange={handleModeChange}
-            selectedBatch={selectedBatch}
-            onBatchChange={handleBatchSelect}
-            courses={availableCourses}
-          />
-          <ProfessorDrawer
+        <div className="flex h-screen bg-background text-foreground">
+          <ProfessorSidebarNew
             isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className="flex-1 flex items-center justify-center p-4">
-            <QuizResults
-              score={quizResults.score}
-              total={quizResults.total}
-              onRetry={handleRetryQuiz}
-              onNewQuiz={handleNewQuiz}
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "ml-72 md:ml-80" : "ml-14"}`}>
+            <ProfessorHeader
+              sidebarOpen={sidebarOpen}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              selectedCourse={selectedCourse}
+              onCourseChange={handleCourseSelect}
+              selectedMode={mode}
+              onModeChange={handleModeChange}
+              selectedBatch={selectedBatch}
+              onBatchChange={handleBatchSelect}
+              courses={availableCourses}
             />
+            <div className="flex-1 flex items-center justify-center p-4">
+              <QuizResults
+                score={quizResults.score}
+                total={quizResults.total}
+                onRetry={handleRetryQuiz}
+                onNewQuiz={handleNewQuiz}
+              />
+            </div>
           </div>
         </div>
       );
@@ -655,33 +658,35 @@ const ProfessorAI = () => {
     // Show active quiz
     if (currentQuiz) {
       return (
-        <div className="flex flex-col h-screen bg-background text-foreground">
-          <ProfessorHeader
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-            selectedCourse={selectedCourse}
-            onCourseChange={handleCourseSelect}
-            selectedMode={mode}
-            onModeChange={handleModeChange}
-            selectedBatch={selectedBatch}
-            onBatchChange={handleBatchSelect}
-            courses={availableCourses}
-          />
-          <ProfessorDrawer
+        <div className="flex h-screen bg-background text-foreground">
+          <ProfessorSidebarNew
             isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
             onNewChat={handleNewChat}
             onSelectConversation={handleSelectConversation}
             activeConversationId={activeConversationId}
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-            <QuizCard
-              quiz={currentQuiz}
-              onComplete={handleQuizComplete}
-              onClose={handleQuizClose}
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "ml-72 md:ml-80" : "ml-14"}`}>
+            <ProfessorHeader
+              sidebarOpen={sidebarOpen}
+              onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+              selectedCourse={selectedCourse}
+              onCourseChange={handleCourseSelect}
+              selectedMode={mode}
+              onModeChange={handleModeChange}
+              selectedBatch={selectedBatch}
+              onBatchChange={handleBatchSelect}
+              courses={availableCourses}
             />
+            <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
+              <QuizCard
+                quiz={currentQuiz}
+                onComplete={handleQuizComplete}
+                onClose={handleQuizClose}
+              />
+            </div>
           </div>
         </div>
       );
@@ -690,17 +695,19 @@ const ProfessorAI = () => {
 
   return (
     <div className="flex h-screen bg-background text-foreground">
-      {/* Left Toolbar - Always visible */}
-      <ProfessorLeftToolbar
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+      {/* Collapsible Sidebar */}
+      <ProfessorSidebarNew
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
         onNewChat={handleNewChat}
-        onSearch={handleSearchFromToolbar}
+        onSelectConversation={handleSelectConversation}
+        activeConversationId={activeConversationId}
         onLogout={handleLogout}
         onFeedback={handleFeedback}
       />
 
-      {/* Main content area - offset by toolbar width */}
-      <div className="flex flex-col flex-1 ml-14">
+      {/* Main content area - offset by sidebar width */}
+      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "ml-72 md:ml-80" : "ml-14"}`}>
         {/* Header with selectors */}
         <ProfessorHeader
           sidebarOpen={sidebarOpen}
@@ -712,17 +719,6 @@ const ProfessorAI = () => {
           selectedBatch={selectedBatch}
           onBatchChange={handleBatchSelect}
           courses={availableCourses}
-        />
-
-        {/* Drawer */}
-        <ProfessorDrawer
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          onNewChat={handleNewChat}
-          onSelectConversation={handleSelectConversation}
-          activeConversationId={activeConversationId}
-          onLogout={handleLogout}
-          onFeedback={handleFeedback}
         />
 
         {/* Chat area */}
