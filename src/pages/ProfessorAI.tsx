@@ -107,6 +107,15 @@ const ProfessorAI = () => {
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(generateUUID());
 
+  // Prevent the browser page from scrolling; only the chat areas should scroll
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   // Quiz-specific state
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
   const [quizLoading, setQuizLoading] = useState(false);
