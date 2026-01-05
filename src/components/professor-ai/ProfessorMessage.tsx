@@ -18,11 +18,25 @@ interface ProfessorMessageProps {
   userQuery?: string;
 }
 
+// Check if a paragraph starts with bold text followed by a description (concept pattern)
+const isConceptDefinition = (text: string): { term: string; description: string } | null => {
+  // Match pattern like "**Term** description..." or "**Term Name** description..."
+  const match = text.match(/^\*\*([^*]+)\*\*\s+(.+)$/s);
+  if (match) {
+    return { term: match[1], description: match[2] };
+  }
+  return null;
+};
+
 // Reusable markdown components configuration
-const getMarkdownComponents = () => ({
-  p: ({ children }: { children?: React.ReactNode }) => (
-    <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
-  ),
+const getMarkdownComponents = (isInline: boolean = false) => ({
+  p: ({ children }: { children?: React.ReactNode }) => {
+    // For inline rendering, don't wrap in p tags
+    if (isInline) {
+      return <>{children}</>;
+    }
+    return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
+  },
   h1: ({ children }: { children?: React.ReactNode }) => (
     <h1 className="text-xl font-semibold text-primary mt-6 mb-3">{children}</h1>
   ),
@@ -33,7 +47,7 @@ const getMarkdownComponents = () => ({
     <h3 className="text-base font-semibold text-chat-text mt-4 mb-2">{children}</h3>
   ),
   strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="font-semibold text-chat-text">{children}</strong>
+    <strong className="font-semibold text-primary">{children}</strong>
   ),
   em: ({ children }: { children?: React.ReactNode }) => (
     <em className="italic text-chat-text-secondary">{children}</em>
@@ -61,18 +75,18 @@ const getMarkdownComponents = () => ({
     );
   },
   code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
-    const isInline = !className;
-    if (isInline) {
+    const isCodeBlock = !!className;
+    if (isCodeBlock) {
       return (
-        <code className="bg-secondary/80 px-1.5 py-0.5 rounded text-sm font-mono text-primary">
-          {children}
-        </code>
+        <pre className="bg-secondary/60 border border-border/50 p-4 rounded-lg my-4 overflow-x-auto">
+          <code className="text-sm font-mono text-chat-text">{children}</code>
+        </pre>
       );
     }
     return (
-      <pre className="bg-secondary/60 border border-border/50 p-4 rounded-lg my-4 overflow-x-auto">
-        <code className="text-sm font-mono text-chat-text">{children}</code>
-      </pre>
+      <code className="bg-secondary/80 px-1.5 py-0.5 rounded text-sm font-mono text-primary">
+        {children}
+      </code>
     );
   },
   pre: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -97,6 +111,43 @@ const getMarkdownComponents = () => ({
 const renderContentWithLatex = (content: string) => {
   const parts: React.ReactNode[] = [];
 
+  // First split by paragraphs to handle concept definitions
+  const paragraphs = content.split(/\n\n+/);
+  
+  paragraphs.forEach((paragraph, paraIndex) => {
+    // Check if this paragraph is a concept definition (starts with **Term**)
+    const conceptMatch = isConceptDefinition(paragraph.trim());
+    
+    if (conceptMatch) {
+      // Render as a styled concept block
+      parts.push(
+        <div key={`concept-${paraIndex}`} className="mb-4">
+          <h4 className="text-base font-semibold text-primary mb-2">{conceptMatch.term}</h4>
+          <div className="text-chat-text leading-relaxed">
+            {processTextWithLatex(conceptMatch.description, `concept-desc-${paraIndex}`)}
+          </div>
+        </div>
+      );
+    } else {
+      // Process normally with LaTeX support
+      const processed = processTextWithLatex(paragraph, `para-${paraIndex}`);
+      if (paragraph.trim()) {
+        parts.push(
+          <div key={`para-${paraIndex}`} className="mb-3 last:mb-0">
+            {processed}
+          </div>
+        );
+      }
+    }
+  });
+
+  return parts;
+};
+
+// Process text with both block and inline LaTeX
+const processTextWithLatex = (text: string, keyPrefix: string): React.ReactNode[] => {
+  const parts: React.ReactNode[] = [];
+  
   // Process block math first ($$...$$)
   const blockMathRegex = /\$\$([\s\S]*?)\$\$/g;
   let lastIndex = 0;
@@ -104,16 +155,16 @@ const renderContentWithLatex = (content: string) => {
 
   const segments: { type: 'text' | 'blockMath'; content: string }[] = [];
   
-  while ((match = blockMathRegex.exec(content)) !== null) {
+  while ((match = blockMathRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
     }
     segments.push({ type: 'blockMath', content: match[1] });
     lastIndex = match.index + match[0].length;
   }
   
-  if (lastIndex < content.length) {
-    segments.push({ type: 'text', content: content.slice(lastIndex) });
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) });
   }
 
   // Now process each segment
@@ -121,18 +172,18 @@ const renderContentWithLatex = (content: string) => {
     if (segment.type === 'blockMath') {
       try {
         parts.push(
-          <div key={`block-${segIndex}`} className="my-4 overflow-x-auto flex justify-center">
+          <div key={`${keyPrefix}-block-${segIndex}`} className="my-4 overflow-x-auto flex justify-center">
             <BlockMath math={segment.content} />
           </div>
         );
       } catch {
         parts.push(
-          <span key={`block-${segIndex}`} className="text-destructive">{`$$${segment.content}$$`}</span>
+          <span key={`${keyPrefix}-block-${segIndex}`} className="text-destructive">{`$$${segment.content}$$`}</span>
         );
       }
     } else {
-      // Process inline math ($...$) in text segments
-      const inlineParts = processInlineMath(segment.content, segIndex);
+      // Process inline math ($...$) in text segments - keep everything inline
+      const inlineParts = processInlineMath(segment.content, `${keyPrefix}-${segIndex}`);
       parts.push(...inlineParts);
     }
   });
@@ -140,31 +191,35 @@ const renderContentWithLatex = (content: string) => {
   return parts;
 };
 
-// Process inline math and render markdown
-const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[] => {
+// Process inline math and render markdown - designed to keep content inline
+const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] => {
   const parts: React.ReactNode[] = [];
   const inlineMathRegex = /\$([^$\n]+?)\$/g;
   let lastIndex = 0;
   let match;
   let partIndex = 0;
 
-  const markdownComponents = getMarkdownComponents();
+  // Use inline markdown components (no p wrapper)
+  const inlineMarkdownComponents = getMarkdownComponents(true);
 
   while ((match = inlineMathRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       const textPart = text.slice(lastIndex, match.index);
+      // Render markdown inline without breaking the flow
       parts.push(
-        <ReactMarkdown key={`md-${segmentIndex}-${partIndex++}`} components={markdownComponents}>
-          {textPart}
-        </ReactMarkdown>
+        <span key={`${keyPrefix}-md-${partIndex++}`}>
+          <ReactMarkdown components={inlineMarkdownComponents}>
+            {textPart}
+          </ReactMarkdown>
+        </span>
       );
     }
     try {
       parts.push(
-        <InlineMath key={`inline-${segmentIndex}-${partIndex++}`} math={match[1]} />
+        <InlineMath key={`${keyPrefix}-inline-${partIndex++}`} math={match[1]} />
       );
     } catch {
-      parts.push(<span key={`inline-${segmentIndex}-${partIndex++}`}>{`$${match[1]}$`}</span>);
+      parts.push(<span key={`${keyPrefix}-inline-${partIndex++}`}>{`$${match[1]}$`}</span>);
     }
     lastIndex = match.index + match[0].length;
   }
@@ -172,9 +227,11 @@ const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[
   if (lastIndex < text.length) {
     const remainingText = text.slice(lastIndex);
     parts.push(
-      <ReactMarkdown key={`md-${segmentIndex}-${partIndex}`} components={markdownComponents}>
-        {remainingText}
-      </ReactMarkdown>
+      <span key={`${keyPrefix}-md-${partIndex}`}>
+        <ReactMarkdown components={inlineMarkdownComponents}>
+          {remainingText}
+        </ReactMarkdown>
+      </span>
     );
   }
 
