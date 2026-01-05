@@ -11,6 +11,15 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
+// Generate a UUID for session tracking
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 export type Mode = "Notes Creator" | "Quiz" | "Study";
 
 export interface Message {
@@ -94,6 +103,9 @@ const ProfessorAI = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const hasAutoTriggered = useRef(false);
+  
+  // Session ID for chat persistence - persists for the duration of the user's visit
+  const sessionIdRef = useRef<string>(generateUUID());
 
   // Quiz-specific state
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null);
@@ -331,6 +343,7 @@ const ProfessorAI = () => {
             mode,
             selectedCourse: selectedCourse, // Send the db_key
             selectedLecture: lectureToSend, // The lecture title or null
+            session_id: sessionIdRef.current, // Session ID for backend chat persistence
             cohort_id: selectedBatch,
           }),
         }
