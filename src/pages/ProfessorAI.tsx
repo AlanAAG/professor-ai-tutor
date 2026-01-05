@@ -106,6 +106,11 @@ const ProfessorAI = () => {
   
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(generateUUID());
+  
+  // Debug: Log session ID on initialization
+  useEffect(() => {
+    console.log("Session ID:", sessionIdRef.current);
+  }, []);
 
   // Prevent the browser page from scrolling; only the chat areas should scroll
   useEffect(() => {
@@ -760,6 +765,7 @@ const ProfessorAI = () => {
             lecturesLoading={lecturesLoading}
             uploadedFile={uploadedFile}
             onFileUpload={handleFileUpload}
+            sessionId={sessionIdRef.current}
           />
         </div>
 

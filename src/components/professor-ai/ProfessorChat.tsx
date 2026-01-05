@@ -31,6 +31,7 @@ interface ProfessorChatProps {
   lecturesLoading: boolean;
   uploadedFile?: UploadedFile | null;
   onFileUpload?: (file: UploadedFile | null) => void;
+  sessionId?: string;
 }
 
 const quizSuggestions = [
@@ -55,10 +56,12 @@ export const ProfessorChat = ({
   lecturesLoading,
   uploadedFile,
   onFileUpload,
+  sessionId,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [lastUserQuery, setLastUserQuery] = useState<string>("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -75,6 +78,7 @@ export const ProfessorChat = ({
     // For Quiz mode, don't require course selection
     if (mode !== "Quiz" && !selectedCourse) return;
     
+    setLastUserQuery(input.trim());
     onSendMessage(input.trim());
     setInput("");
   };
@@ -346,15 +350,30 @@ export const ProfessorChat = ({
       {/* Messages area - takes available space and scrolls */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 pb-4 space-y-8">
-          {messages.map((message, index) => (
-            <ProfessorMessage key={message.id || index} message={message} messageId={message.id} />
-          ))}
+          {messages.map((message, index) => {
+            // Find the preceding user message for feedback context
+            const precedingUserQuery = message.role === "assistant" 
+              ? messages.slice(0, index).reverse().find(m => m.role === "user")?.content || lastUserQuery
+              : undefined;
+            
+            return (
+              <ProfessorMessage 
+                key={message.id || index} 
+                message={message} 
+                messageId={message.id}
+                sessionId={sessionId}
+                userQuery={precedingUserQuery}
+              />
+            );
+          })}
           
           {/* Streaming content display */}
           {streamingContent && (
             <ProfessorMessage 
               message={{ role: "assistant", content: streamingContent }} 
               isStreaming={true}
+              sessionId={sessionId}
+              userQuery={lastUserQuery}
             />
           )}
           

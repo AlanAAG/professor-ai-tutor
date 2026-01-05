@@ -1,4 +1,4 @@
-import { Sparkles, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Sparkles, Copy, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
@@ -8,11 +8,14 @@ import type { Message } from "@/pages/ProfessorAI";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { FeedbackModal } from "./FeedbackModal";
 
 interface ProfessorMessageProps {
   message: Message;
   isStreaming?: boolean;
   messageId?: string;
+  sessionId?: string;
+  userQuery?: string;
 }
 
 // Reusable markdown components configuration
@@ -178,13 +181,14 @@ const processInlineMath = (text: string, segmentIndex: number): React.ReactNode[
   return parts;
 };
 
-export const ProfessorMessage = ({ message, isStreaming = false, messageId }: ProfessorMessageProps) => {
+export const ProfessorMessage = ({ message, isStreaming = false, messageId, sessionId, userQuery }: ProfessorMessageProps) => {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
-  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  // Load existing feedback on mount
+  // Load existing feedback on mount (for Supabase local storage)
   useEffect(() => {
     if (!messageId || isUser) return;
 
@@ -201,7 +205,9 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId }: Pr
           .maybeSingle();
 
         if (data) {
-          setFeedback(data.feedback_type as 'up' | 'down');
+          // Convert 'up'/'down' to rating for display
+          const ratingFromType = data.feedback_type === 'up' ? 5 : data.feedback_type === 'down' ? 1 : null;
+          if (ratingFromType) setFeedbackRating(ratingFromType);
         }
       } catch (error) {
         console.error("Error loading feedback:", error);
@@ -218,43 +224,54 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId }: Pr
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFeedback = async (type: 'up' | 'down') => {
-    if (!messageId || isSubmitting) return;
+  const handleOpenFeedbackModal = () => {
+    setFeedbackModalOpen(true);
+  };
+
+  const handleSubmitFeedback = async (rating: number, comment: string) => {
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        toast.error("Please sign in to provide feedback");
-        return;
+      // Send feedback to /api/feedback endpoint
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          query: userQuery || "",
+          response: message.content,
+          rating,
+          comment: comment || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit feedback");
       }
 
-      const userId = session.session.user.id;
+      setFeedbackRating(rating);
+      setFeedbackModalOpen(false);
+      toast.success("Thanks for your feedback!");
 
-      if (feedback === type) {
-        // Remove feedback
-        await supabase
-          .from("message_feedback")
-          .delete()
-          .eq("message_id", messageId)
-          .eq("user_id", userId);
-        setFeedback(null);
-      } else {
-        // Upsert feedback
-        const { error } = await supabase
-          .from("message_feedback")
-          .upsert(
-            {
-              message_id: messageId,
-              user_id: userId,
-              feedback_type: type,
-            },
-            { onConflict: "message_id,user_id" }
-          );
-
-        if (error) throw error;
-        setFeedback(type);
-        toast.success("Thanks for your feedback!");
+      // Also save to Supabase for local tracking if we have messageId
+      if (messageId) {
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session) {
+          const feedbackType = rating >= 4 ? 'up' : rating <= 2 ? 'down' : 'up';
+          await supabase
+            .from("message_feedback")
+            .upsert(
+              {
+                message_id: messageId,
+                user_id: session.session.user.id,
+                feedback_type: feedbackType,
+              },
+              { onConflict: "message_id,user_id" }
+            );
+        }
       }
     } catch (error) {
       console.error("Error submitting feedback:", error);
@@ -313,42 +330,37 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId }: Pr
               )}
             </Button>
             
-            {messageId && (
+            {sessionId && (
               <>
                 <div className="w-px h-4 bg-border mx-1" />
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-8 px-2.5 rounded-lg",
-                    feedback === 'up' 
-                      ? "text-primary bg-primary/10" 
+                    "h-8 px-2.5 rounded-lg gap-1",
+                    feedbackRating 
+                      ? "text-yellow-500" 
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
                   )}
-                  onClick={() => handleFeedback('up')}
+                  onClick={handleOpenFeedbackModal}
                   disabled={isSubmitting}
                 >
-                  <ThumbsUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "h-8 px-2.5 rounded-lg",
-                    feedback === 'down' 
-                      ? "text-destructive bg-destructive/10" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-                  )}
-                  onClick={() => handleFeedback('down')}
-                  disabled={isSubmitting}
-                >
-                  <ThumbsDown className="h-4 w-4" />
+                  <Star className={cn("h-4 w-4", feedbackRating && "fill-yellow-400")} />
+                  {feedbackRating && <span className="text-xs">{feedbackRating}/5</span>}
                 </Button>
               </>
             )}
           </div>
         )}
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        open={feedbackModalOpen}
+        onOpenChange={setFeedbackModalOpen}
+        onSubmit={handleSubmitFeedback}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 };
