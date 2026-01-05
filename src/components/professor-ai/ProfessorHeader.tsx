@@ -1,14 +1,7 @@
 import { Menu, X, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Mode, Course } from "@/pages/ProfessorAI";
-
 interface ProfessorHeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -22,13 +15,19 @@ interface ProfessorHeaderProps {
   onLogout?: () => void;
   onFeedback?: () => void;
 }
-
-const modeOptions: { value: Mode; label: string }[] = [
-  { value: "Study", label: "Study" },
-  { value: "Quiz", label: "Quiz" },
-  { value: "Notes Creator", label: "Notes" },
-];
-
+const modeOptions: {
+  value: Mode;
+  label: string;
+}[] = [{
+  value: "Study",
+  label: "Study"
+}, {
+  value: "Quiz",
+  label: "Quiz"
+}, {
+  value: "Notes Creator",
+  label: "Notes"
+}];
 export const ProfessorHeader = ({
   sidebarOpen,
   onToggleSidebar,
@@ -40,23 +39,14 @@ export const ProfessorHeader = ({
   onBatchChange,
   courses,
   onLogout,
-  onFeedback,
+  onFeedback
 }: ProfessorHeaderProps) => {
   const selectedCourseDisplay = courses.find(c => c.id === selectedCourse)?.name;
-
-  return (
-    <div className="bg-background border-b border-border/50 py-2 px-3 md:px-4">
+  return <div className="bg-background border-b border-border/50 py-2 px-3 md:px-4">
       <div className="flex justify-between items-center">
         {/* Left side - Menu and Title */}
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={onToggleSidebar}
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-primary">AskTETR</span>
           </div>
@@ -72,25 +62,21 @@ export const ProfessorHeader = ({
               </span>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border max-h-[300px]">
-              {courses.map((course) => (
-                <SelectItem key={course.id} value={course.id}>
+              {courses.map(course => <SelectItem key={course.id} value={course.id}>
                   <span className="text-sm truncate">{course.name}</span>
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
           </Select>
 
           {/* Mode Selector */}
-          <Select value={selectedMode} onValueChange={(v) => onModeChange(v as Mode)}>
+          <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
             <SelectTrigger className="w-[120px] bg-secondary/50 border-border/50 text-sm h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
-              {modeOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+              {modeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
-                </SelectItem>
-              ))}
+                </SelectItem>)}
             </SelectContent>
           </Select>
 
@@ -134,28 +120,23 @@ export const ProfessorHeader = ({
             </span>
           </SelectTrigger>
           <SelectContent className="bg-popover border-border max-h-[300px]">
-            {courses.map((course) => (
-              <SelectItem key={course.id} value={course.id}>
+            {courses.map(course => <SelectItem key={course.id} value={course.id}>
                 <span className="text-xs truncate">{course.name}</span>
-              </SelectItem>
-            ))}
+              </SelectItem>)}
           </SelectContent>
         </Select>
 
         {/* Mode Selector */}
-        <Select value={selectedMode} onValueChange={(v) => onModeChange(v as Mode)}>
+        <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
           <SelectTrigger className="w-[80px] bg-secondary/50 border-border/50 text-xs h-8">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border">
-            {modeOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+            {modeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
-              </SelectItem>
-            ))}
+              </SelectItem>)}
           </SelectContent>
         </Select>
       </div>
-    </div>
-  );
+    </div>;
 };
