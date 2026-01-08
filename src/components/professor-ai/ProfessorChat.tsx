@@ -105,6 +105,8 @@ export const ProfessorChat = ({
         textContent = `[PDF file: ${file.name}] - Note: PDF content extraction requires server-side processing. The file has been attached for context.`;
       } else if (file.name.endsWith(".docx")) {
         textContent = `[Word document: ${file.name}] - Note: DOCX content extraction requires server-side processing. The file has been attached for context.`;
+      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+        textContent = `[Excel file: ${file.name}] - Note: Excel content extraction requires server-side processing. The file has been attached for context.`;
       } else {
         textContent = await file.text();
       }
@@ -253,7 +255,7 @@ export const ProfessorChat = ({
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".pdf,.docx,.txt,.md"
+                      accept=".pdf,.docx,.txt,.md,.xlsx,.xls"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -346,9 +348,9 @@ export const ProfessorChat = ({
 
   // Chat mode with messages
   return (
-    <main className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Messages area - flex-1 takes remaining space, scrolls independently */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+    <main className="relative flex flex-col h-full bg-background overflow-hidden">
+      {/* Messages area - takes full height minus input area height */}
+      <div className="flex-1 overflow-y-auto pb-36" style={{ minHeight: 0 }}>
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {messages.map((message, index) => {
             // Find the preceding user message for feedback context
@@ -394,8 +396,8 @@ export const ProfessorChat = ({
         </div>
       </div>
 
-      {/* Fixed input area at bottom - flex-shrink-0 prevents it from shrinking */}
-      <div className="flex-shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
+      {/* Fixed input area at bottom - absolutely positioned to prevent jumping */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Uploaded file indicator */}
           {uploadedFile && (
@@ -419,7 +421,7 @@ export const ProfessorChat = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.docx,.txt,.md"
+                accept=".pdf,.docx,.txt,.md,.xlsx,.xls"
                 onChange={handleFileChange}
                 className="hidden"
               />

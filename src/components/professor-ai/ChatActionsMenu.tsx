@@ -61,7 +61,7 @@ export const ChatActionsMenu = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 opacity-0 group-hover/chat:opacity-100 focus:opacity-100 transition-opacity shrink-0 hover:bg-secondary"
+            className="h-7 w-7 shrink-0 hover:bg-secondary/80 md:opacity-0 md:group-hover/chat:opacity-100 md:focus:opacity-100 transition-opacity"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />

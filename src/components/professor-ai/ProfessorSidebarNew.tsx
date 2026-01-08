@@ -125,22 +125,50 @@ export const ProfessorSidebarNew = ({
     loadConversations();
   }, [loadConversations]);
 
-  // Subscribe to realtime changes
+  // Subscribe to realtime changes - use unique channel name
   useEffect(() => {
+    const channelName = `sidebar-conversations-${Date.now()}`;
     const channel = supabase
-      .channel('professor-conversations-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'conversations'
         },
         () => {
+          console.log('New conversation detected, reloading...');
           loadConversations();
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations'
+        },
+        () => {
+          console.log('Conversation updated, reloading...');
+          loadConversations();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'conversations'
+        },
+        () => {
+          console.log('Conversation deleted, reloading...');
+          loadConversations();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

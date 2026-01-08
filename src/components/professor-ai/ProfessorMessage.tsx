@@ -191,6 +191,42 @@ const processTextWithLatex = (text: string, keyPrefix: string): React.ReactNode[
   return parts;
 };
 
+// Check if a math expression is a full formula (not just a simple number)
+const isFullFormula = (math: string): boolean => {
+  const trimmed = math.trim();
+  
+  // Simple numbers (with optional currency/percent sign) should NOT be LaTeX
+  // Examples to NOT render as LaTeX: $500, 40%, 1000, $1,000
+  const simpleNumberPattern = /^[$€£¥]?\s*[\d,]+(\.\d+)?%?$/;
+  if (simpleNumberPattern.test(trimmed)) {
+    return false;
+  }
+  
+  // Contains LaTeX commands like \frac, \sqrt, \sum, etc. - IS a formula
+  if (/\\[a-zA-Z]+/.test(trimmed)) {
+    return true;
+  }
+  
+  // Contains operators between variables/numbers - IS a formula
+  // e.g., x + y, a = b, 2x + 3y
+  if (/[a-zA-Z].*[+\-*/=].*[a-zA-Z0-9]|[0-9].*[+\-*/=].*[a-zA-Z]/.test(trimmed)) {
+    return true;
+  }
+  
+  // Contains subscripts or superscripts - IS a formula
+  if (/[_^]/.test(trimmed)) {
+    return true;
+  }
+  
+  // Contains Greek letters or special math symbols - IS a formula
+  if (/\\(alpha|beta|gamma|delta|sigma|pi|theta|lambda|mu|omega|infty|partial|nabla)/.test(trimmed)) {
+    return true;
+  }
+  
+  // If it's just simple text or numbers, don't render as LaTeX
+  return false;
+};
+
 // Process inline math and render markdown - designed to keep content inline
 const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] => {
   const parts: React.ReactNode[] = [];
@@ -214,12 +250,21 @@ const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] =
         </span>
       );
     }
-    try {
-      parts.push(
-        <InlineMath key={`${keyPrefix}-inline-${partIndex++}`} math={match[1]} />
-      );
-    } catch {
-      parts.push(<span key={`${keyPrefix}-inline-${partIndex++}`}>{`$${match[1]}$`}</span>);
+    
+    const mathContent = match[1];
+    
+    // Only render as LaTeX if it's a full formula
+    if (isFullFormula(mathContent)) {
+      try {
+        parts.push(
+          <InlineMath key={`${keyPrefix}-inline-${partIndex++}`} math={mathContent} />
+        );
+      } catch {
+        parts.push(<span key={`${keyPrefix}-inline-${partIndex++}`}>{`$${mathContent}$`}</span>);
+      }
+    } else {
+      // Render as plain text (preserving the content without $ signs)
+      parts.push(<span key={`${keyPrefix}-text-${partIndex++}`}>{mathContent}</span>);
     }
     lastIndex = match.index + match[0].length;
   }
