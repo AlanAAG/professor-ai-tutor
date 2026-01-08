@@ -63,17 +63,19 @@ export const ChatActionsMenu = ({
           <Button
             variant="ghost"
             size="icon"
-            className={`h-7 w-7 shrink-0 transition-opacity ${
-              isActive 
-                ? "opacity-100 hover:bg-primary-foreground/20" 
-                : "opacity-0 group-hover/chat:opacity-100 hover:bg-secondary/80"
-            }`}
+            className={
+              `h-7 w-7 shrink-0 transition-opacity ${
+                isActive
+                  ? "opacity-100 text-primary-foreground hover:bg-primary-foreground/15"
+                  : "opacity-0 group-hover/chat:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+              }`
+            }
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuContent align="end" className="w-40 bg-popover z-50">
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
