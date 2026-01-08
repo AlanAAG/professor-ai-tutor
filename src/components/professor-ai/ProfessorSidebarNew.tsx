@@ -300,6 +300,7 @@ export const ProfessorSidebarNew = ({
         title={conversation.title}
         isPinned={conversation.is_pinned || false}
         isArchived={conversation.is_archived || false}
+        isActive={activeConversationId === conversation.id}
         onRename={handleRename}
         onPin={handlePin}
         onArchive={handleArchive}

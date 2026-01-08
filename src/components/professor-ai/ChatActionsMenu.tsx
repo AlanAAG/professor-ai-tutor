@@ -22,6 +22,7 @@ interface ChatActionsMenuProps {
   title: string;
   isPinned: boolean;
   isArchived: boolean;
+  isActive?: boolean;
   onRename: (id: string, newTitle: string) => void;
   onPin: (id: string, isPinned: boolean) => void;
   onArchive: (id: string) => void;
@@ -33,6 +34,7 @@ export const ChatActionsMenu = ({
   title,
   isPinned,
   isArchived,
+  isActive = false,
   onRename,
   onPin,
   onArchive,
@@ -61,7 +63,11 @@ export const ChatActionsMenu = ({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 shrink-0 hover:bg-secondary/80 md:opacity-0 md:group-hover/chat:opacity-100 md:focus:opacity-100 transition-opacity"
+            className={`h-7 w-7 shrink-0 transition-opacity ${
+              isActive 
+                ? "opacity-100 hover:bg-primary-foreground/20" 
+                : "opacity-0 group-hover/chat:opacity-100 hover:bg-secondary/80"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />
