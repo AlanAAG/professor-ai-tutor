@@ -65,10 +65,10 @@ export const ChatActionsMenu = ({
             type="button"
             className={`
               h-7 w-7 shrink-0 rounded-md flex items-center justify-center
-              transition-all duration-150
+              transition-opacity duration-150
               ${isActive || menuOpen
                 ? "opacity-100"
-                : "opacity-0 group-hover/chat:opacity-100"
+                : "opacity-0 group-hover:opacity-100"
               }
               ${isActive
                 ? "text-primary-foreground/90 hover:text-primary-foreground hover:bg-primary-foreground/15"
