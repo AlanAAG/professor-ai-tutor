@@ -252,35 +252,39 @@ export const ProfessorSidebarNew = ({
 
   const renderConversationItem = (conversation: Conversation) => {
     const isActive = activeConversationId === conversation.id;
-    
+
     return (
       <div
         key={conversation.id}
         onClick={() => handleSelectConversation(conversation)}
-        className={`group relative w-full text-left p-3 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "hover:bg-secondary/70"
-        }`}
+        className={
+          `group relative w-full text-left rounded-lg transition-colors cursor-pointer ` +
+          `flex items-start gap-2 p-3 pr-10 ` +
+          (isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70")
+        }
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {conversation.is_pinned && (
-              <Pin className={`h-3 w-3 shrink-0 ${isActive ? "text-primary-foreground/80" : "text-primary"}`} />
+              <Pin
+                className={`h-3 w-3 shrink-0 ${
+                  isActive ? "text-primary-foreground/80" : "text-primary"
+                }`}
+              />
             )}
-            <span className="font-medium truncate text-sm">
-              {conversation.title}
-            </span>
+            <span className="font-medium truncate text-sm">{conversation.title}</span>
           </div>
-          <div className={`text-xs mt-0.5 ${
-            isActive 
-              ? "opacity-80" 
-              : "text-muted-foreground"
-          }`}>
+          <div
+            className={`text-xs mt-0.5 ${
+              isActive ? "opacity-80" : "text-muted-foreground"
+            }`}
+          >
             {getDisplayName(conversation.class_id)} • {formatDate(conversation.updated_at)}
           </div>
         </div>
-        <div className="shrink-0">
+
+        {/* Actions: pinned to the right edge, only visible on hover (or when active / open) */}
+        <div className="absolute right-2 top-2">
           <ChatActionsMenu
             conversationId={conversation.id}
             title={conversation.title}
