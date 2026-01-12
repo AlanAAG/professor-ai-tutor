@@ -125,55 +125,37 @@ export const ProfessorSidebarNew = ({
     loadConversations();
   }, [loadConversations]);
 
-  // Subscribe to realtime changes - use unique channel name
+  // Subscribe to realtime changes for conversations
   useEffect(() => {
-    const channelName = `sidebar-conversations-${Date.now()}`;
     const channel = supabase
-      .channel(channelName)
+      .channel('sidebar-conversations-realtime')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'conversations'
         },
-        () => {
-          console.log('New conversation detected, reloading...');
-          loadConversations();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'conversations'
-        },
-        () => {
-          console.log('Conversation updated, reloading...');
-          loadConversations();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'conversations'
-        },
-        () => {
-          console.log('Conversation deleted, reloading...');
+        (payload) => {
+          console.log('Realtime change detected:', payload.eventType);
           loadConversations();
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('Sidebar realtime status:', status);
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [loadConversations]);
+
+  // Reload conversations when activeConversationId changes (new conversation created)
+  useEffect(() => {
+    if (activeConversationId) {
+      loadConversations();
+    }
+  }, [activeConversationId, loadConversations]);
 
   // Filter and sort conversations
   const filteredConversations = useMemo(() => {

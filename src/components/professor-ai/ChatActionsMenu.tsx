@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MoreHorizontal, Pin, Archive, Trash2, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface ChatActionsMenuProps {
   conversationId: string;
@@ -43,6 +43,7 @@ export const ChatActionsMenu = ({
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleRename = () => {
     if (newTitle.trim()) {
@@ -58,29 +59,38 @@ export const ChatActionsMenu = ({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={
-              `h-7 w-7 shrink-0 transition-opacity ${
-                isActive
-                  ? "opacity-100 text-primary-foreground hover:bg-primary-foreground/15"
-                  : "opacity-0 group-hover/chat:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-              }`
-            }
+          <button
+            type="button"
+            className={`
+              h-7 w-7 shrink-0 rounded-md flex items-center justify-center
+              transition-all duration-150
+              ${isActive || menuOpen
+                ? "opacity-100"
+                : "opacity-0 group-hover/chat:opacity-100"
+              }
+              ${isActive
+                ? "text-primary-foreground/90 hover:text-primary-foreground hover:bg-primary-foreground/15"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+              }
+            `}
             onClick={(e) => e.stopPropagation()}
           >
             <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40 bg-popover z-50">
+        <DropdownMenuContent 
+          align="end" 
+          className="w-40 bg-popover border border-border shadow-lg z-[100]"
+          onClick={(e) => e.stopPropagation()}
+        >
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
               setNewTitle(title);
               setRenameDialogOpen(true);
+              setMenuOpen(false);
             }}
           >
             <Pencil className="h-4 w-4 mr-2" />
@@ -90,6 +100,7 @@ export const ChatActionsMenu = ({
             onClick={(e) => {
               e.stopPropagation();
               onPin(conversationId, !isPinned);
+              setMenuOpen(false);
             }}
           >
             <Pin className={`h-4 w-4 mr-2 ${isPinned ? "text-primary" : ""}`} />
@@ -99,6 +110,7 @@ export const ChatActionsMenu = ({
             onClick={(e) => {
               e.stopPropagation();
               onArchive(conversationId);
+              setMenuOpen(false);
             }}
           >
             <Archive className="h-4 w-4 mr-2" />
@@ -108,6 +120,7 @@ export const ChatActionsMenu = ({
             onClick={(e) => {
               e.stopPropagation();
               setDeleteDialogOpen(true);
+              setMenuOpen(false);
             }}
             className="text-destructive focus:text-destructive"
           >
@@ -119,7 +132,7 @@ export const ChatActionsMenu = ({
 
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Rename Chat</DialogTitle>
             <DialogDescription>Enter a new name for this conversation.</DialogDescription>
@@ -141,7 +154,7 @@ export const ChatActionsMenu = ({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
             <DialogTitle>Delete Chat</DialogTitle>
             <DialogDescription>
