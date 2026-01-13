@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
 import { ProfessorTermSelection } from "@/components/professor-ai/ProfessorTermSelection";
+import { ProfessorCourseSelection } from "@/components/professor-ai/ProfessorCourseSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
 import { ProfessorSidebarNew } from "@/components/professor-ai/ProfessorSidebarNew";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
@@ -78,22 +79,22 @@ const COURSES_BY_BATCH_TERM: Record<string, Record<string, Course[]>> = {
   },
   "2028": {
     "term3": [
-      { id: "MarketResearch", name: "Market Research" },
-      { id: "Kickstarter", name: "Kickstarter Campaign" },
-      { id: "Prototyping", name: "Prototyping" },
-      { id: "FundraisingVideo", name: "Fundraising Video" },
+      { id: "KickstarterCampaign", name: "How to build a Kickstarter campaign?" },
+      { id: "ProductDesignKickstarter", name: "How to develop and design a product for kickstarter success?" },
+      { id: "FundraisingVideo", name: "How to craft a fundraising video that converts?" },
       { id: "CapstoneHours", name: "Capstone Hours" },
-      { id: "PublicSpeaking", name: "Public Speaking" },
-      { id: "Copywriting", name: "Copywriting" },
-      { id: "Web3", name: "Web3 & Blockchain" },
-      { id: "BusinessMetrics", name: "Business Metrics" },
-      { id: "VCFundraising", name: "VC Fundraising" },
-      { id: "IPLaw", name: "IP Law" },
-      { id: "PythonAI", name: "Python for AI" },
-      { id: "Strategy", name: "Business Strategy" },
-      { id: "InnovationImmersion", name: "Innovation Immersion" },
-      { id: "SEAsiaPolicy", name: "SE Asia Policy" },
-      { id: "Macroeconomics", name: "Macroeconomics" },
+      { id: "Web3Innovation", name: "How to leverage web3 for entrepreneurial innovation" },
+      { id: "BusinessMetrics", name: "How to use business metrics to enhance efficiency and drive innovation" },
+      { id: "FundraisingStartups", name: "How can founders raise money for their start-ups" },
+      { id: "IPProtection", name: "How to protect your ideas and innovations" },
+      { id: "AIPython", name: "How to design AI-powered solutions with Python" },
+      { id: "PublicSpeakingLevel2", name: "How to own a stage – Level 2" },
+      { id: "CopywritingSells", name: "How to craft compelling copy that sells and builds trust" },
+      { id: "SingaporePolicy", name: "Understanding modern Southeast Asia through Singaporean public policy" },
+      { id: "EconomicForces", name: "How to understand economic forces that shape the world" },
+      { id: "CompetitiveStrategy", name: "How can my business win against the competition" },
+      { id: "NUSImmersion", name: "Strategy and innovation immersion at NUS" },
+      { id: "CustomerInsights", name: "How to uncover what customers really want" },
     ],
     "term4": [
       { id: "NudgeBehavior", name: "How to Nudge to understand human behaviour" },
@@ -551,6 +552,26 @@ const ProfessorAI = () => {
     setQuizResults(null);
   };
 
+  const handleBackToTermSelection = () => {
+    localStorage.removeItem("professorSelectedTerm");
+    setSelectedTerm(null);
+    setSelectedCourse(null);
+    setSelectedLecture(null);
+    setMessages([]);
+    setStreamingContent("");
+    setCurrentQuiz(null);
+    setQuizResults(null);
+  };
+
+  const handleOpenCourseSelection = () => {
+    setSelectedCourse(null);
+    setSelectedLecture(null);
+    setMessages([]);
+    setStreamingContent("");
+    setCurrentQuiz(null);
+    setQuizResults(null);
+  };
+
   const handleBackToBatchSelection = () => {
     localStorage.removeItem("professorSelectedBatch");
     localStorage.removeItem("professorSelectedTerm");
@@ -679,6 +700,21 @@ const ProfessorAI = () => {
     );
   }
 
+  // Show course selection after term is selected
+  if (!selectedCourse) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background overflow-y-auto">
+        <ProfessorCourseSelection
+          batch={selectedBatch}
+          term={selectedTerm}
+          courses={availableCourses}
+          onCourseSelect={handleCourseSelect}
+          onBack={handleBackToTermSelection}
+        />
+      </div>
+    );
+  }
+
   // Quiz mode rendering
   if (mode === "Quiz") {
     // Show quiz loading
@@ -704,7 +740,10 @@ const ProfessorAI = () => {
               onModeChange={handleModeChange}
               selectedBatch={selectedBatch}
               onBatchChange={handleBatchSelect}
+              selectedTerm={selectedTerm}
+              onTermChange={handleTermSelect}
               courses={availableCourses}
+              onOpenCourseSelection={handleOpenCourseSelection}
             />
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center space-y-4">
@@ -740,7 +779,10 @@ const ProfessorAI = () => {
               onModeChange={handleModeChange}
               selectedBatch={selectedBatch}
               onBatchChange={handleBatchSelect}
+              selectedTerm={selectedTerm}
+              onTermChange={handleTermSelect}
               courses={availableCourses}
+              onOpenCourseSelection={handleOpenCourseSelection}
             />
             <div className="flex-1 flex items-center justify-center p-4">
               <QuizResults
@@ -778,7 +820,10 @@ const ProfessorAI = () => {
               onModeChange={handleModeChange}
               selectedBatch={selectedBatch}
               onBatchChange={handleBatchSelect}
+              selectedTerm={selectedTerm}
+              onTermChange={handleTermSelect}
               courses={availableCourses}
+              onOpenCourseSelection={handleOpenCourseSelection}
             />
             <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
               <QuizCard
@@ -818,7 +863,10 @@ const ProfessorAI = () => {
           onModeChange={handleModeChange}
           selectedBatch={selectedBatch}
           onBatchChange={handleBatchSelect}
+          selectedTerm={selectedTerm}
+          onTermChange={handleTermSelect}
           courses={availableCourses}
+          onOpenCourseSelection={handleOpenCourseSelection}
         />
 
         {/* Chat area */}
