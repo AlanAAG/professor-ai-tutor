@@ -35,10 +35,10 @@ interface ProfessorChatProps {
 }
 
 const quizSuggestions = [
-  "Quiz me on machine learning basics",
-  "I need a quiz on elasticity",
-  "Test me on supply and demand",
-  "Create a quiz about calculus derivatives",
+  "Quiz me on key concepts",
+  "Test my understanding of the main topics",
+  "Create a quiz on recent lectures",
+  "Help me review for an exam",
 ];
 
 export const ProfessorChat = ({
