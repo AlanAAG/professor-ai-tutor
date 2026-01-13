@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfessorChat } from "@/components/professor-ai/ProfessorChat";
 import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
+import { ProfessorTermSelection } from "@/components/professor-ai/ProfessorTermSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
 import { ProfessorSidebarNew } from "@/components/professor-ai/ProfessorSidebarNew";
 import { QuizCard, Quiz } from "@/components/professor-ai/QuizCard";
@@ -40,44 +41,71 @@ export interface Course {
   name: string;    // display name
 }
 
-// Define courses per batch from persona.json (id = db_key, name = display_name)
-const COURSES_BY_BATCH: Record<string, Course[]> = {
-  "2029": [
-    { id: "AIML", name: "How do machines see, hear or speak" },
-    { id: "Calculus", name: "Calculus" },
-    { id: "Dropshipping", name: "Dropshipping" },
-    { id: "PublicSpeaking", name: "How to own a stage" },
-    { id: "OOP", name: "OOP" },
-    { id: "DRP101", name: "How to build a dropshipping business" },
-    { id: "FinanceBasics", name: "How to understand basic financial terminology" },
-    { id: "LA101", name: "How to decode global trends and navigate economic transformations" },
-    { id: "MarketAnalysis", name: "How to read market for better decision making" },
-    { id: "Startup", name: "How to validate, shape, and launch a startup" },
-    { id: "Networking", name: "How to network effortlessly" },
-    { id: "Excel", name: "How to use excel" },
-    { id: "Statistics", name: "How to use statistics to build a better business" },
-    { id: "MarketGaps", name: "How to identify gaps in the market" },
-    { id: "MetaMarketing", name: "How to execute digital marketing on Meta" },
-    { id: "CRO", name: "How to execute CRO and increase AOV" },
-  ],
-  "2028": [
-    { id: "MarketResearch", name: "Market Research" },
-    { id: "Kickstarter", name: "Kickstarter Campaign" },
-    { id: "Prototyping", name: "Prototyping" },
-    { id: "FundraisingVideo", name: "Fundraising Video" },
-    { id: "CapstoneHours", name: "Capstone Hours" },
-    { id: "PublicSpeaking", name: "Public Speaking" },
-    { id: "Copywriting", name: "Copywriting" },
-    { id: "Web3", name: "Web3 & Blockchain" },
-    { id: "BusinessMetrics", name: "Business Metrics" },
-    { id: "VCFundraising", name: "VC Fundraising" },
-    { id: "IPLaw", name: "IP Law" },
-    { id: "PythonAI", name: "Python for AI" },
-    { id: "Strategy", name: "Business Strategy" },
-    { id: "InnovationImmersion", name: "Innovation Immersion" },
-    { id: "SEAsiaPolicy", name: "SE Asia Policy" },
-    { id: "Macroeconomics", name: "Macroeconomics" },
-  ],
+// Define courses per batch and term (id = db_key, name = display_name)
+const COURSES_BY_BATCH_TERM: Record<string, Record<string, Course[]>> = {
+  "2029": {
+    "term1": [
+      { id: "AIML", name: "How do machines see, hear or speak" },
+      { id: "Calculus", name: "Calculus" },
+      { id: "Dropshipping", name: "Dropshipping" },
+      { id: "PublicSpeaking", name: "How to own a stage" },
+      { id: "OOP", name: "OOP" },
+      { id: "DRP101", name: "How to build a dropshipping business" },
+      { id: "FinanceBasics", name: "How to understand basic financial terminology" },
+      { id: "LA101", name: "How to decode global trends and navigate economic transformations" },
+      { id: "MarketAnalysis", name: "How to read market for better decision making" },
+      { id: "Startup", name: "How to validate, shape, and launch a startup" },
+      { id: "Networking", name: "How to network effortlessly" },
+      { id: "Excel", name: "How to use excel" },
+      { id: "Statistics", name: "How to use statistics to build a better business" },
+      { id: "MarketGaps", name: "How to identify gaps in the market" },
+      { id: "MetaMarketing", name: "How to execute digital marketing on Meta" },
+      { id: "CRO", name: "How to execute CRO and increase AOV" },
+    ],
+    "term2": [
+      { id: "CareerLabs", name: "Career Labs" },
+      { id: "OfflineMarket", name: "How to Crack the offline Market" },
+      { id: "GlobalStartupEcon", name: "How to understand the Economics for Global Start-up ecosystem" },
+      { id: "D2CBusiness", name: "How to build a D2C Business" },
+      { id: "CapstoneHours", name: "Capstone Hours" },
+      { id: "BusinessMetrics", name: "How to use Business Metrics to Enhance Efficiency and Drive Innovation" },
+      { id: "TaxesCompliance", name: "How to understand Taxes and Compliances" },
+      { id: "EconomicForces", name: "How to understand Economics Forces that Shape the World" },
+      { id: "WorldCultures", name: "How to Connect World Cultures With Business Practices for Competitive Advantage" },
+      { id: "AIMarketing", name: "How can AI improve Marketing Strategies" },
+      { id: "BillionDollarBrand", name: "How to Influence Consumers to Build a Billion Dollar Brand" },
+    ],
+  },
+  "2028": {
+    "term3": [
+      { id: "MarketResearch", name: "Market Research" },
+      { id: "Kickstarter", name: "Kickstarter Campaign" },
+      { id: "Prototyping", name: "Prototyping" },
+      { id: "FundraisingVideo", name: "Fundraising Video" },
+      { id: "CapstoneHours", name: "Capstone Hours" },
+      { id: "PublicSpeaking", name: "Public Speaking" },
+      { id: "Copywriting", name: "Copywriting" },
+      { id: "Web3", name: "Web3 & Blockchain" },
+      { id: "BusinessMetrics", name: "Business Metrics" },
+      { id: "VCFundraising", name: "VC Fundraising" },
+      { id: "IPLaw", name: "IP Law" },
+      { id: "PythonAI", name: "Python for AI" },
+      { id: "Strategy", name: "Business Strategy" },
+      { id: "InnovationImmersion", name: "Innovation Immersion" },
+      { id: "SEAsiaPolicy", name: "SE Asia Policy" },
+      { id: "Macroeconomics", name: "Macroeconomics" },
+    ],
+    "term4": [
+      { id: "NudgeBehavior", name: "How to Nudge to understand human behaviour" },
+      { id: "SustainableNudges", name: "How to use nudges to promote sustainable and healthy behaviors" },
+      { id: "FinancialModels", name: "How to build Financial Models?" },
+      { id: "ImpactInvestor", name: "How to Think Like an Impact Investor: Risk, Return, and SROI" },
+      { id: "TalentManagement", name: "How to attract, manage, and retain talent" },
+      { id: "CrossCulturalLeadership", name: "How to negotiate and lead across diverse cultures and stakeholders" },
+      { id: "NonProfitBrand", name: "How to position & market your non-profit brand" },
+      { id: "SocialImpactVentures", name: "How to design and scale ventures delivering social impact with limited resources?" },
+    ],
+  },
 };
 
 const NO_MATERIALS_FALLBACK_PHRASES = [
@@ -93,6 +121,9 @@ const ProfessorAI = () => {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedBatch, setSelectedBatch] = useState<string | null>(() => {
     return localStorage.getItem("professorSelectedBatch");
+  });
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(() => {
+    return localStorage.getItem("professorSelectedTerm");
   });
   const [lectures, setLectures] = useState<Lecture[]>([]);
   const [lecturesLoading, setLecturesLoading] = useState(false);
@@ -133,8 +164,10 @@ const ProfessorAI = () => {
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<{ name: string; content: string } | null>(null);
 
-  // Get available courses for selected batch
-  const availableCourses = selectedBatch ? COURSES_BY_BATCH[selectedBatch] || [] : [];
+  // Get available courses for selected batch and term
+  const availableCourses = selectedBatch && selectedTerm 
+    ? COURSES_BY_BATCH_TERM[selectedBatch]?.[selectedTerm] || [] 
+    : [];
   
   // Filter lectures by selected course (matching class_name to db_key)
   const filteredLectures = selectedCourse 
@@ -496,6 +529,33 @@ const ProfessorAI = () => {
   const handleBatchSelect = (batchId: string) => {
     localStorage.setItem("professorSelectedBatch", batchId);
     setSelectedBatch(batchId);
+    // Clear term when batch changes
+    localStorage.removeItem("professorSelectedTerm");
+    setSelectedTerm(null);
+    setSelectedCourse(null);
+    setSelectedLecture(null);
+    setMessages([]);
+    setStreamingContent("");
+    setCurrentQuiz(null);
+    setQuizResults(null);
+  };
+
+  const handleTermSelect = (termId: string) => {
+    localStorage.setItem("professorSelectedTerm", termId);
+    setSelectedTerm(termId);
+    setSelectedCourse(null);
+    setSelectedLecture(null);
+    setMessages([]);
+    setStreamingContent("");
+    setCurrentQuiz(null);
+    setQuizResults(null);
+  };
+
+  const handleBackToBatchSelection = () => {
+    localStorage.removeItem("professorSelectedBatch");
+    localStorage.removeItem("professorSelectedTerm");
+    setSelectedBatch(null);
+    setSelectedTerm(null);
     setSelectedCourse(null);
     setSelectedLecture(null);
     setMessages([]);
@@ -602,6 +662,19 @@ const ProfessorAI = () => {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <ProfessorBatchSelection onBatchSelect={handleBatchSelect} />
+      </div>
+    );
+  }
+
+  // Show term selection after batch is selected
+  if (!selectedTerm) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <ProfessorTermSelection 
+          batch={selectedBatch} 
+          onTermSelect={handleTermSelect} 
+          onBack={handleBackToBatchSelection}
+        />
       </div>
     );
   }
