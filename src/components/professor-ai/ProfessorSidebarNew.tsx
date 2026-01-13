@@ -257,13 +257,14 @@ export const ProfessorSidebarNew = ({
       <div
         key={conversation.id}
         onClick={() => handleSelectConversation(conversation)}
-        className={
-          `group relative w-full text-left rounded-lg transition-colors cursor-pointer ` +
-          `flex items-start gap-2 p-3 pr-10 ` +
-          (isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70")
-        }
+        className={`
+          group w-full rounded-lg transition-colors cursor-pointer
+          flex items-center justify-between gap-2 p-3
+          ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70"}
+        `}
       >
-        <div className="flex-1 min-w-0">
+        {/* Left side - Title and metadata */}
+        <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1.5">
             {conversation.is_pinned && (
               <Pin
@@ -272,10 +273,10 @@ export const ProfessorSidebarNew = ({
                 }`}
               />
             )}
-            <span className="font-medium truncate text-sm">{conversation.title}</span>
+            <span className="font-medium text-sm truncate">{conversation.title}</span>
           </div>
           <div
-            className={`text-xs mt-0.5 ${
+            className={`text-xs mt-0.5 truncate ${
               isActive ? "opacity-80" : "text-muted-foreground"
             }`}
           >
@@ -283,8 +284,8 @@ export const ProfessorSidebarNew = ({
           </div>
         </div>
 
-        {/* Actions: pinned to the right edge, only visible on hover (or when active / open) */}
-        <div className="absolute right-2 top-2">
+        {/* Right side - 3-dots menu */}
+        <div className="shrink-0">
           <ChatActionsMenu
             conversationId={conversation.id}
             title={conversation.title}
