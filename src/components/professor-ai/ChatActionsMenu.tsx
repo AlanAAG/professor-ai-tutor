@@ -65,14 +65,11 @@ export const ChatActionsMenu = ({
             type="button"
             className={`
               relative z-20
-              h-7 w-7 shrink-0 rounded-md flex items-center justify-center
-              transition-opacity duration-150
-              ${isActive || menuOpen
-                ? "opacity-100"
-                : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
-              }
+              h-7 w-7 min-w-[20px] shrink-0 rounded-md flex items-center justify-center
+              opacity-100
+              transition-colors duration-150
               ${isActive
-                ? "text-primary-foreground/90 hover:text-primary-foreground hover:bg-primary-foreground/15"
+                ? "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/15"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
               }
             `}

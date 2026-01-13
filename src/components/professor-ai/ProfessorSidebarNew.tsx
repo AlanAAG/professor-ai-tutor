@@ -284,8 +284,7 @@ export const ProfessorSidebarNew = ({
           </div>
         </div>
 
-        {/* Right side - 3-dots menu */}
-        <div className="shrink-0">
+        <div className="shrink-0 min-w-[20px] flex-shrink-0 relative z-10">
           <ChatActionsMenu
             conversationId={conversation.id}
             title={conversation.title}
