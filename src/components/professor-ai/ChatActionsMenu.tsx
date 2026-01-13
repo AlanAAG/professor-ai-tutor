@@ -64,18 +64,18 @@ export const ChatActionsMenu = ({
           <button
             type="button"
             className={`
-              relative z-20
-              h-7 w-7 min-w-[20px] shrink-0 rounded-md flex items-center justify-center
-              opacity-100
-              transition-colors duration-150
-              ${isActive
-                ? "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/15"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-              }
+              relative z-50 block
+              h-7 w-7 min-w-[20px] shrink-0 rounded-md
+              flex items-center justify-center
+              text-gray-400
+              hover:bg-secondary/80
             `}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <span className="text-lg leading-none">...</span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 

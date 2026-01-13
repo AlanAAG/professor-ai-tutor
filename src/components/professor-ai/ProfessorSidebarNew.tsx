@@ -256,35 +256,40 @@ export const ProfessorSidebarNew = ({
     return (
       <div
         key={conversation.id}
-        onClick={() => handleSelectConversation(conversation)}
         className={`
-          group w-full rounded-lg transition-colors cursor-pointer
-          flex items-center justify-between gap-2 p-3
+          relative group w-full rounded-lg transition-colors
           ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70"}
         `}
       >
-        {/* Left side - Title and metadata */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-1.5">
-            {conversation.is_pinned && (
-              <Pin
-                className={`h-3 w-3 shrink-0 ${
-                  isActive ? "text-primary-foreground/80" : "text-primary"
-                }`}
-              />
-            )}
-            <span className="font-medium text-sm truncate">{conversation.title}</span>
+        {/* Navigation layer */}
+        <button
+          type="button"
+          onClick={() => handleSelectConversation(conversation)}
+          className="w-full text-left flex items-center justify-between gap-2 p-3 pr-8"
+        >
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-1.5">
+              {conversation.is_pinned && (
+                <Pin
+                  className={`h-3 w-3 shrink-0 ${
+                    isActive ? "text-primary-foreground/80" : "text-primary"
+                  }`}
+                />
+              )}
+              <span className="font-medium text-sm truncate">{conversation.title}</span>
+            </div>
+            <div
+              className={`text-xs mt-0.5 truncate ${
+                isActive ? "opacity-80" : "text-muted-foreground"
+              }`}
+            >
+              {getDisplayName(conversation.class_id)} • {formatDate(conversation.updated_at)}
+            </div>
           </div>
-          <div
-            className={`text-xs mt-0.5 truncate ${
-              isActive ? "opacity-80" : "text-muted-foreground"
-            }`}
-          >
-            {getDisplayName(conversation.class_id)} • {formatDate(conversation.updated_at)}
-          </div>
-        </div>
+        </button>
 
-        <div className="shrink-0 min-w-[20px] flex-shrink-0 relative z-10">
+        {/* Menu layer (absolute, sibling to navigation) */}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-50 block">
           <ChatActionsMenu
             conversationId={conversation.id}
             title={conversation.title}
