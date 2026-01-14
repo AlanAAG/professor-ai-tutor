@@ -447,8 +447,8 @@ export const ProfessorChat = ({
                 <Paperclip className="w-4 h-4" />
               </Button>
               
-              {/* Input container with send button */}
-              <div className="flex-1 relative">
+              {/* Input container with send button - properly centered */}
+              <div className="flex-1 relative flex items-center">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -468,14 +468,14 @@ export const ProfessorChat = ({
                   }
                   disabled={isInputDisabled}
                   rows={1}
-                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-12 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
+                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-14 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
                   style={{ minHeight: '48px' }}
                 />
                 <Button
                   type="submit"
                   disabled={isInputDisabled || !input.trim()}
                   size="sm"
-                  className="absolute right-1.5 bottom-1.5 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

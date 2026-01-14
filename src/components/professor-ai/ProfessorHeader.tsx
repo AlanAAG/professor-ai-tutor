@@ -65,20 +65,21 @@ export const ProfessorHeader = ({
   const termOptions = TERM_OPTIONS_BY_BATCH[selectedBatch] || [];
   const selectedTermLabel = termOptions.find(t => t.value === selectedTerm)?.label || selectedTerm;
 
-  // Get a short, readable course name for mobile
+  // Get a short, readable course name for mobile - show START of title
   const getMobileCourseLabel = () => {
     if (!selectedCourseDisplay) return "Select Course";
-    // Extract first meaningful words, max ~15 chars
-    const words = selectedCourseDisplay.replace(/^How to /i, '').split(' ');
-    let label = '';
-    for (const word of words) {
-      if ((label + ' ' + word).trim().length <= 15) {
-        label = (label + ' ' + word).trim();
-      } else {
-        break;
-      }
+    // Remove "How to" prefix if present, then show first ~18 chars
+    const cleanedName = selectedCourseDisplay.replace(/^How to /i, '');
+    if (cleanedName.length <= 18) {
+      return cleanedName;
     }
-    return label || words[0].substring(0, 12);
+    // Truncate at word boundary if possible
+    const truncated = cleanedName.substring(0, 18);
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > 10) {
+      return truncated.substring(0, lastSpace) + '...';
+    }
+    return truncated + '...';
   };
 
   return (

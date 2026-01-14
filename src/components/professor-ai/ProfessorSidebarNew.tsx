@@ -94,7 +94,7 @@ export const ProfessorSidebarNew = ({
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [userName, setUserName] = useState<string | undefined>();
 
-  // Load user info
+  // Load user info and persist across refreshes
   useEffect(() => {
     const loadUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -111,6 +111,7 @@ export const ProfessorSidebarNew = ({
         
         // If no name in metadata, extract a nice name from email
         // e.g., "john.doe@email.com" -> "John Doe"
+        // e.g., "samuel.estrada_bmt2029@tetr.com" -> "Samuel Estrada Bmt2029"
         if (nameFromMetadata) {
           setUserName(nameFromMetadata);
         } else if (email) {
@@ -123,9 +124,47 @@ export const ProfessorSidebarNew = ({
             .join(' ');
           setUserName(formattedName);
         }
+      } else {
+        // No user logged in
+        setUserEmail(undefined);
+        setUserName(undefined);
       }
     };
+    
     loadUser();
+    
+    // Also listen for auth state changes to update user info when refreshed
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const email = session.user.email;
+        setUserEmail(email);
+        
+        const nameFromMetadata = 
+          session.user.user_metadata?.full_name || 
+          session.user.user_metadata?.name ||
+          session.user.user_metadata?.display_name ||
+          session.user.user_metadata?.preferred_username;
+        
+        if (nameFromMetadata) {
+          setUserName(nameFromMetadata);
+        } else if (email) {
+          const emailPrefix = email.split('@')[0];
+          const formattedName = emailPrefix
+            .replace(/[._-]/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+          setUserName(formattedName);
+        }
+      } else {
+        setUserEmail(undefined);
+        setUserName(undefined);
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadConversations = useCallback(async () => {
@@ -201,6 +240,10 @@ export const ProfessorSidebarNew = ({
   const regularConversations = filteredConversations.filter(c => !c.is_pinned);
 
   const handleSelectConversation = (conversation: Conversation) => {
+    // Prevent re-selecting the same conversation (fixes jumping issue on double-click)
+    if (activeConversationId === conversation.id) {
+      return;
+    }
     if (onSelectConversation) {
       onSelectConversation(conversation);
     }
@@ -581,17 +624,17 @@ export const ProfessorSidebarNew = ({
       <Sheet open={isOpen} onOpenChange={onToggle}>
         <SheetContent 
           side="left" 
-          className="w-80 p-0 bg-card border-r border-border lg:hidden"
+          className="w-80 p-0 bg-card border-r border-border lg:hidden z-50"
         >
           {sidebarContent(true)}
         </SheetContent>
       </Sheet>
 
-      {/* Desktop (lg+): Fixed sidebar */}
+      {/* Desktop (lg+): Fixed sidebar - z-30 to stay below any modals but visible */}
       <div 
         className={`
           hidden lg:flex
-          fixed left-0 top-0 bottom-0 z-40
+          fixed left-0 top-0 bottom-0 z-30
           bg-card border-r border-border
           flex-col
           transition-all duration-300 ease-in-out
