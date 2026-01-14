@@ -99,7 +99,9 @@ export const ProfessorSidebarNew = ({
     const loadUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUserEmail(user.email);
+        const email = user.email;
+        setUserEmail(email);
+        
         // Try multiple metadata fields for name
         const nameFromMetadata = 
           user.user_metadata?.full_name || 
@@ -107,9 +109,20 @@ export const ProfessorSidebarNew = ({
           user.user_metadata?.display_name ||
           user.user_metadata?.preferred_username;
         
-        // If no name in metadata, use email prefix as display name
-        const displayName = nameFromMetadata || user.email?.split('@')[0];
-        setUserName(displayName);
+        // If no name in metadata, extract a nice name from email
+        // e.g., "john.doe@email.com" -> "John Doe"
+        if (nameFromMetadata) {
+          setUserName(nameFromMetadata);
+        } else if (email) {
+          const emailPrefix = email.split('@')[0];
+          // Convert email prefix to readable name (replace dots, underscores with spaces and capitalize)
+          const formattedName = emailPrefix
+            .replace(/[._-]/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+          setUserName(formattedName);
+        }
       }
     };
     loadUser();
@@ -318,7 +331,7 @@ export const ProfessorSidebarNew = ({
   };
 
   const userInitials = getInitials(userEmail, userName);
-  const displayName = userName || userEmail?.split('@')[0] || 'User';
+  const displayName = userName || (userEmail ? userEmail.split('@')[0] : 'Guest');
 
   // Sidebar content - shared between mobile and desktop
   const sidebarContent = (isMobile: boolean) => (

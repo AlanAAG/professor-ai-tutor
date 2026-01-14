@@ -65,40 +65,59 @@ export const ProfessorHeader = ({
   const termOptions = TERM_OPTIONS_BY_BATCH[selectedBatch] || [];
   const selectedTermLabel = termOptions.find(t => t.value === selectedTerm)?.label || selectedTerm;
 
+  // Get a short, readable course name for mobile
+  const getMobileCourseLabel = () => {
+    if (!selectedCourseDisplay) return "Select Course";
+    // Extract first meaningful words, max ~15 chars
+    const words = selectedCourseDisplay.replace(/^How to /i, '').split(' ');
+    let label = '';
+    for (const word of words) {
+      if ((label + ' ' + word).trim().length <= 15) {
+        label = (label + ' ' + word).trim();
+      } else {
+        break;
+      }
+    }
+    return label || words[0].substring(0, 12);
+  };
+
   return (
     <div className="bg-background border-b border-border/50 py-2 px-2 md:px-4">
-      {/* Mobile/Tablet layout - single row with all controls */}
-      <div className="flex lg:hidden items-center gap-1.5">
-        {/* Hamburger menu */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSidebar}
-          className="h-8 w-8 shrink-0"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
-        
-        {/* Logo */}
-        <span className="text-sm font-bold text-primary shrink-0">AskTETR</span>
+      {/* Mobile/Tablet layout - two rows for better readability */}
+      <div className="flex lg:hidden flex-col gap-2">
+        {/* Top row: Menu, Logo, Course */}
+        <div className="flex items-center gap-2">
+          {/* Hamburger menu */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-9 w-9 shrink-0"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          
+          {/* Logo */}
+          <span className="text-base font-bold text-primary shrink-0">AskTETR</span>
 
-        {/* Scrollable selectors */}
-        <div className="flex items-center gap-1 flex-1 overflow-x-auto min-w-0 ml-1">
-          {/* Course selector */}
+          {/* Course selector - takes remaining space */}
           <Button
             variant="outline"
-            className="min-w-[80px] max-w-[120px] bg-secondary/50 border-border/50 text-xs h-7 justify-start px-2"
+            className="flex-1 min-w-0 bg-secondary/50 border-border/50 text-sm h-9 justify-start px-3"
             onClick={onOpenCourseSelection}
           >
             <span className="truncate">
-              {selectedCourseDisplay ? selectedCourseDisplay.split(' ').slice(0, 2).join(' ') + '...' : "Course"}
+              {getMobileCourseLabel()}
             </span>
           </Button>
-
+        </div>
+        
+        {/* Bottom row: Mode, Term, Batch - evenly spaced */}
+        <div className="flex items-center gap-2 px-1">
           {/* Mode selector */}
           <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
-            <SelectTrigger className="w-[60px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
-              <SelectValue />
+            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+              <SelectValue placeholder="Mode" />
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
               {modeOptions.map(opt => (
@@ -111,8 +130,8 @@ export const ProfessorHeader = ({
 
           {/* Term selector */}
           <Select value={selectedTerm} onValueChange={onTermChange}>
-            <SelectTrigger className="w-[55px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
-              <span className="truncate">T{selectedTerm.replace('term', '')}</span>
+            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+              <span className="truncate">{selectedTermLabel}</span>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
               {termOptions.map(term => (
@@ -125,8 +144,8 @@ export const ProfessorHeader = ({
 
           {/* Batch selector */}
           <Select value={selectedBatch} onValueChange={onBatchChange}>
-            <SelectTrigger className="w-[55px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
-              <span className="truncate">{selectedBatch.slice(-2)}</span>
+            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+              <span className="truncate">{selectedBatch}</span>
             </SelectTrigger>
             <SelectContent className="bg-popover border-border">
               <SelectItem value="2029">2029</SelectItem>
