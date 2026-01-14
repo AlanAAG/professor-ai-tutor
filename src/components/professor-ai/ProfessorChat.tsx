@@ -295,7 +295,7 @@ export const ProfessorChat = ({
                         type="submit"
                         disabled={isLoading || !input.trim()}
                         size="sm"
-                        className="absolute right-1.5 bottom-1.5 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center"
                       >
                         {isLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

@@ -1,7 +1,16 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { 
-  Plus, MessageSquare, LogOut, MessageCircle, Search, Pin, Archive, 
-  Menu, PanelLeftClose, ChevronUp, X 
+import {
+  Plus,
+  MessageSquare,
+  LogOut,
+  MessageCircle,
+  Search,
+  Pin,
+  Archive,
+  Menu,
+  PanelLeftClose,
+  ChevronUp,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import personas from "@/data/personas.json";
+import { cn } from "@/lib/utils";
 import { ChatActionsMenu } from "./ChatActionsMenu";
 import {
   DropdownMenu,
@@ -94,78 +104,87 @@ export const ProfessorSidebarNew = ({
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [userName, setUserName] = useState<string | undefined>();
 
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Track desktop breakpoint (lg = 1024px) to avoid rendering mobile Sheet overlay on desktop
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, []);
+
+  const applyUserInfo = useCallback((user: { email?: string; user_metadata?: any } | null) => {
+    if (!user) {
+      setUserEmail(undefined);
+      setUserName(undefined);
+      return;
+    }
+
+    const email = user.email;
+    setUserEmail(email);
+
+    const nameFromMetadata =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.user_metadata?.display_name ||
+      user.user_metadata?.preferred_username;
+
+    if (nameFromMetadata) {
+      setUserName(String(nameFromMetadata));
+      return;
+    }
+
+    if (email) {
+      const emailPrefix = email.split("@")[0];
+      const formattedName = emailPrefix
+        .replace(/[._-]/g, " ")
+        .split(" ")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ");
+      setUserName(formattedName || undefined);
+      return;
+    }
+
+    setUserName(undefined);
+  }, []);
+
   // Load user info and persist across refreshes
   useEffect(() => {
+    let alive = true;
+
     const loadUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const email = user.email;
-        setUserEmail(email);
-        
-        // Try multiple metadata fields for name
-        const nameFromMetadata = 
-          user.user_metadata?.full_name || 
-          user.user_metadata?.name ||
-          user.user_metadata?.display_name ||
-          user.user_metadata?.preferred_username;
-        
-        // If no name in metadata, extract a nice name from email
-        // e.g., "john.doe@email.com" -> "John Doe"
-        // e.g., "samuel.estrada_bmt2029@tetr.com" -> "Samuel Estrada Bmt2029"
-        if (nameFromMetadata) {
-          setUserName(nameFromMetadata);
-        } else if (email) {
-          const emailPrefix = email.split('@')[0];
-          // Convert email prefix to readable name (replace dots, underscores with spaces and capitalize)
-          const formattedName = emailPrefix
-            .replace(/[._-]/g, ' ')
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
-          setUserName(formattedName);
-        }
-      } else {
-        // No user logged in
-        setUserEmail(undefined);
-        setUserName(undefined);
+      // On refresh, getUser() can temporarily return null while session is being hydrated.
+      // getSession() is the reliable source for initial render.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!alive) return;
+      applyUserInfo(sessionData.session?.user ?? null);
+
+      // Fallback: if session isn't ready yet, try getUser() once.
+      if (!sessionData.session) {
+        const { data: userData } = await supabase.auth.getUser();
+        if (!alive) return;
+        applyUserInfo(userData.user ?? null);
       }
     };
-    
+
     loadUser();
-    
-    // Also listen for auth state changes to update user info when refreshed
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        const email = session.user.email;
-        setUserEmail(email);
-        
-        const nameFromMetadata = 
-          session.user.user_metadata?.full_name || 
-          session.user.user_metadata?.name ||
-          session.user.user_metadata?.display_name ||
-          session.user.user_metadata?.preferred_username;
-        
-        if (nameFromMetadata) {
-          setUserName(nameFromMetadata);
-        } else if (email) {
-          const emailPrefix = email.split('@')[0];
-          const formattedName = emailPrefix
-            .replace(/[._-]/g, ' ')
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
-          setUserName(formattedName);
-        }
-      } else {
-        setUserEmail(undefined);
-        setUserName(undefined);
-      }
+
+    // Listen for auth state changes to update user info when refreshed
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!alive) return;
+      applyUserInfo(session?.user ?? null);
     });
-    
+
     return () => {
+      alive = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [applyUserInfo]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -323,7 +342,7 @@ export const ProfessorSidebarNew = ({
       <div
         key={conversation.id}
         className={`
-          relative group w-full rounded-lg transition-colors overflow-visible
+          relative group w-full rounded-lg transition-colors overflow-visible min-w-0
           grid grid-cols-[1fr_auto] items-center
           ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70"}
         `}
@@ -331,11 +350,16 @@ export const ProfessorSidebarNew = ({
         {/* Column 1 (1fr): Open chat */}
         <button
           type="button"
+          disabled={isActive}
           onClick={() => handleSelectConversation(conversation)}
-          className="col-start-1 col-end-2 w-full min-w-0 text-left flex items-center justify-between gap-2 p-3"
+          className={cn(
+            "col-start-1 col-end-2 w-full min-w-0 text-left flex items-center justify-between gap-2 p-3",
+            isActive && "cursor-default"
+          )}
+          aria-current={isActive ? "page" : undefined}
         >
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className="flex items-center gap-1.5">
+          <div className="flex-1 min-w-0 overflow-hidden text-left w-full">
+            <div className="flex items-center gap-1.5 min-w-0">
               {conversation.is_pinned && (
                 <Pin
                   className={`h-3 w-3 shrink-0 ${
@@ -343,7 +367,9 @@ export const ProfessorSidebarNew = ({
                   }`}
                 />
               )}
-              <span className="font-medium text-sm truncate">{conversation.title}</span>
+              <span className="font-medium text-sm truncate block w-full text-left">
+                {conversation.title}
+              </span>
             </div>
             <div
               className={`text-xs mt-0.5 truncate ${
@@ -621,14 +647,22 @@ export const ProfessorSidebarNew = ({
   return (
     <TooltipProvider delayDuration={300}>
       {/* Mobile/Tablet: Sheet drawer triggered by hamburger in header */}
-      <Sheet open={isOpen} onOpenChange={onToggle}>
-        <SheetContent 
-          side="left" 
-          className="w-80 p-0 bg-card border-r border-border lg:hidden z-50"
+      {!isDesktop && (
+        <Sheet
+          open={isOpen}
+          onOpenChange={(open) => {
+            // only react to state changes on mobile/tablet
+            if (open !== isOpen) onToggle();
+          }}
         >
-          {sidebarContent(true)}
-        </SheetContent>
-      </Sheet>
+          <SheetContent
+            side="left"
+            className="w-80 p-0 bg-card border-r border-border lg:hidden z-50"
+          >
+            {sidebarContent(true)}
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Desktop (lg+): Fixed sidebar - z-30 to stay below any modals but visible */}
       <div 

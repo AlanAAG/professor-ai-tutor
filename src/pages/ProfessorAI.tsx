@@ -730,7 +730,7 @@ const ProfessorAI = () => {
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
+          <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
             <ProfessorHeader
               sidebarOpen={sidebarOpen}
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
