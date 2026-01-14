@@ -67,8 +67,17 @@ export const ProfessorHeader = ({
 
   return <div className="bg-background border-b border-border/50 py-2 px-3 md:px-4">
       <div className="flex justify-between items-center">
-        {/* Left side - Menu and Title */}
+        {/* Left side - Menu (hamburger for mobile) and Title */}
         <div className="flex items-center gap-2">
+          {/* Mobile hamburger menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-9 w-9 md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
           
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-primary">AskTETR</span>
