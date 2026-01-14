@@ -730,7 +730,7 @@ const ProfessorAI = () => {
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "md:ml-80" : "md:ml-14"}`}>
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
             <ProfessorHeader
               sidebarOpen={sidebarOpen}
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -769,7 +769,7 @@ const ProfessorAI = () => {
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "md:ml-80" : "md:ml-14"}`}>
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
             <ProfessorHeader
               sidebarOpen={sidebarOpen}
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -810,7 +810,7 @@ const ProfessorAI = () => {
             onLogout={handleLogout}
             onFeedback={handleFeedback}
           />
-          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "md:ml-80" : "md:ml-14"}`}>
+          <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
             <ProfessorHeader
               sidebarOpen={sidebarOpen}
               onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
@@ -852,7 +852,7 @@ const ProfessorAI = () => {
       />
 
       {/* Main content area - offset by sidebar width */}
-      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "md:ml-80" : "md:ml-14"}`}>
+      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
         {/* Header with selectors */}
         <ProfessorHeader
           sidebarOpen={sidebarOpen}

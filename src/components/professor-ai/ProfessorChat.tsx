@@ -253,9 +253,9 @@ export const ProfessorChat = ({
             
             {/* Input area for Quiz mode and Study mode */}
             {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && (
-              <div className="w-full max-w-3xl mt-8 md:mt-12 px-2">
+              <div className="w-full max-w-3xl mt-6 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
-                  <div className="relative flex items-center gap-2">
+                  <div className="flex items-end gap-2">
                     {/* File upload button */}
                     <input
                       ref={fileInputRef}
@@ -268,7 +268,7 @@ export const ProfessorChat = ({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-12 w-12 shrink-0 hover:bg-secondary rounded-full"
+                      className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full mb-0.5"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isLoading}
                     >
@@ -288,14 +288,14 @@ export const ProfessorChat = ({
                         placeholder={mode === "Quiz" ? "What topic should I quiz you on?" : "Ask anything..."}
                         disabled={isLoading}
                         rows={1}
-                        className="w-full bg-secondary/60 backdrop-blur-md border border-border/50 rounded-2xl px-6 py-4 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none overflow-y-auto max-h-[200px]"
-                        style={{ minHeight: '56px' }}
+                        className="w-full bg-secondary/60 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-12 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all resize-none overflow-y-auto max-h-[200px]"
+                        style={{ minHeight: '48px' }}
                       />
                       <Button
                         type="submit"
                         disabled={isLoading || !input.trim()}
                         size="sm"
-                        className="absolute right-2 bottom-2 h-10 w-10 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
+                        className="absolute right-1.5 bottom-1.5 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md"
                       >
                         {isLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -310,7 +310,7 @@ export const ProfessorChat = ({
                 {/* Uploaded file indicator */}
                 {uploadedFile && (
                   <div className="flex items-center justify-center gap-2 mt-3 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30 max-w-md mx-auto">
-                    <Paperclip className="w-4 h-4 text-primary" />
+                    <Paperclip className="w-4 h-4 text-primary shrink-0" />
                     <span className="text-sm text-chat-text truncate">{uploadedFile.name}</span>
                     <Button
                       variant="ghost"
@@ -408,12 +408,12 @@ export const ProfessorChat = ({
       </div>
 
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4">
+      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom">
         <div className="max-w-3xl mx-auto space-y-2">
           {/* Uploaded file indicator */}
           {uploadedFile && (
             <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
-              <Paperclip className="w-4 h-4 text-primary" />
+              <Paperclip className="w-4 h-4 text-primary shrink-0" />
               <span className="text-sm text-chat-text truncate flex-1">{uploadedFile.name}</span>
               <Button
                 variant="ghost"
@@ -427,7 +427,7 @@ export const ProfessorChat = ({
           )}
           
           <form onSubmit={handleSubmit}>
-            <div className="relative flex items-center gap-2">
+            <div className="flex items-end gap-2">
               {/* File upload button */}
               <input
                 ref={fileInputRef}
@@ -440,14 +440,15 @@ export const ProfessorChat = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full"
+                className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full mb-0.5"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading}
               >
                 <Paperclip className="w-4 h-4" />
               </Button>
               
-              <div className="relative flex-1">
+              {/* Input container with send button */}
+              <div className="flex-1 relative">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -467,8 +468,8 @@ export const ProfessorChat = ({
                   }
                   disabled={isInputDisabled}
                   rows={1}
-                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl px-5 py-3.5 pr-14 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
-                  style={{ minHeight: '52px' }}
+                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-12 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
+                  style={{ minHeight: '48px' }}
                 />
                 <Button
                   type="submit"

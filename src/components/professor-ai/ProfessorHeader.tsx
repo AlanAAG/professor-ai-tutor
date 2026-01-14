@@ -1,4 +1,4 @@
-import { Menu, X, LogOut, MessageSquare } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Mode, Course } from "@/pages/ProfessorAI";
@@ -66,23 +66,83 @@ export const ProfessorHeader = ({
   const selectedTermLabel = termOptions.find(t => t.value === selectedTerm)?.label || selectedTerm;
 
   return (
-    <div className="bg-background border-b border-border/50 py-2 px-3 md:px-4">
-      <div className="flex items-center gap-2">
-        {/* Mobile hamburger menu button */}
+    <div className="bg-background border-b border-border/50 py-2 px-2 md:px-4">
+      {/* Mobile/Tablet layout - single row with all controls */}
+      <div className="flex lg:hidden items-center gap-1.5">
+        {/* Hamburger menu */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className="h-9 w-9 shrink-0 md:hidden"
+          className="h-8 w-8 shrink-0"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-4 w-4" />
         </Button>
         
+        {/* Logo */}
+        <span className="text-sm font-bold text-primary shrink-0">AskTETR</span>
+
+        {/* Scrollable selectors */}
+        <div className="flex items-center gap-1 flex-1 overflow-x-auto min-w-0 ml-1">
+          {/* Course selector */}
+          <Button
+            variant="outline"
+            className="min-w-[80px] max-w-[120px] bg-secondary/50 border-border/50 text-xs h-7 justify-start px-2"
+            onClick={onOpenCourseSelection}
+          >
+            <span className="truncate">
+              {selectedCourseDisplay ? selectedCourseDisplay.split(' ').slice(0, 2).join(' ') + '...' : "Course"}
+            </span>
+          </Button>
+
+          {/* Mode selector */}
+          <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
+            <SelectTrigger className="w-[60px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {modeOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Term selector */}
+          <Select value={selectedTerm} onValueChange={onTermChange}>
+            <SelectTrigger className="w-[55px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
+              <span className="truncate">T{selectedTerm.replace('term', '')}</span>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {termOptions.map(term => (
+                <SelectItem key={term.value} value={term.value}>
+                  {term.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Batch selector */}
+          <Select value={selectedBatch} onValueChange={onBatchChange}>
+            <SelectTrigger className="w-[55px] shrink-0 bg-secondary/50 border-border/50 text-xs h-7 px-2">
+              <span className="truncate">{selectedBatch.slice(-2)}</span>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              <SelectItem value="2029">2029</SelectItem>
+              <SelectItem value="2028">2028</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Desktop layout - centered selectors */}
+      <div className="hidden lg:flex items-center gap-2">
         {/* Logo */}
         <span className="text-lg font-bold text-primary shrink-0">AskTETR</span>
 
         {/* Desktop selectors - centered */}
-        <div className="hidden md:flex items-center gap-2 flex-1 justify-center max-w-3xl px-4">
+        <div className="flex items-center gap-2 flex-1 justify-center max-w-3xl px-4">
           <Button
             variant="outline"
             className="w-[220px] bg-secondary/50 border-border/50 text-sm h-9 justify-start"
@@ -130,34 +190,8 @@ export const ProfessorHeader = ({
           </Select>
         </div>
 
-        {/* Mobile selectors - single row after logo */}
-        <div className="flex md:hidden items-center gap-1.5 flex-1 overflow-x-auto min-w-0">
-          <Button
-            variant="outline"
-            className="flex-1 min-w-0 bg-secondary/50 border-border/50 text-xs h-8 justify-start"
-            onClick={onOpenCourseSelection}
-          >
-            <span className="truncate">
-              {selectedCourseDisplay || "Select course"}
-            </span>
-          </Button>
-
-          <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
-            <SelectTrigger className="w-[65px] shrink-0 bg-secondary/50 border-border/50 text-xs h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {modeOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Desktop right side placeholder for balance */}
-        <div className="hidden md:block w-[100px]" />
+        <div className="w-[100px]" />
       </div>
     </div>
   );

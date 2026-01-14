@@ -564,20 +564,20 @@ export const ProfessorSidebarNew = ({
 
   return (
     <TooltipProvider delayDuration={300}>
-      {/* Mobile: Sheet drawer triggered by hamburger in header */}
+      {/* Mobile/Tablet: Sheet drawer triggered by hamburger in header */}
       <Sheet open={isOpen} onOpenChange={onToggle}>
         <SheetContent 
           side="left" 
-          className="w-80 p-0 bg-card border-r border-border md:hidden"
+          className="w-80 p-0 bg-card border-r border-border lg:hidden"
         >
           {sidebarContent(true)}
         </SheetContent>
       </Sheet>
 
-      {/* Desktop: Fixed sidebar */}
+      {/* Desktop (lg+): Fixed sidebar */}
       <div 
         className={`
-          hidden md:flex
+          hidden lg:flex
           fixed left-0 top-0 bottom-0 z-40
           bg-card border-r border-border
           flex-col
