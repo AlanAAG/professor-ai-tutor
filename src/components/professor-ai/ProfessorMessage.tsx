@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import ReactMarkdown from 'react-markdown';
-import type { Message } from "@/pages/ProfessorAI";
+import type { Message } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

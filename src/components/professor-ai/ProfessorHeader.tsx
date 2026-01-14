@@ -1,7 +1,8 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Mode, Course } from "@/pages/ProfessorAI";
+import type { Mode } from "./types";
+import type { Course } from "@/data/courses";
 
 interface ProfessorHeaderProps {
   sidebarOpen: boolean;

@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Mode, Message, Lecture } from "@/pages/ProfessorAI";
+import type { Mode, Message, Lecture } from "./types";
 
 interface UploadedFile {
   name: string;

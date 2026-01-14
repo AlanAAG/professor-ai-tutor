@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Mode, Lecture, Course } from "@/pages/ProfessorAI";
+import type { Mode, Lecture } from "./types";
+import type { Course } from "@/data/courses";
 
 interface ProfessorSidebarProps {
   mode: Mode;
