@@ -257,15 +257,16 @@ export const ProfessorSidebarNew = ({
       <div
         key={conversation.id}
         className={`
-          relative group w-full rounded-lg transition-colors
+          relative group w-full rounded-lg transition-colors overflow-visible
+          grid grid-cols-[1fr_auto] items-center
           ${isActive ? "bg-primary text-primary-foreground" : "hover:bg-secondary/70"}
         `}
       >
-        {/* Navigation layer */}
+        {/* Column 1 (1fr): Open chat */}
         <button
           type="button"
           onClick={() => handleSelectConversation(conversation)}
-          className="w-full text-left flex items-center justify-between gap-2 p-3 pr-8"
+          className="col-start-1 col-end-2 w-full min-w-0 text-left flex items-center justify-between gap-2 p-3"
         >
           <div className="flex-1 min-w-0 overflow-hidden">
             <div className="flex items-center gap-1.5">
@@ -288,8 +289,8 @@ export const ProfessorSidebarNew = ({
           </div>
         </button>
 
-        {/* Menu layer (absolute, sibling to navigation) */}
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-50 block">
+        {/* Column 2 (auto): Menu */}
+        <div className="col-start-2 col-end-3 flex items-center justify-center px-2 overflow-visible relative z-50">
           <ChatActionsMenu
             conversationId={conversation.id}
             title={conversation.title}
