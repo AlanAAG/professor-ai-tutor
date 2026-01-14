@@ -387,9 +387,9 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
   if (isUser) {
     return (
       <div className="flex justify-end animate-fade-in">
-        <div className="max-w-[85%] md:max-w-[75%] max-w-full overflow-hidden">
-          <div className="bg-foreground text-background px-4 py-3 rounded-2xl rounded-br-sm shadow-md overflow-hidden">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+        <div className="max-w-[85%] md:max-w-[75%] overflow-hidden">
+          <div className="bg-foreground text-background px-4 py-3 rounded-2xl rounded-br-sm shadow-md overflow-hidden max-w-full">
+            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
               {message.content}
             </p>
           </div>
@@ -407,9 +407,9 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
       </div>
       
       {/* Message Content */}
-      <div className="flex-1 min-w-0 space-y-1 overflow-hidden">
+      <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
         {/* Content area with proper typography */}
-        <div className="text-[15px] leading-7 text-chat-text break-words overflow-hidden">
+        <div className="text-[15px] leading-7 text-chat-text break-words whitespace-pre-wrap overflow-hidden max-w-full [overflow-wrap:anywhere]">
           {renderContentWithLatex(message.content)}
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />

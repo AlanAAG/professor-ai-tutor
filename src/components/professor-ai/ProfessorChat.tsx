@@ -64,13 +64,46 @@ export const ProfessorChat = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [lastUserQuery, setLastUserQuery] = useState<string>("");
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef(true);
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
+  // Track if user is at bottom
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
+  };
+
+  // Auto-scroll on new messages
   useEffect(() => {
-    scrollToBottom();
+    if (isAtBottomRef.current) {
+      scrollToBottom();
+    }
   }, [messages, isLoading, streamingContent]);
+
+  // ResizeObserver for dynamic content (LaTeX rendering)
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (isAtBottomRef.current) {
+        scrollToBottom("auto");
+      }
+    });
+
+    // Observe the scroll content
+    const scrollContent = container.querySelector('.max-w-3xl');
+    if (scrollContent) {
+      resizeObserver.observe(scrollContent);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,7 +394,12 @@ export const ProfessorChat = ({
   return (
     <main className="flex flex-col h-full bg-background overflow-hidden">
       {/* Messages area - flex-1 to take available space */}
-      <div className="flex-1 overflow-y-auto" style={{ minHeight: 0 }}>
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto overflow-x-hidden" 
+        style={{ minHeight: 0 }}
+      >
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {messages.map((message, index) => {
             // Find the preceding user message for feedback context
@@ -408,8 +446,8 @@ export const ProfessorChat = ({
       </div>
 
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-[100vw] box-border">
-        <div className="max-w-3xl mx-auto space-y-2 w-full box-border">
+      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
+        <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
           {/* Uploaded file indicator */}
           {uploadedFile && (
             <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
@@ -448,7 +486,7 @@ export const ProfessorChat = ({
               </Button>
               
               {/* Input container with send button - properly centered */}
-              <div className="flex-1 relative flex items-center">
+              <div className="flex-1 min-w-0 relative flex items-center overflow-hidden">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -475,7 +513,7 @@ export const ProfessorChat = ({
                   type="submit"
                   disabled={isInputDisabled || !input.trim()}
                   size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center flex-shrink-0"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

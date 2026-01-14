@@ -84,8 +84,22 @@ serve(async (req) => {
     // IMPORTANT: Send null/empty for selectedLecture if "All Lectures" is selected
     const lectureValue = body.selectedLecture === "__all__" ? null : (body.selectedLecture || null);
     
+    // Build system message with formatting instructions
+    const systemInstructions = `When providing Excel formulas, ALWAYS wrap them in Markdown code blocks (e.g., \`=SUM(A1:B1)\`).
+
+When providing Mathematical equations, ALWAYS use LaTeX wrapped in double dollar signs (e.g., $$x = \\frac{-b}{2a}$$).
+
+Use clear bullet points and bold text for lists of definitions.`;
+
+    // Prepend system message if not already present
+    const messages = body.messages || [];
+    const hasSystemMessage = messages.length > 0 && messages[0].role === "system";
+    const finalMessages = hasSystemMessage 
+      ? [{ ...messages[0], content: `${systemInstructions}\n\n${messages[0].content}` }, ...messages.slice(1)]
+      : [{ role: "system", content: systemInstructions }, ...messages];
+
     const payload = {
-      messages: body.messages || [],
+      messages: finalMessages,
       mode: body.mode || "Study",
       selectedCourse: body.selectedCourse || null, // Send the db_key
       selectedLecture: lectureValue, // null or lecture title
