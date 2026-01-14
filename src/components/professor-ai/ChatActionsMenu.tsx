@@ -63,15 +63,9 @@ export const ChatActionsMenu = ({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className={`
-              relative z-50 block
-              h-7 w-7 min-w-[20px] shrink-0 rounded-md
-              flex items-center justify-center
-              bg-red-500
-              hover:bg-red-500/90
-            `}
+            className="h-8 w-8 rounded-md flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-primary transition-colors focus:outline-none"
           >
-            <MoreHorizontal className="w-5 h-5 text-foreground" />
+            <MoreHorizontal className="w-4 h-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
