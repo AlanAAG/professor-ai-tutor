@@ -358,7 +358,7 @@ export const ProfessorSidebarNew = ({
           )}
           aria-current={isActive ? "page" : undefined}
         >
-          <div className="flex-1 min-w-0 overflow-hidden text-left w-full">
+        <div className="flex-1 min-w-0 overflow-hidden w-full">
             <div className="flex items-center gap-1.5 min-w-0">
               {conversation.is_pinned && (
                 <Pin
@@ -367,12 +367,12 @@ export const ProfessorSidebarNew = ({
                   }`}
                 />
               )}
-              <span className="font-medium text-sm truncate block w-full text-left">
+              <span className="font-medium text-sm text-ellipsis overflow-hidden whitespace-nowrap block w-full text-left">
                 {conversation.title}
               </span>
             </div>
             <div
-              className={`text-xs mt-0.5 truncate ${
+              className={`text-xs mt-0.5 text-ellipsis overflow-hidden whitespace-nowrap text-left ${
                 isActive ? "opacity-80" : "text-muted-foreground"
               }`}
             >

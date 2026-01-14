@@ -408,8 +408,8 @@ export const ProfessorChat = ({
       </div>
 
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom">
-        <div className="max-w-3xl mx-auto space-y-2">
+      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-[100vw] box-border">
+        <div className="max-w-3xl mx-auto space-y-2 w-full box-border">
           {/* Uploaded file indicator */}
           {uploadedFile && (
             <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">

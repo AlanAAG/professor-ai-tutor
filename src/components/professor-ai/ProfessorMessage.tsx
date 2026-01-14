@@ -78,18 +78,18 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
     const isCodeBlock = !!className;
     if (isCodeBlock) {
       return (
-        <pre className="bg-secondary/60 border border-border/50 p-4 rounded-lg my-4 overflow-x-auto">
-          <code className="text-sm font-mono text-chat-text">{children}</code>
+        <pre className="bg-secondary/60 border border-border/50 p-4 rounded-lg my-4 overflow-x-auto max-w-full">
+          <code className="text-sm font-mono text-chat-text break-words">{children}</code>
         </pre>
       );
     }
     return (
-      <code className="bg-secondary/80 px-1.5 py-0.5 rounded text-sm font-mono text-primary">
+      <code className="bg-secondary/80 px-1.5 py-0.5 rounded text-sm font-mono text-primary break-words">
         {children}
       </code>
     );
   },
-  pre: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  pre: ({ children }: { children?: React.ReactNode }) => <div className="overflow-x-auto max-w-full">{children}</div>,
   blockquote: ({ children }: { children?: React.ReactNode }) => (
     <blockquote className="border-l-2 border-primary/50 pl-4 my-4 text-chat-text-secondary italic">
       {children}
@@ -387,8 +387,8 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
   if (isUser) {
     return (
       <div className="flex justify-end animate-fade-in">
-        <div className="max-w-[85%] md:max-w-[75%]">
-          <div className="bg-foreground text-background px-4 py-3 rounded-2xl rounded-br-sm shadow-md">
+        <div className="max-w-[85%] md:max-w-[75%] max-w-full overflow-hidden">
+          <div className="bg-foreground text-background px-4 py-3 rounded-2xl rounded-br-sm shadow-md overflow-hidden">
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
               {message.content}
             </p>
@@ -400,16 +400,16 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
 
   // AI message - modern clean layout
   return (
-    <div className="flex gap-4 animate-fade-in group">
+    <div className="flex gap-4 animate-fade-in group max-w-full overflow-hidden">
       {/* AI Avatar */}
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
         <Sparkles className="w-4 h-4 text-primary-foreground" />
       </div>
       
       {/* Message Content */}
-      <div className="flex-1 min-w-0 space-y-1">
+      <div className="flex-1 min-w-0 space-y-1 overflow-hidden">
         {/* Content area with proper typography */}
-        <div className="text-[15px] leading-7 text-chat-text">
+        <div className="text-[15px] leading-7 text-chat-text break-words overflow-hidden">
           {renderContentWithLatex(message.content)}
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />
