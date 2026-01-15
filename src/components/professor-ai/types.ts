@@ -1,4 +1,4 @@
-export type Mode = "Notes Creator" | "Quiz" | "Study";
+export type Mode = "Notes Creator" | "Quiz" | "Study" | "Pre-Read";
 
 export interface Message {
   id?: string; // Database ID for feedback tracking

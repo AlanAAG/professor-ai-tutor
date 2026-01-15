@@ -126,8 +126,12 @@ const ProfessorAI = () => {
 
   // Handle create notes action (called from ProfessorChat)
   const handleCreateNotes = () => {
-    if (mode === "Notes Creator" && selectedCourse && selectedLecture) {
-      sendMessage("Summarize this lecture", true);
+    if (selectedCourse && selectedLecture) {
+      if (mode === "Notes Creator") {
+        sendMessage("Summarize this lecture", true);
+      } else if (mode === "Pre-Read") {
+        sendMessage("Summarize the pre-reading material for this lecture", true);
+      }
     }
   };
 

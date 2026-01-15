@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X } from "lucide-react";
+import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import {
@@ -167,12 +167,12 @@ export const ProfessorChat = ({
   };
 
   // Study and Quiz modes only need course selection
-  // Notes Creator mode requires both course and specific lecture
-  const needsLecture = mode === "Notes Creator";
+  // Notes Creator and Pre-Read modes require both course and specific lecture
+  const needsLecture = mode === "Notes Creator" || mode === "Pre-Read";
   const hasSpecificLecture = selectedLecture && selectedLecture !== "__all__";
   
   // Quiz mode doesn't require course selection
-  // Can chat if: quiz mode OR (course selected AND (not Notes Creator OR has specific lecture))
+  // Can chat if: quiz mode OR (course selected AND (not Notes Creator/Pre-Read OR has specific lecture))
   const canChat = mode === "Quiz" || (selectedCourse && (!needsLecture || hasSpecificLecture));
   const isInputDisabled = !canChat || isLoading;
 
@@ -195,6 +195,8 @@ export const ProfessorChat = ({
               <div className="inline-flex items-center justify-center w-14 h-14 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 shadow-lg mx-auto">
                 {mode === "Notes Creator" ? (
                   <Sparkles className="w-7 h-7 md:w-10 md:h-10 text-primary" />
+                ) : mode === "Pre-Read" ? (
+                  <BookOpen className="w-7 h-7 md:w-10 md:h-10 text-primary" />
                 ) : mode === "Quiz" ? (
                   <Brain className="w-7 h-7 md:w-10 md:h-10 text-primary" />
                 ) : (
@@ -211,6 +213,8 @@ export const ProfessorChat = ({
                     ? "What would you like to learn?"
                     : mode === "Notes Creator" && !hasSpecificLecture
                     ? "Select a Lecture for Notes"
+                    : mode === "Pre-Read" && !hasSpecificLecture
+                    ? "Select a Lecture for Pre-Read Summary"
                     : "What would you like to learn?"}
                 </h1>
                 <p className="text-chat-text-secondary text-base md:text-lg px-2">
@@ -220,12 +224,14 @@ export const ProfessorChat = ({
                     ? "Select a course to get started"
                     : mode === "Notes Creator" && !hasSpecificLecture
                     ? "Notes Creator requires a specific lecture selection"
+                    : mode === "Pre-Read" && !hasSpecificLecture
+                    ? "Pre-Read mode requires a specific lecture selection"
                     : `Ready to help you learn about ${getLectureDisplayText()}`}
                 </p>
               </div>
 
-              {/* Lecture selector for Notes Creator mode */}
-              {mode === "Notes Creator" && selectedCourse && (
+              {/* Lecture selector for Notes Creator and Pre-Read modes */}
+              {(mode === "Notes Creator" || mode === "Pre-Read") && selectedCourse && (
                 <div className="space-y-4">
                   <div className="max-w-xs mx-auto">
                     <Select
@@ -259,7 +265,7 @@ export const ProfessorChat = ({
                     </Select>
                   </div>
                   
-                  {/* Create Notes button */}
+                  {/* Create Notes / Pre-Read button */}
                   {hasSpecificLecture && (
                     <Button
                       onClick={onCreateNotes}
@@ -270,12 +276,12 @@ export const ProfessorChat = ({
                       {isLoading ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          Creating notes...
+                          {mode === "Pre-Read" ? "Creating summary..." : "Creating notes..."}
                         </>
                       ) : (
                         <>
-                          <FileText className="w-5 h-5" />
-                          Create Notes
+                          {mode === "Pre-Read" ? <BookOpen className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                          {mode === "Pre-Read" ? "Create Pre-Read Summary" : "Create Notes"}
                         </>
                       )}
                     </Button>
@@ -285,7 +291,7 @@ export const ProfessorChat = ({
             </div>
             
             {/* Input area for Quiz mode and Study mode */}
-            {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && (
+            {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && mode !== "Pre-Read" && (
               <div className="w-full max-w-3xl mt-6 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
                   <div className="flex items-end gap-2">

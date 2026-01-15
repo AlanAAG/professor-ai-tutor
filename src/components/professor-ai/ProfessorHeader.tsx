@@ -33,6 +33,9 @@ const modeOptions: {
 }, {
   value: "Notes Creator",
   label: "Notes"
+}, {
+  value: "Pre-Read",
+  label: "Pre-Read"
 }];
 
 const TERM_OPTIONS_BY_BATCH: Record<string, { value: string; label: string }[]> = {
