@@ -32,7 +32,7 @@ serve(async (req) => {
 
       const fetchLectures = async (cohortHeaderValue: string) => {
         const lectureUrl = mode
-          ? `${PROFESSOR_API_URL}/api/lectures?mode=${mode}`
+          ? `${PROFESSOR_API_URL}/api/lectures?mode=${encodeURIComponent(mode)}`
           : `${PROFESSOR_API_URL}/api/lectures`;
 
         const res = await fetch(lectureUrl, {
