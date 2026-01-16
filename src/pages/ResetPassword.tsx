@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,24 +7,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 
 const ResetPassword = () => {
-  const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasValidSession, setHasValidSession] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Listen for auth state changes to detect PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+          setHasValidSession(true);
+        }
+        setCheckingSession(false);
+      }
+    );
+
+    // Check if there's already a session (user clicked reset link)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setHasValidSession(true);
+      }
+      setCheckingSession(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email.toLowerCase().endsWith("@tetr.com")) {
-      toast({
-        title: "Invalid email domain",
-        description: "Please use your @tetr.com account",
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (newPassword !== confirmPassword) {
       toast({
@@ -58,10 +72,12 @@ const ResetPassword = () => {
         description: "Your password has been successfully changed.",
       });
 
-      setEmail("");
       setNewPassword("");
       setConfirmPassword("");
-      navigate("/professor");
+      
+      // Sign out and redirect to auth page
+      await supabase.auth.signOut();
+      navigate("/auth");
     } catch (error: any) {
       toast({
         title: "Password reset failed",
@@ -72,6 +88,48 @@ const ResetPassword = () => {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p>Verifying reset link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasValidSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/asktetr-logo.png"
+                alt="Ask TETR Logo"
+                className="h-16 w-auto"
+              />
+            </div>
+            <CardTitle className="text-2xl font-bold">Invalid or Expired Link</CardTitle>
+            <CardDescription>
+              This password reset link is invalid or has expired. Please request a new one.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              className="w-full"
+              onClick={() => navigate("/auth")}
+            >
+              Back to Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -86,21 +144,11 @@ const ResetPassword = () => {
           </div>
           <CardTitle className="text-2xl font-bold">Create a New Password</CardTitle>
           <CardDescription>
-            Enter your @tetr.com email and choose a new password.
+            Enter your new password below.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePasswordReset} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Enter your @tetr.com email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
             <div className="space-y-2">
               <Input
                 type="password"
