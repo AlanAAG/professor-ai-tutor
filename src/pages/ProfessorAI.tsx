@@ -77,7 +77,7 @@ const ProfessorAI = () => {
       setLecturesError(false);
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures&mode=${mode}`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures&mode=${encodeURIComponent(mode)}`,
           {
             headers: {
               "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
