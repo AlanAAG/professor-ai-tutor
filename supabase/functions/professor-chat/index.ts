@@ -31,6 +31,7 @@ serve(async (req) => {
       console.log(`Fetching lectures for cohort: ${cohortId} with mode: ${mode}`);
 
       const fetchLectures = async (cohortHeaderValue: string) => {
+        // FIX: Pass the mode parameter to the backend
         const lectureUrl = mode
           ? `${PROFESSOR_API_URL}/api/lectures?mode=${encodeURIComponent(mode)}`
           : `${PROFESSOR_API_URL}/api/lectures`;
@@ -58,10 +59,10 @@ serve(async (req) => {
         return { res, json, rawText: text };
       };
 
-      // First attempt: pass through cohort as-is
+      // First attempt
       let { res, json } = await fetchLectures(cohortId);
 
-      // If backend expects a prefixed cohort id, retry once
+      // Retry logic for cohort prefix
       const lectures = (json?.lectures ?? []) as unknown[];
       if (res.ok && Array.isArray(lectures) && lectures.length === 0 && !cohortId.startsWith("cohort_")) {
         console.log(`Empty lectures for cohort ${cohortId}; retrying with cohort_${cohortId}`);
@@ -85,10 +86,6 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Chat request:", JSON.stringify(body));
     
-    // Map the frontend data to the Python backend expected format
-    // IMPORTANT: Send null/empty for selectedLecture if "All Lectures" is selected
-    const lectureValue = body.selectedLecture === "__all__" ? null : (body.selectedLecture || null);
-    
     // Build system message with formatting instructions
     const systemInstructions = `When providing Excel formulas, ALWAYS wrap them in Markdown code blocks (e.g., \`=SUM(A1:B1)\`).
 
@@ -103,11 +100,12 @@ Use clear bullet points and bold text for lists of definitions.`;
       ? [{ ...messages[0], content: `${systemInstructions}\n\n${messages[0].content}` }, ...messages.slice(1)]
       : [{ role: "system", content: systemInstructions }, ...messages];
 
+    // Build payload with mode
     const payload = {
       messages: finalMessages,
       mode: body.mode || "Study",
-      selectedCourse: body.selectedCourse || null, // Send the db_key
-      selectedLecture: lectureValue, // null or lecture title
+      selectedCourse: body.selectedCourse || null,
+      selectedLecture: body.selectedLecture === "__all__" ? null : (body.selectedLecture || null),
       cohort_id: body.cohort_id || cohortId,
     };
 
@@ -126,14 +124,12 @@ Use clear bullet points and bold text for lists of definitions.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Backend error:", errorText);
-      throw new Error(`Backend returned ${response.status}`);
+      throw new Error(`Backend returned ${response.status}: ${errorText}`);
     }
 
-    // Check if response is streaming (text/event-stream)
+    // Handle Streaming Response
     const contentType = response.headers.get("content-type");
-    
     if (contentType?.includes("text/event-stream")) {
-      // Forward streaming response directly
       return new Response(response.body, {
         headers: { 
           ...corsHeaders, 
@@ -144,20 +140,18 @@ Use clear bullet points and bold text for lists of definitions.`;
       });
     }
 
-    // Handle regular JSON response
+    // Handle JSON Response
     const data = await response.json();
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (error) {
     console.error("Professor chat error:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
