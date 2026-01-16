@@ -164,6 +164,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_sessions_cohort2: {
+        Args: { filter?: Json }
+        Returns: {
+          class_name: string
+          session: string
+        }[]
+      }
       increment_prompt_count: { Args: never; Returns: number }
       increment_visitor_count: { Args: never; Returns: number }
       is_conversation_owner: {
