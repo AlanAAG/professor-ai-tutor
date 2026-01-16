@@ -164,6 +164,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_sessions_cohort1: {
+        Args: { filter?: Json }
+        Returns: {
+          class_name: string
+          session: string
+        }[]
+      }
       get_sessions_cohort2: {
         Args: { filter?: Json }
         Returns: {
