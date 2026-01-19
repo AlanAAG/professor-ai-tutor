@@ -409,7 +409,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
       {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
         {/* Content area with proper typography */}
-        <div className="text-[15px] leading-7 text-chat-text break-words whitespace-pre-wrap overflow-hidden max-w-full [overflow-wrap:anywhere]">
+        <div className="text-[15px] leading-7 text-chat-text break-words whitespace-pre-wrap overflow-hidden max-w-full [overflow-wrap:anywhere] professor-message-bubble">
           {renderContentWithLatex(message.content)}
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />

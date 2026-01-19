@@ -403,7 +403,7 @@ export const ProfessorChat = ({
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden" 
+        className="flex-1 overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
         style={{ minHeight: 0 }}
       >
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
