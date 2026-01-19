@@ -41,3 +41,20 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Professor AI Chat Styles */
+.professor-chat-scroll-area {
+  scrollbar-gutter: stable;
+}
+
+.professor-message-bubble {
+  min-height: 1.5em;
+  /* line-height is also set via tailwind leading-7 (1.75rem), ensuring consistency */
+}
+
+/* LaTeX display margin fix */
+.katex-display {
+  margin: 1em 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
