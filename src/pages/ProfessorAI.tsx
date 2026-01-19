@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProfessorBatchSelection } from "@/components/professor-ai/ProfessorBatchSelection";
+import { Loader2 } from "lucide-react";
 import { ProfessorTermSelection } from "@/components/professor-ai/ProfessorTermSelection";
 import { ProfessorCourseSelection } from "@/components/professor-ai/ProfessorCourseSelection";
 import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
@@ -19,9 +19,7 @@ const ProfessorAI = () => {
   const [mode, setMode] = useState<Mode>("Study");
   const [selectedLecture, setSelectedLecture] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [selectedBatch, setSelectedBatch] = useState<string | null>(() => {
-    return localStorage.getItem("professorSelectedBatch");
-  });
+  const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(() => {
     return localStorage.getItem("professorSelectedTerm");
   });
@@ -66,6 +64,41 @@ const ProfessorAI = () => {
     return () => {
       document.body.style.overflow = prev;
     };
+  }, []);
+
+  // Determine batch from user email
+  useEffect(() => {
+    const setBatchFromUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      let batch = "2029"; // Default fallback
+
+      if (user?.email) {
+        const email = user.email;
+        if (email.includes("2028")) {
+          batch = "2028";
+        } else if (email.includes("2029")) {
+          batch = "2029";
+        } else if (email.includes("tetr")) {
+          batch = "2029"; // Admins default to latest
+        }
+      }
+
+      const storedBatch = localStorage.getItem("professorSelectedBatch");
+      if (storedBatch && storedBatch !== batch) {
+        localStorage.removeItem("professorSelectedTerm");
+        setSelectedTerm(null);
+        setSelectedCourse(null);
+        setSelectedLecture(null);
+        chat.resetChat();
+        quiz.resetQuiz();
+      }
+
+      setSelectedBatch(batch);
+      localStorage.setItem("professorSelectedBatch", batch);
+    };
+
+    setBatchFromUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch lectures when batch is selected
@@ -154,18 +187,6 @@ const ProfessorAI = () => {
     quiz.resetQuiz();
   };
 
-  const handleBatchSelect = (batchId: string) => {
-    localStorage.setItem("professorSelectedBatch", batchId);
-    setSelectedBatch(batchId);
-    // Clear term when batch changes
-    localStorage.removeItem("professorSelectedTerm");
-    setSelectedTerm(null);
-    setSelectedCourse(null);
-    setSelectedLecture(null);
-    chat.resetChat();
-    quiz.resetQuiz();
-  };
-
   const handleTermSelect = (termId: string) => {
     localStorage.setItem("professorSelectedTerm", termId);
     setSelectedTerm(termId);
@@ -185,17 +206,6 @@ const ProfessorAI = () => {
   };
 
   const handleOpenCourseSelection = () => {
-    setSelectedCourse(null);
-    setSelectedLecture(null);
-    chat.resetChat();
-    quiz.resetQuiz();
-  };
-
-  const handleBackToBatchSelection = () => {
-    localStorage.removeItem("professorSelectedBatch");
-    localStorage.removeItem("professorSelectedTerm");
-    setSelectedBatch(null);
-    setSelectedTerm(null);
     setSelectedCourse(null);
     setSelectedLecture(null);
     chat.resetChat();
@@ -236,7 +246,7 @@ const ProfessorAI = () => {
   if (!selectedBatch) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <ProfessorBatchSelection onBatchSelect={handleBatchSelect} />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -248,7 +258,7 @@ const ProfessorAI = () => {
         <ProfessorTermSelection 
           batch={selectedBatch} 
           onTermSelect={handleTermSelect} 
-          onBack={handleBackToBatchSelection}
+          onBack={() => {}} // Batch selection is now automated/hidden
         />
       </div>
     );
@@ -293,7 +303,6 @@ const ProfessorAI = () => {
           selectedMode={mode}
           onModeChange={handleModeChange}
           selectedBatch={selectedBatch}
-          onBatchChange={handleBatchSelect}
           selectedTerm={selectedTerm}
           onTermChange={handleTermSelect}
           courses={availableCourses}

@@ -12,7 +12,6 @@ interface ProfessorHeaderProps {
   selectedMode: Mode;
   onModeChange: (mode: Mode) => void;
   selectedBatch: string;
-  onBatchChange: (batch: string) => void;
   selectedTerm: string;
   onTermChange: (term: string) => void;
   courses: Course[];
@@ -57,7 +56,6 @@ export const ProfessorHeader = ({
   selectedMode,
   onModeChange,
   selectedBatch,
-  onBatchChange,
   selectedTerm,
   onTermChange,
   courses,
@@ -146,17 +144,6 @@ export const ProfessorHeader = ({
               ))}
             </SelectContent>
           </Select>
-
-          {/* Batch selector */}
-          <Select value={selectedBatch} onValueChange={onBatchChange}>
-            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
-              <span className="truncate">{selectedBatch}</span>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              <SelectItem value="2029">2029</SelectItem>
-              <SelectItem value="2028">2028</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -200,16 +187,6 @@ export const ProfessorHeader = ({
                   {term.label}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedBatch} onValueChange={onBatchChange}>
-            <SelectTrigger className="w-[90px] bg-secondary/50 border-border/50 text-sm h-9">
-              <span className="truncate">{selectedBatch}</span>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              <SelectItem value="2029">2029</SelectItem>
-              <SelectItem value="2028">2028</SelectItem>
             </SelectContent>
           </Select>
         </div>

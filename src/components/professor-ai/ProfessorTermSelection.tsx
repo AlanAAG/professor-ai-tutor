@@ -45,18 +45,6 @@ export const ProfessorTermSelection = ({ batch, onTermSelect, onBack }: Professo
 
   return (
     <div className="w-full max-w-2xl px-4">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Batch Selection
-        </Button>
-      </div>
-
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
           Select Your Term
