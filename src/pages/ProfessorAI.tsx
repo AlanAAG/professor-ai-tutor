@@ -66,25 +66,36 @@ const ProfessorAI = () => {
     };
   }, []);
 
+  // Track if user is a developer (has full access)
+  const [isDeveloper, setIsDeveloper] = useState(false);
+
   // Determine batch from user email
   useEffect(() => {
     const setBatchFromUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       let batch = "2029"; // Default fallback
+      let isDevUser = false;
 
       if (user?.email) {
-        const email = user.email;
+        const email = user.email.toLowerCase();
         if (email.includes("2028")) {
           batch = "2028";
         } else if (email.includes("2029")) {
           batch = "2029";
-        } else if (email.includes("tetr")) {
-          batch = "2029"; // Admins default to latest
+        } else if (email.includes("@tetr")) {
+          // Developer/admin - no year number, has full access
+          isDevUser = true;
+          // For developers, use stored batch or default to 2029
+          const storedBatch = localStorage.getItem("professorSelectedBatch");
+          batch = storedBatch && (storedBatch === "2028" || storedBatch === "2029") ? storedBatch : "2029";
         }
       }
 
+      setIsDeveloper(isDevUser);
+
       const storedBatch = localStorage.getItem("professorSelectedBatch");
-      if (storedBatch && storedBatch !== batch) {
+      // Only reset if batch changed and user is not a developer (devs can switch freely)
+      if (!isDevUser && storedBatch && storedBatch !== batch) {
         localStorage.removeItem("professorSelectedTerm");
         setSelectedTerm(null);
         setSelectedCourse(null);
@@ -258,7 +269,11 @@ const ProfessorAI = () => {
         <ProfessorTermSelection 
           batch={selectedBatch} 
           onTermSelect={handleTermSelect} 
-          onBack={() => {}} // Batch selection is now automated/hidden
+          onBatchChange={(newBatch) => {
+            setSelectedBatch(newBatch);
+            localStorage.setItem("professorSelectedBatch", newBatch);
+          }}
+          isDeveloper={isDeveloper}
         />
       </div>
     );
