@@ -8,14 +8,12 @@ const VisitorCounter = () => {
   useEffect(() => {
     const fetchMessageCount = async () => {
       try {
-        // Fetch total message count from messages table
-        const { count, error } = await supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true });
+        // Use the security definer function to get total count across all users
+        const { data, error } = await supabase.rpc("get_total_message_count");
 
         if (error) throw error;
 
-        setMessageCount(count || 0);
+        setMessageCount(data || 0);
       } catch (error) {
         console.error("Error fetching message count:", error);
         setMessageCount(0);
