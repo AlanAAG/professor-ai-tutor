@@ -178,6 +178,7 @@ export type Database = {
           session: string
         }[]
       }
+      get_total_message_count: { Args: never; Returns: number }
       increment_prompt_count: { Args: never; Returns: number }
       increment_visitor_count: { Args: never; Returns: number }
       is_conversation_owner: {
