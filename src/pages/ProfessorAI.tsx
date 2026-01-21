@@ -10,7 +10,7 @@ import { ChatView } from "@/components/professor-ai/ChatView";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { COURSES_BY_BATCH_TERM } from "@/data/courses";
-import type { Mode, Lecture } from "@/components/professor-ai/types";
+import type { Mode, Lecture, ExpertiseLevel } from "@/components/professor-ai/types";
 import { useProfessorChat } from "@/hooks/useProfessorChat";
 import { useProfessorQuiz } from "@/hooks/useProfessorQuiz";
 
@@ -27,6 +27,9 @@ const ProfessorAI = () => {
   const [lecturesLoading, setLecturesLoading] = useState(false);
   const [lecturesError, setLecturesError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Adaptive learning - expertise level state
+  const [expertiseLevel, setExpertiseLevel] = useState<ExpertiseLevel>(null);
   
   // Feedback dialog state
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -53,6 +56,7 @@ const ProfessorAI = () => {
     selectedBatch,
     selectedLecture,
     mode,
+    expertiseLevel,
   });
 
   const quiz = useProfessorQuiz(getSelectedCourseDisplayName() || undefined);
@@ -322,6 +326,8 @@ const ProfessorAI = () => {
           onTermChange={handleTermSelect}
           courses={availableCourses}
           onOpenCourseSelection={handleOpenCourseSelection}
+          expertiseLevel={expertiseLevel}
+          onExpertiseLevelChange={setExpertiseLevel}
         />
 
         {mode === "Quiz" ? (

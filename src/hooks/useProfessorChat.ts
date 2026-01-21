@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import type { Mode, Message } from "@/components/professor-ai/types";
+import type { Mode, Message, ExpertiseLevel } from "@/components/professor-ai/types";
 
 const NO_MATERIALS_FALLBACK_PHRASES = [
   "couldn't find relevant materials",
@@ -14,6 +14,7 @@ interface UseProfessorChatProps {
   selectedBatch: string | null;
   selectedLecture: string | null;
   mode: Mode;
+  expertiseLevel: ExpertiseLevel;
 }
 
 export const useProfessorChat = ({
@@ -21,6 +22,7 @@ export const useProfessorChat = ({
   selectedBatch,
   selectedLecture,
   mode,
+  expertiseLevel,
 }: UseProfessorChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -133,6 +135,7 @@ export const useProfessorChat = ({
             selectedLecture: lectureToSend, // The lecture title or null
             session_id: sessionIdRef.current, // Session ID for backend chat persistence
             cohort_id: selectedBatch,
+            expertise_level: expertiseLevel, // Adaptive learning - user's expertise level
           }),
         }
       );

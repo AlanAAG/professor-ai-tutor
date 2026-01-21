@@ -1,7 +1,7 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Mode } from "./types";
+import type { Mode, ExpertiseLevel } from "./types";
 import type { Course } from "@/data/courses";
 
 interface ProfessorHeaderProps {
@@ -18,6 +18,8 @@ interface ProfessorHeaderProps {
   onLogout?: () => void;
   onFeedback?: () => void;
   onOpenCourseSelection?: () => void;
+  expertiseLevel: ExpertiseLevel;
+  onExpertiseLevelChange: (level: ExpertiseLevel) => void;
 }
 
 const modeOptions: {
@@ -36,6 +38,13 @@ const modeOptions: {
   value: "Pre-Read",
   label: "Pre-Read"
 }];
+
+const expertiseLevelOptions: { value: string; label: string }[] = [
+  { value: "auto", label: "Auto" },
+  { value: "Novice", label: "Novice" },
+  { value: "Intermediate", label: "Intermediate" },
+  { value: "Expert", label: "Expert" },
+];
 
 const TERM_OPTIONS_BY_BATCH: Record<string, { value: string; label: string }[]> = {
   "2029": [
@@ -62,10 +71,14 @@ export const ProfessorHeader = ({
   onLogout,
   onFeedback,
   onOpenCourseSelection,
+  expertiseLevel,
+  onExpertiseLevelChange,
 }: ProfessorHeaderProps) => {
   const selectedCourseDisplay = courses.find(c => c.id === selectedCourse)?.name;
   const termOptions = TERM_OPTIONS_BY_BATCH[selectedBatch] || [];
   const selectedTermLabel = termOptions.find(t => t.value === selectedTerm)?.label || selectedTerm;
+  const expertiseDisplayValue = expertiseLevel === null ? "auto" : expertiseLevel;
+  const expertiseDisplayLabel = expertiseLevelOptions.find(e => e.value === expertiseDisplayValue)?.label || "Auto";
 
   // Get a short, readable course name for mobile - show START of title
   const getMobileCourseLabel = () => {
@@ -115,7 +128,7 @@ export const ProfessorHeader = ({
           </Button>
         </div>
         
-        {/* Bottom row: Mode, Term, Batch - evenly spaced */}
+        {/* Bottom row: Mode, Term, Expertise - evenly spaced */}
         <div className="flex items-center gap-2 px-1">
           {/* Mode selector */}
           <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
@@ -140,6 +153,23 @@ export const ProfessorHeader = ({
               {termOptions.map(term => (
                 <SelectItem key={term.value} value={term.value}>
                   {term.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Expertise Level selector */}
+          <Select 
+            value={expertiseDisplayValue} 
+            onValueChange={v => onExpertiseLevelChange(v === "auto" ? null : v as ExpertiseLevel)}
+          >
+            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+              <span className="truncate">{expertiseDisplayLabel}</span>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {expertiseLevelOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -185,6 +215,23 @@ export const ProfessorHeader = ({
               {termOptions.map(term => (
                 <SelectItem key={term.value} value={term.value}>
                   {term.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Expertise Level selector - desktop */}
+          <Select 
+            value={expertiseDisplayValue} 
+            onValueChange={v => onExpertiseLevelChange(v === "auto" ? null : v as ExpertiseLevel)}
+          >
+            <SelectTrigger className="w-[110px] bg-secondary/50 border-border/50 text-sm h-9">
+              <span className="truncate">{expertiseDisplayLabel}</span>
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border">
+              {expertiseLevelOptions.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
                 </SelectItem>
               ))}
             </SelectContent>
