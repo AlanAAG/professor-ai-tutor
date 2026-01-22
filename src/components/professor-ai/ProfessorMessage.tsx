@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import type { Message } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,6 +106,28 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
     >
       {children}
     </a>
+  ),
+  // Table components for GFM tables
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="my-4 w-full overflow-y-auto rounded-lg border border-border/50">
+      <table className="w-full border-collapse text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-secondary/50 text-left">{children}</thead>,
+  tbody: ({ children }: { children?: React.ReactNode }) => <tbody className="bg-background">{children}</tbody>,
+  tr: ({ children }: { children?: React.ReactNode }) => <tr className="border-b border-border/50 last:border-0">{children}</tr>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="px-4 py-3 font-semibold text-primary">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="px-4 py-3 text-chat-text align-top">{children}</td>,
+  // Details/Summary for collapsible sections
+  details: ({ children }: { children?: React.ReactNode }) => (
+    <details className="my-4 rounded-lg border border-border/50 bg-secondary/20 px-4 py-3 open:bg-secondary/30">
+      {children}
+    </details>
+  ),
+  summary: ({ children }: { children?: React.ReactNode }) => (
+    <summary className="cursor-pointer font-medium text-primary hover:text-primary/80 select-none">
+      {children}
+    </summary>
   ),
 });
 
@@ -244,7 +268,11 @@ const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] =
       // Render markdown inline without breaking the flow
       parts.push(
         <span key={`${keyPrefix}-md-${partIndex++}`}>
-          <ReactMarkdown components={inlineMarkdownComponents}>
+          <ReactMarkdown 
+            components={inlineMarkdownComponents}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw]}
+          >
             {textPart}
           </ReactMarkdown>
         </span>
@@ -273,7 +301,11 @@ const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] =
     const remainingText = text.slice(lastIndex);
     parts.push(
       <span key={`${keyPrefix}-md-${partIndex}`}>
-        <ReactMarkdown components={inlineMarkdownComponents}>
+        <ReactMarkdown 
+          components={inlineMarkdownComponents}
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+        >
           {remainingText}
         </ReactMarkdown>
       </span>
@@ -409,7 +441,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
       {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
         {/* Content area with proper typography */}
-        <div className="text-[15px] leading-7 text-chat-text break-words whitespace-pre-wrap overflow-hidden max-w-full [overflow-wrap:anywhere] professor-message-bubble">
+        <div className="text-[15px] leading-7 text-chat-text break-words overflow-hidden max-w-full [overflow-wrap:anywhere] professor-message-bubble">
           {renderContentWithLatex(message.content)}
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />
