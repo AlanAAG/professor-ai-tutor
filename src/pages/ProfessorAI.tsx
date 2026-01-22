@@ -191,7 +191,10 @@ const ProfessorAI = () => {
   const handleCourseSelect = (courseId: string) => {
     setSelectedCourse(courseId);
     setSelectedLecture(null);
-    chat.resetChat();
+    
+    // Expertise Isolation: Reset expertise level and regenerate session on course change
+    setExpertiseLevel(null);
+    chat.resetChat(true); // true = regenerate session ID
     quiz.resetQuiz();
   };
 

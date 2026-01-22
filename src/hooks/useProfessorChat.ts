@@ -304,10 +304,16 @@ export const useProfessorChat = ({
     }
   };
 
-  const resetChat = () => {
+  const resetChat = (regenerateSession = false) => {
     setMessages([]);
     setStreamingContent("");
     setActiveConversationId(null);
+    
+    // Regenerate session ID when switching courses for expertise isolation
+    if (regenerateSession) {
+      sessionIdRef.current = crypto.randomUUID();
+      console.log("New Session ID:", sessionIdRef.current);
+    }
   };
 
   const handleFileUpload = (file: { name: string; content: string } | null) => {
