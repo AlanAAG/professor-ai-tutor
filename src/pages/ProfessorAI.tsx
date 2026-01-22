@@ -57,6 +57,7 @@ const ProfessorAI = () => {
     selectedLecture,
     mode,
     expertiseLevel,
+    onExpertiseLevelChange: setExpertiseLevel, // Silent auto-update from AI responses
   });
 
   const quiz = useProfessorQuiz(getSelectedCourseDisplayName() || undefined);
@@ -326,8 +327,6 @@ const ProfessorAI = () => {
           onTermChange={handleTermSelect}
           courses={availableCourses}
           onOpenCourseSelection={handleOpenCourseSelection}
-          expertiseLevel={expertiseLevel}
-          onExpertiseLevelChange={setExpertiseLevel}
         />
 
         {mode === "Quiz" ? (

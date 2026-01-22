@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Mode, Message, ExpertiseLevel } from "@/components/professor-ai/types";
@@ -9,12 +9,16 @@ const NO_MATERIALS_FALLBACK_PHRASES = [
   "content hasn't been uploaded yet",
 ];
 
+// Pattern to detect expertise level set by AI in response
+const EXPERTISE_LEVEL_PATTERN = /USER LEVEL SET:\s*\[?(Novice|Intermediate|Expert)\]?/i;
+
 interface UseProfessorChatProps {
   selectedCourse: string | null;
   selectedBatch: string | null;
   selectedLecture: string | null;
   mode: Mode;
   expertiseLevel: ExpertiseLevel;
+  onExpertiseLevelChange?: (level: ExpertiseLevel) => void;
 }
 
 export const useProfessorChat = ({
@@ -23,6 +27,7 @@ export const useProfessorChat = ({
   selectedLecture,
   mode,
   expertiseLevel,
+  onExpertiseLevelChange,
 }: UseProfessorChatProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +53,16 @@ export const useProfessorChat = ({
     const lowerContent = content.toLowerCase();
     return NO_MATERIALS_FALLBACK_PHRASES.some(phrase => lowerContent.includes(phrase));
   };
+
+  // Parse AI response for expertise level auto-detection
+  const parseExpertiseLevelFromResponse = useCallback((content: string) => {
+    const match = content.match(EXPERTISE_LEVEL_PATTERN);
+    if (match && onExpertiseLevelChange) {
+      const detectedLevel = match[1] as ExpertiseLevel;
+      console.log("Auto-detected expertise level:", detectedLevel);
+      onExpertiseLevelChange(detectedLevel);
+    }
+  }, [onExpertiseLevelChange]);
 
   const saveConversationAndMessage = async (userContent: string, assistantContent: string) => {
     try {
@@ -201,6 +216,9 @@ export const useProfessorChat = ({
             });
           }
 
+          // Parse for expertise level auto-detection
+          parseExpertiseLevelFromResponse(accumulatedContent);
+
           // Save to database and get message ID
           const messageId = await saveConversationAndMessage(content, accumulatedContent);
 
@@ -222,6 +240,15 @@ export const useProfessorChat = ({
             description: `Check if you're in the correct cohort (currently: ${selectedBatch}). Try switching between 2028 and 2029.`,
             variant: "destructive",
           });
+        }
+
+        // Parse for expertise level auto-detection
+        parseExpertiseLevelFromResponse(responseContent);
+
+        // Also check if backend returned expertise_level in metadata
+        if (data.expertise_level && onExpertiseLevelChange) {
+          console.log("Backend returned expertise level:", data.expertise_level);
+          onExpertiseLevelChange(data.expertise_level as ExpertiseLevel);
         }
 
         // Save to database and get message ID
