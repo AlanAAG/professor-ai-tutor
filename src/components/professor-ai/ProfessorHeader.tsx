@@ -85,7 +85,7 @@ export const ProfessorHeader = ({
   };
 
   return (
-    <div className="bg-background border-b border-border/50 py-2 px-2 md:px-4">
+    <div className="bg-background border-b border-border/50 py-2 px-2 md:px-4 shrink-0">
       {/* Mobile/Tablet layout - two rows for better readability */}
       <div className="flex lg:hidden flex-col gap-2">
         {/* Top row: Menu, Logo, Course */}
