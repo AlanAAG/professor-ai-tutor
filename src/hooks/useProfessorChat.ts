@@ -54,14 +54,16 @@ export const useProfessorChat = ({
     return NO_MATERIALS_FALLBACK_PHRASES.some(phrase => lowerContent.includes(phrase));
   };
 
-  // Parse AI response for expertise level auto-detection
-  const parseExpertiseLevelFromResponse = useCallback((content: string) => {
+  // Parse AI response for expertise level auto-detection and strip the tag
+  const parseAndStripExpertiseLevel = useCallback((content: string): string => {
     const match = content.match(EXPERTISE_LEVEL_PATTERN);
     if (match && onExpertiseLevelChange) {
       const detectedLevel = match[1] as ExpertiseLevel;
       console.log("Auto-detected expertise level:", detectedLevel);
       onExpertiseLevelChange(detectedLevel);
     }
+    // Strip the tag from the content for display
+    return content.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
   }, [onExpertiseLevelChange]);
 
   const saveConversationAndMessage = async (userContent: string, assistantContent: string) => {
@@ -187,19 +189,25 @@ export const useProfessorChat = ({
                   const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
                   if (typeof msgContent === 'string') {
                     accumulatedContent += msgContent;
-                    setStreamingContent(accumulatedContent);
+                    // Strip expertise tag for display during streaming
+                    const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    setStreamingContent(displayContent);
                   }
                 } catch {
                   // If not valid JSON, treat as raw text
                   if (data.trim() && data !== '[DONE]') {
                     accumulatedContent += data;
-                    setStreamingContent(accumulatedContent);
+                    // Strip expertise tag for display during streaming
+                    const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    setStreamingContent(displayContent);
                   }
                 }
               } else if (line.trim() && !line.startsWith(':')) {
                 // Handle non-SSE text chunks
                 accumulatedContent += line;
-                setStreamingContent(accumulatedContent);
+                // Strip expertise tag for display during streaming
+                const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                setStreamingContent(displayContent);
               }
             }
           }
@@ -207,8 +215,11 @@ export const useProfessorChat = ({
 
         // Finalize streaming message
         if (accumulatedContent) {
+          // Parse for expertise level and strip tag from content
+          const cleanedContent = parseAndStripExpertiseLevel(accumulatedContent);
+
           // Check for no materials fallback
-          if (checkForNoMaterialsFallback(accumulatedContent)) {
+          if (checkForNoMaterialsFallback(cleanedContent)) {
             toast({
               title: "No materials found",
               description: `Check if you're in the correct cohort (currently: ${selectedBatch}). Try switching between 2028 and 2029.`,
@@ -216,15 +227,12 @@ export const useProfessorChat = ({
             });
           }
 
-          // Parse for expertise level auto-detection
-          parseExpertiseLevelFromResponse(accumulatedContent);
-
-          // Save to database and get message ID
-          const messageId = await saveConversationAndMessage(content, accumulatedContent);
+          // Save cleaned content to database and get message ID
+          const messageId = await saveConversationAndMessage(content, cleanedContent);
 
           setMessages(prev => [
             ...prev,
-            { id: messageId || undefined, role: "assistant", content: accumulatedContent },
+            { id: messageId || undefined, role: "assistant", content: cleanedContent },
           ]);
         }
         setStreamingContent("");
@@ -233,17 +241,8 @@ export const useProfessorChat = ({
         const data = await response.json();
         const responseContent = data.response || data.content || "No response received.";
 
-        // Check for no materials fallback
-        if (checkForNoMaterialsFallback(responseContent)) {
-          toast({
-            title: "No materials found",
-            description: `Check if you're in the correct cohort (currently: ${selectedBatch}). Try switching between 2028 and 2029.`,
-            variant: "destructive",
-          });
-        }
-
-        // Parse for expertise level auto-detection
-        parseExpertiseLevelFromResponse(responseContent);
+        // Parse for expertise level and strip tag from content
+        const cleanedContent = parseAndStripExpertiseLevel(responseContent);
 
         // Also check if backend returned expertise_level in metadata
         if (data.expertise_level && onExpertiseLevelChange) {
@@ -251,13 +250,22 @@ export const useProfessorChat = ({
           onExpertiseLevelChange(data.expertise_level as ExpertiseLevel);
         }
 
-        // Save to database and get message ID
-        const messageId = await saveConversationAndMessage(content, responseContent);
+        // Check for no materials fallback
+        if (checkForNoMaterialsFallback(cleanedContent)) {
+          toast({
+            title: "No materials found",
+            description: `Check if you're in the correct cohort (currently: ${selectedBatch}). Try switching between 2028 and 2029.`,
+            variant: "destructive",
+          });
+        }
+
+        // Save cleaned content to database and get message ID
+        const messageId = await saveConversationAndMessage(content, cleanedContent);
 
         const assistantMessage: Message = {
           id: messageId || undefined,
           role: "assistant",
-          content: responseContent,
+          content: cleanedContent,
         };
 
         setMessages(prev => [...prev, assistantMessage]);
