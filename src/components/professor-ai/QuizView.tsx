@@ -43,7 +43,7 @@ export const QuizView = ({
 }: QuizViewProps) => {
   if (quizLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 min-h-0 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Generating your quiz...</p>
@@ -54,7 +54,7 @@ export const QuizView = ({
 
   if (quizResults) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 min-h-0 flex items-center justify-center p-4">
         <QuizResults
           score={quizResults.score}
           total={quizResults.total}
@@ -67,7 +67,7 @@ export const QuizView = ({
 
   if (currentQuiz) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="flex-1 min-h-0 flex items-center justify-center p-4 overflow-y-auto">
         <QuizCard
           quiz={currentQuiz}
           onComplete={onComplete}
@@ -78,7 +78,7 @@ export const QuizView = ({
   }
 
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className="flex-1 min-h-0 overflow-hidden">
       <ProfessorChat {...chatProps} />
     </div>
   );
