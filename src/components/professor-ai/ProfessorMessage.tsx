@@ -30,6 +30,11 @@ const isConceptDefinition = (text: string): { term: string; description: string 
   return null;
 };
 
+// Check if text is a Markdown table (contains pipes and separator row pattern)
+const isTable = (text: string): boolean => {
+  return text.includes('|') && /\|[\s-:|]*\|/.test(text) && text.includes('\n');
+};
+
 // Reusable markdown components configuration
 const getMarkdownComponents = (isInline: boolean = false) => ({
   p: ({ children }: { children?: React.ReactNode }) => {
@@ -152,8 +157,21 @@ const renderContentWithLatex = (content: string) => {
           </div>
         </div>
       );
+    } else if (isTable(paragraph)) {
+      // Render tables directly as blocks, bypassing inline math processing
+      parts.push(
+        <div key={`table-${paraIndex}`} className="mb-4 w-full overflow-x-auto">
+          <ReactMarkdown 
+            components={getMarkdownComponents(false)}
+            remarkPlugins={[remarkGfm]} 
+            rehypePlugins={[rehypeRaw]}
+          >
+            {paragraph}
+          </ReactMarkdown>
+        </div>
+      );
     } else {
-      // Process normally with LaTeX support
+      // Process normal text/math as before
       const processed = processTextWithLatex(paragraph, `para-${paraIndex}`);
       if (paragraph.trim()) {
         parts.push(
