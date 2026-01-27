@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X, BookOpen } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import {
@@ -132,31 +133,69 @@ export const ProfessorChat = ({
     const file = e.target.files?.[0];
     if (!file || !onFileUpload) return;
 
-    try {
-      let textContent = "";
-      
-      if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-        textContent = await file.text();
-      } else if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
-        // For PDF, we'll read it as text (basic extraction)
-        // Note: Full PDF parsing would require a library
-        textContent = `[PDF file: ${file.name}] - Note: PDF content extraction requires server-side processing. The file has been attached for context.`;
-      } else if (file.name.endsWith(".docx")) {
-        textContent = `[Word document: ${file.name}] - Note: DOCX content extraction requires server-side processing. The file has been attached for context.`;
-      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-        textContent = `[Excel file: ${file.name}] - Note: Excel content extraction requires server-side processing. The file has been attached for context.`;
-      } else {
-        textContent = await file.text();
-      }
-
-      onFileUpload({ name: file.name, content: textContent });
-    } catch (error) {
-      console.error("Error reading file:", error);
-    }
-    
-    // Reset input
+    // Reset input early
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+
+    try {
+      // Check if it's a simple text file we can read client-side
+      const isTextFile = file.type === "text/plain" || 
+                         file.name.endsWith(".txt") || 
+                         file.name.endsWith(".md") ||
+                         file.name.endsWith(".json") ||
+                         file.name.endsWith(".py") ||
+                         file.name.endsWith(".js") ||
+                         file.name.endsWith(".ts") ||
+                         file.name.endsWith(".csv");
+
+      if (isTextFile) {
+        // Read text files directly on client
+        const textContent = await file.text();
+        onFileUpload({ name: file.name, content: textContent });
+        toast({
+          title: "File loaded",
+          description: `${file.name} is ready to use as context`,
+        });
+      } else {
+        // Send binary documents to backend for processing
+        toast({
+          title: "Uploading and processing...",
+          description: `Extracting text from ${file.name}`,
+        });
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const extractedContent = data.content || "";
+
+        if (!extractedContent) {
+          throw new Error("No content extracted from file");
+        }
+
+        onFileUpload({ name: file.name, content: extractedContent });
+        toast({
+          title: "File processed",
+          description: `Successfully extracted text from ${file.name}`,
+        });
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      toast({
+        title: "File processing failed",
+        description: error instanceof Error ? error.message : "Failed to process file",
+        variant: "destructive",
+      });
     }
   };
 

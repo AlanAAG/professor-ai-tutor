@@ -122,6 +122,12 @@ export const useProfessorChat = ({
   const sendMessage = async (content: string, isHidden = false) => {
     if (!selectedCourse) return;
 
+    // Prepend uploaded file content if available
+    let messageContent = content;
+    if (uploadedFile) {
+      messageContent = `[CONTEXT FROM FILE: ${uploadedFile.name}]\n${uploadedFile.content}\n\n[USER QUERY]\n${content}`;
+    }
+
     const userMessage: Message = { role: "user", content };
 
     // Only show user message if not hidden
@@ -136,6 +142,9 @@ export const useProfessorChat = ({
       // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
       const lectureToSend = selectedLecture === "__all__" ? null : selectedLecture;
 
+      // Create the message with file context for the API
+      const apiUserMessage: Message = { role: "user", content: messageContent };
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
         {
@@ -146,7 +155,7 @@ export const useProfessorChat = ({
             "x-cohort-id": selectedBatch || "2029",
           },
           body: JSON.stringify({
-            messages: [...messages, userMessage],
+            messages: [...messages, apiUserMessage],
             mode,
             selectedCourse: selectedCourse, // Send the db_key
             selectedLecture: lectureToSend, // The lecture title or null
