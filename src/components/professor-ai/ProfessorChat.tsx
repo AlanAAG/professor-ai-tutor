@@ -3,6 +3,7 @@ import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Pap
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
+import { KnowledgeLevelSelector, type KnowledgeLevel } from "./KnowledgeLevelSelector";
 import {
   Select,
   SelectContent,
@@ -15,6 +16,10 @@ import type { Mode, Message, Lecture } from "./types";
 interface UploadedFile {
   name: string;
   content: string;
+}
+
+interface CalibrationRequest {
+  topic: string;
 }
 
 interface ProfessorChatProps {
@@ -33,6 +38,8 @@ interface ProfessorChatProps {
   uploadedFile?: UploadedFile | null;
   onFileUpload?: (file: UploadedFile | null) => void;
   sessionId?: string;
+  calibrationRequest?: CalibrationRequest | null;
+  onCalibrationSelect?: (level: KnowledgeLevel) => void;
 }
 
 const quizSuggestions = [
@@ -58,12 +65,22 @@ export const ProfessorChat = ({
   uploadedFile,
   onFileUpload,
   sessionId,
+  calibrationRequest,
+  onCalibrationSelect,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [lastUserQuery, setLastUserQuery] = useState<string>("");
+
+  // Handle calibration level selection
+  const handleCalibrationSelect = (level: KnowledgeLevel) => {
+    // Send the level as a user message
+    onSendMessage(`I am a ${level}`);
+    // Notify parent to hide selector
+    onCalibrationSelect?.(level);
+  };
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
@@ -492,86 +509,100 @@ export const ProfessorChat = ({
         </div>
       </div>
 
+      {/* Calibration Mode - Knowledge Level Selector */}
+      {calibrationRequest && (
+        <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 md:p-6 w-full">
+          <div className="max-w-2xl mx-auto">
+            <KnowledgeLevelSelector
+              topic={calibrationRequest.topic}
+              onSelect={handleCalibrationSelect}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
-        <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
-          {/* Uploaded file indicator */}
-          {uploadedFile && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
-              <Paperclip className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm text-chat-text truncate flex-1">{uploadedFile.name}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 hover:bg-destructive/20"
-                onClick={handleRemoveFile}
-              >
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-end gap-2">
-              {/* File upload button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full mb-0.5"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-              >
-                <Paperclip className="w-4 h-4" />
-              </Button>
-              
-              {/* Input container with send button - properly centered */}
-              <div className="flex-1 min-w-0 relative flex items-center overflow-hidden">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
-                    // Auto-resize textarea
-                    e.target.style.height = 'auto';
-                    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-                  }}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    mode === "Quiz"
-                      ? "What topic should I quiz you on?"
-                      : !selectedCourse
-                      ? "Select a course first..."
-                      : "Ask anything..."
-                  }
-                  disabled={isInputDisabled}
-                  rows={1}
-                  className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-14 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
-                  style={{ minHeight: '48px' }}
-                />
+      {!calibrationRequest && (
+        <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
+          <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
+            {/* Uploaded file indicator */}
+            {uploadedFile && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
+                <Paperclip className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-sm text-chat-text truncate flex-1">{uploadedFile.name}</span>
                 <Button
-                  type="submit"
-                  disabled={isInputDisabled || !input.trim()}
-                  size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center flex-shrink-0"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0 hover:bg-destructive/20"
+                  onClick={handleRemoveFile}
                 >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ArrowUp className="w-4 h-4" />
-                  )}
+                  <X className="w-3.5 h-3.5" />
                 </Button>
               </div>
-            </div>
-          </form>
+            )}
+            
+            <form onSubmit={handleSubmit}>
+              <div className="flex items-end gap-2">
+                {/* File upload button */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 hover:bg-secondary rounded-full mb-0.5"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading}
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+                
+                {/* Input container with send button - properly centered */}
+                <div className="flex-1 min-w-0 relative flex items-center overflow-hidden">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value);
+                      // Auto-resize textarea
+                      e.target.style.height = 'auto';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder={
+                      mode === "Quiz"
+                        ? "What topic should I quiz you on?"
+                        : !selectedCourse
+                        ? "Select a course first..."
+                        : "Ask anything..."
+                    }
+                    disabled={isInputDisabled}
+                    rows={1}
+                    className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-14 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
+                    style={{ minHeight: '48px' }}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={isInputDisabled || !input.trim()}
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center flex-shrink-0"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </main>
   );
 };

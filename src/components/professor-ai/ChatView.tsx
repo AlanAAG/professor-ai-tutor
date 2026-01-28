@@ -1,5 +1,10 @@
 import { ProfessorChat } from "./ProfessorChat";
 import type { Mode, Message, Lecture } from "./types";
+import type { KnowledgeLevel } from "./KnowledgeLevelSelector";
+
+interface CalibrationRequest {
+  topic: string;
+}
 
 interface ChatViewProps {
   // ProfessorChat props
@@ -18,6 +23,8 @@ interface ChatViewProps {
   uploadedFile: { name: string; content: string } | null;
   onFileUpload: (file: { name: string; content: string } | null) => void;
   sessionId: string;
+  calibrationRequest?: CalibrationRequest | null;
+  onCalibrationSelect?: (level: KnowledgeLevel) => void;
 }
 
 export const ChatView = ({
