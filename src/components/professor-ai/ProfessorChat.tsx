@@ -76,8 +76,20 @@ export const ProfessorChat = ({
 
   // Handle calibration level selection
   const handleCalibrationSelect = (level: KnowledgeLevel) => {
+    let message = "";
+    switch (level) {
+      case "Novice":
+        message = "I don't know anything about this topic.";
+        break;
+      case "Intermediate":
+        message = "I have some knowledge about this.";
+        break;
+      case "Expert":
+        message = "I'm an expert on the topic.";
+        break;
+    }
     // Send the level as a user message
-    onSendMessage(`I am a ${level}`);
+    onSendMessage(message);
     // Notify parent to hide selector
     onCalibrationSelect?.(level);
   };
@@ -243,7 +255,7 @@ export const ProfessorChat = ({
   };
 
   // Pre-chat welcome screen
-  if (messages.length === 0 && !streamingContent) {
+  if (messages.length === 0 && !streamingContent && !calibrationRequest) {
     return (
       <main className="flex-1 flex flex-col h-full bg-background">
         {/* Centered welcome content */}
