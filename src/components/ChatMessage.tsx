@@ -1,5 +1,5 @@
 import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Copy, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, fixMarkdownTables } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,7 +120,7 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
       {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-2">
         <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-          {content}
+          {fixMarkdownTables(content)}
         </div>
         
         {/* Sources */}
