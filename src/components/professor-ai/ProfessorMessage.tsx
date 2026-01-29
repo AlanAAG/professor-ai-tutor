@@ -136,12 +136,28 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   ),
 });
 
+// Preprocess content to ensure tables are correctly formatted
+const preprocessContent = (content: string): string => {
+  // Regex to find table headers preceded by text without a blank line
+  // Captures:
+  // 1. Non-newline character (end of previous line)
+  // 2. The table header row (starts with pipe)
+  // 3. The separator row (starts with pipe, contains dashes/colons/spaces)
+  return content.replace(
+    /([^\n])\n(\|.*\|)\n(\|[\s-:|]*\|)/g,
+    '$1\n\n$2\n$3'
+  );
+};
+
 // Parse and render content with LaTeX support
 const renderContentWithLatex = (content: string) => {
   const parts: React.ReactNode[] = [];
 
+  // Preprocess content to fix table rendering issues
+  const processedContent = preprocessContent(content);
+
   // First split by paragraphs to handle concept definitions
-  const paragraphs = content.split(/\n\n+/);
+  const paragraphs = processedContent.split(/\n\n+/);
   
   paragraphs.forEach((paragraph, paraIndex) => {
     // Check if this paragraph is a concept definition (starts with **Term**)
