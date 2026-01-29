@@ -136,7 +136,7 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   ),
 });
 
-// Preprocess content to ensure tables are correctly formatted
+// Preprocess content to ensure tables are correctly formatted (GFM compliance)
 const preprocessContent = (content: string): string => {
   // Regex to find table headers preceded by text without a blank line
   // Captures:
