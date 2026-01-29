@@ -14,22 +14,22 @@ interface LevelOption {
 const levelOptions: LevelOption[] = [
   {
     level: "Novice",
-    title: "Novice",
-    description: "I'm new to this.",
+    title: "I don't know anything",
+    description: "Start from scratch",
     icon: <Sprout className="w-8 h-8" />,
     gradient: "from-green-400/20 to-emerald-500/20",
   },
   {
     level: "Intermediate",
-    title: "Intermediate",
-    description: "I know the basics.",
+    title: "I have some knowledge",
+    description: "Fill in the gaps",
     icon: <Compass className="w-8 h-8" />,
     gradient: "from-blue-400/20 to-cyan-500/20",
   },
   {
     level: "Expert",
-    title: "Expert",
-    description: "Deep dive.",
+    title: "I'm an expert on the topic",
+    description: "Deep dive only",
     icon: <Trophy className="w-8 h-8" />,
     gradient: "from-amber-400/20 to-orange-500/20",
   },
