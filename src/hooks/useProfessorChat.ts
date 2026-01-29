@@ -12,6 +12,9 @@ const NO_MATERIALS_FALLBACK_PHRASES = [
 // Pattern to detect expertise level set by AI in response
 const EXPERTISE_LEVEL_PATTERN = /USER LEVEL SET:\s*\[?(Novice|Intermediate|Expert)\]?/i;
 
+// Pattern to detect calibration request
+const CALIBRATION_REQUEST_PATTERN = /CALIBRATION_REQUEST:\s*(\{.*?\})/;
+
 interface UseProfessorChatProps {
   selectedCourse: string | null;
   selectedBatch: string | null;
@@ -34,6 +37,7 @@ export const useProfessorChat = ({
   const [streamingContent, setStreamingContent] = useState<string>("");
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<{ name: string; content: string } | null>(null);
+  const [calibrationRequest, setCalibrationRequest] = useState<{ topic: string } | null>(null);
 
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -65,6 +69,25 @@ export const useProfessorChat = ({
     // Strip the tag from the content for display
     return content.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
   }, [onExpertiseLevelChange]);
+
+  // Parse AI response for calibration request and strip the tag
+  const parseAndStripCalibrationRequest = useCallback((content: string): string => {
+    const match = content.match(CALIBRATION_REQUEST_PATTERN);
+    if (match) {
+      try {
+        const jsonStr = match[1];
+        const data = JSON.parse(jsonStr);
+        if (data.topic) {
+          console.log("Detected calibration request:", data);
+          setCalibrationRequest({ topic: data.topic });
+        }
+      } catch (e) {
+        console.error("Failed to parse calibration request:", e);
+      }
+      return content.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+    }
+    return content;
+  }, []);
 
   const saveConversationAndMessage = async (userContent: string, assistantContent: string) => {
     try {
@@ -137,6 +160,7 @@ export const useProfessorChat = ({
 
     setIsLoading(true);
     setStreamingContent("");
+    setCalibrationRequest(null);
 
     try {
       // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
@@ -198,24 +222,27 @@ export const useProfessorChat = ({
                   const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
                   if (typeof msgContent === 'string') {
                     accumulatedContent += msgContent;
-                    // Strip expertise tag for display during streaming
-                    const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    // Strip expertise tag and calibration request for display during streaming
+                    let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    displayContent = parseAndStripCalibrationRequest(displayContent);
                     setStreamingContent(displayContent);
                   }
                 } catch {
                   // If not valid JSON, treat as raw text
                   if (data.trim() && data !== '[DONE]') {
                     accumulatedContent += data;
-                    // Strip expertise tag for display during streaming
-                    const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    // Strip expertise tag and calibration request for display during streaming
+                    let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                    displayContent = parseAndStripCalibrationRequest(displayContent);
                     setStreamingContent(displayContent);
                   }
                 }
               } else if (line.trim() && !line.startsWith(':')) {
                 // Handle non-SSE text chunks
                 accumulatedContent += line;
-                // Strip expertise tag for display during streaming
-                const displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                // Strip expertise tag and calibration request for display during streaming
+                let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+                displayContent = parseAndStripCalibrationRequest(displayContent);
                 setStreamingContent(displayContent);
               }
             }
@@ -224,8 +251,9 @@ export const useProfessorChat = ({
 
         // Finalize streaming message
         if (accumulatedContent) {
-          // Parse for expertise level and strip tag from content
-          const cleanedContent = parseAndStripExpertiseLevel(accumulatedContent);
+          // Parse for expertise level and calibration request, and strip tags from content
+          let cleanedContent = parseAndStripExpertiseLevel(accumulatedContent);
+          cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
 
           // Check for no materials fallback
           if (checkForNoMaterialsFallback(cleanedContent)) {
@@ -250,8 +278,9 @@ export const useProfessorChat = ({
         const data = await response.json();
         const responseContent = data.response || data.content || "No response received.";
 
-        // Parse for expertise level and strip tag from content
-        const cleanedContent = parseAndStripExpertiseLevel(responseContent);
+        // Parse for expertise level and calibration request, and strip tags from content
+        let cleanedContent = parseAndStripExpertiseLevel(responseContent);
+        cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
 
         // Also check if backend returned expertise_level in metadata
         if (data.expertise_level && onExpertiseLevelChange) {
@@ -355,5 +384,7 @@ export const useProfessorChat = ({
     resetChat,
     uploadedFile,
     handleFileUpload,
+    calibrationRequest,
+    setCalibrationRequest,
   };
 };
