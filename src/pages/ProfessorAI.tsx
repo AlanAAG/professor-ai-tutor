@@ -60,6 +60,8 @@ const ProfessorAI = () => {
     onExpertiseLevelChange: setExpertiseLevel, // Silent auto-update from AI responses
   });
 
+  const { calibrationRequest, setCalibrationRequest } = chat;
+
   const quiz = useProfessorQuiz(getSelectedCourseDisplayName() || undefined);
 
   // Prevent the browser page from scrolling; only the chat areas should scroll
@@ -367,6 +369,8 @@ const ProfessorAI = () => {
             uploadedFile={chat.uploadedFile}
             onFileUpload={chat.handleFileUpload}
             sessionId={chat.sessionId}
+            calibrationRequest={calibrationRequest}
+            onCalibrationSelect={() => setCalibrationRequest(null)}
           />
         ) : (
           <ChatView
@@ -385,6 +389,8 @@ const ProfessorAI = () => {
             uploadedFile={chat.uploadedFile}
             onFileUpload={chat.handleFileUpload}
             sessionId={chat.sessionId}
+            calibrationRequest={calibrationRequest}
+            onCalibrationSelect={() => setCalibrationRequest(null)}
           />
         )}
 
