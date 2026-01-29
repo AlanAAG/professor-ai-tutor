@@ -66,7 +66,7 @@ export const ProfessorTermSelection = ({
             Select Your Term
           </h1>
           <p className="text-muted-foreground text-lg">
-            Developer Access - All batches available
+            Admin Access - All batches available
           </p>
         </div>
 

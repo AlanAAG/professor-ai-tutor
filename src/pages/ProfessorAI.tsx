@@ -71,15 +71,15 @@ const ProfessorAI = () => {
     };
   }, []);
 
-  // Track if user is a developer (has full access)
-  const [isDeveloper, setIsDeveloper] = useState(false);
+  // Track if user is an admin (has full access to all batches)
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Determine batch from user email
+  // Determine batch from user email and check admin role from database
   useEffect(() => {
     const setBatchFromUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       let batch = "2029"; // Default fallback
-      let isDevUser = false;
+      let isAdminUser = false;
 
       if (user?.email) {
         const email = user.email.toLowerCase();
@@ -87,20 +87,31 @@ const ProfessorAI = () => {
           batch = "2028";
         } else if (email.includes("2029")) {
           batch = "2029";
-        } else if (email.includes("@tetr")) {
-          // Developer/admin - no year number, has full access
-          isDevUser = true;
-          // For developers, use stored batch or default to 2029
+        }
+      }
+
+      // Check admin status from database
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (roleData) {
+          isAdminUser = true;
+          // For admins, use stored batch or default to 2029
           const storedBatch = localStorage.getItem("professorSelectedBatch");
           batch = storedBatch && (storedBatch === "2028" || storedBatch === "2029") ? storedBatch : "2029";
         }
       }
 
-      setIsDeveloper(isDevUser);
+      setIsAdmin(isAdminUser);
 
       const storedBatch = localStorage.getItem("professorSelectedBatch");
-      // Only reset if batch changed and user is not a developer (devs can switch freely)
-      if (!isDevUser && storedBatch && storedBatch !== batch) {
+      // Only reset if batch changed and user is not an admin (admins can switch freely)
+      if (!isAdminUser && storedBatch && storedBatch !== batch) {
         localStorage.removeItem("professorSelectedTerm");
         setSelectedTerm(null);
         setSelectedCourse(null);
@@ -281,7 +292,7 @@ const ProfessorAI = () => {
             setSelectedBatch(newBatch);
             localStorage.setItem("professorSelectedBatch", newBatch);
           }}
-          isDeveloper={isDeveloper}
+          isDeveloper={isAdmin}
         />
       </div>
     );
