@@ -473,7 +473,7 @@ export const ProfessorChat = ({
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
+        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
       >
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {messages.map((message, index) => {
