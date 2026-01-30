@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import type { Mode, Message, ExpertiseLevel } from "@/components/professor-ai/types";
+import type { Mode, Message, ExpertiseLevel, DiagnosticQuizData, DiagnosticSubmission, SystemEvent } from "@/components/professor-ai/types";
 
 const NO_MATERIALS_FALLBACK_PHRASES = [
   "couldn't find relevant materials",
@@ -14,6 +14,12 @@ const EXPERTISE_LEVEL_PATTERN = /USER LEVEL SET:\s*\[?(Novice|Intermediate|Exper
 
 // Pattern to detect calibration request
 const CALIBRATION_REQUEST_PATTERN = /CALIBRATION_REQUEST:\s*(\{.*?\})/;
+
+// Pattern to detect diagnostic quiz event
+const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
+
+// Pattern to detect system events (e.g., persona shift)
+const SYSTEM_EVENT_PATTERN = /SYSTEM_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
 
 interface UseProfessorChatProps {
   selectedCourse: string | null;
@@ -38,6 +44,7 @@ export const useProfessorChat = ({
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<{ name: string; content: string } | null>(null);
   const [calibrationRequest, setCalibrationRequest] = useState<{ topic: string } | null>(null);
+  const [diagnosticQuiz, setDiagnosticQuiz] = useState<DiagnosticQuizData | null>(null);
 
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -85,6 +92,49 @@ export const useProfessorChat = ({
         console.error("Failed to parse calibration request:", e);
       }
       return content.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+    }
+    return content;
+  }, []);
+
+  // Parse AI response for diagnostic quiz event and strip the tag
+  const parseAndStripDiagnosticEvent = useCallback((content: string): string => {
+    const match = content.match(DIAGNOSTIC_EVENT_PATTERN);
+    if (match) {
+      try {
+        const jsonStr = match[1];
+        const data = JSON.parse(jsonStr) as DiagnosticQuizData;
+        if (data.topic_slug && data.questions && Array.isArray(data.questions)) {
+          console.log("Detected diagnostic quiz event:", data);
+          setDiagnosticQuiz(data);
+        }
+      } catch (e) {
+        console.error("Failed to parse diagnostic event:", e);
+      }
+      return content.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+    }
+    return content;
+  }, []);
+
+  // Parse AI response for system events (e.g., persona shift) and strip the tag
+  const parseAndStripSystemEvent = useCallback((content: string): string => {
+    const match = content.match(SYSTEM_EVENT_PATTERN);
+    if (match) {
+      try {
+        const jsonStr = match[1];
+        const data = JSON.parse(jsonStr) as SystemEvent;
+        console.log("Detected system event:", data);
+        
+        if (data.type === "persona_shift") {
+          const personaName = data.persona || "Adaptive Mode";
+          toast({
+            title: `Switching to ${personaName} 🧠`,
+            description: data.message || "Adjusting teaching style based on your responses.",
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse system event:", e);
+      }
+      return content.replace(SYSTEM_EVENT_PATTERN, '').trim();
     }
     return content;
   }, []);
@@ -222,27 +272,33 @@ export const useProfessorChat = ({
                   const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
                   if (typeof msgContent === 'string') {
                     accumulatedContent += msgContent;
-                    // Strip expertise tag and calibration request for display during streaming
+                    // Strip all event tags for display during streaming
                     let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                    displayContent = parseAndStripCalibrationRequest(displayContent);
+                    displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+                    displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                    displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                     setStreamingContent(displayContent);
                   }
                 } catch {
                   // If not valid JSON, treat as raw text
                   if (data.trim() && data !== '[DONE]') {
                     accumulatedContent += data;
-                    // Strip expertise tag and calibration request for display during streaming
+                    // Strip all event tags for display during streaming
                     let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                    displayContent = parseAndStripCalibrationRequest(displayContent);
+                    displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+                    displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                    displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                     setStreamingContent(displayContent);
                   }
                 }
               } else if (line.trim() && !line.startsWith(':')) {
                 // Handle non-SSE text chunks
                 accumulatedContent += line;
-                // Strip expertise tag and calibration request for display during streaming
+                // Strip all event tags for display during streaming
                 let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                displayContent = parseAndStripCalibrationRequest(displayContent);
+                displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+                displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                 setStreamingContent(displayContent);
               }
             }
@@ -251,9 +307,11 @@ export const useProfessorChat = ({
 
         // Finalize streaming message
         if (accumulatedContent) {
-          // Parse for expertise level and calibration request, and strip tags from content
+          // Parse for expertise level, calibration, diagnostic, and system events, strip tags from content
           let cleanedContent = parseAndStripExpertiseLevel(accumulatedContent);
           cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
+          cleanedContent = parseAndStripDiagnosticEvent(cleanedContent);
+          cleanedContent = parseAndStripSystemEvent(cleanedContent);
 
           // Check for no materials fallback
           if (checkForNoMaterialsFallback(cleanedContent)) {
@@ -278,9 +336,11 @@ export const useProfessorChat = ({
         const data = await response.json();
         const responseContent = data.response || data.content || "No response received.";
 
-        // Parse for expertise level and calibration request, and strip tags from content
+        // Parse for expertise level, calibration, diagnostic, and system events, strip tags from content
         let cleanedContent = parseAndStripExpertiseLevel(responseContent);
         cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
+        cleanedContent = parseAndStripDiagnosticEvent(cleanedContent);
+        cleanedContent = parseAndStripSystemEvent(cleanedContent);
 
         // Also check if backend returned expertise_level in metadata
         if (data.expertise_level && onExpertiseLevelChange) {
@@ -354,6 +414,8 @@ export const useProfessorChat = ({
     setMessages([]);
     setStreamingContent("");
     setActiveConversationId(null);
+    setDiagnosticQuiz(null); // Clear diagnostic quiz state
+    setCalibrationRequest(null); // Clear calibration request
     
     // Regenerate session ID when switching courses for expertise isolation
     if (regenerateSession) {
@@ -372,6 +434,71 @@ export const useProfessorChat = ({
     }
   };
 
+  // Submit diagnostic quiz results to backend
+  const submitDiagnostic = async (payload: DiagnosticSubmission) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            "x-cohort-id": selectedBatch || "2029",
+          },
+          body: JSON.stringify({
+            endpoint: "submit-diagnostic",
+            session_id: sessionIdRef.current,
+            cohort_id: selectedBatch,
+            diagnostic_results: payload,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit diagnostic quiz");
+      }
+
+      const data = await response.json();
+      
+      // Check for system event in response (persona shift)
+      if (data.system_event) {
+        const event = data.system_event as SystemEvent;
+        if (event.type === "persona_shift") {
+          const personaName = event.persona || "Adaptive Mode";
+          toast({
+            title: `Switching to ${personaName} 🧠`,
+            description: event.message || "Adjusting teaching style based on your responses.",
+          });
+        }
+      }
+
+      // If there's a follow-up message from the AI, add it
+      if (data.response) {
+        setMessages(prev => [
+          ...prev,
+          { role: "assistant", content: data.response },
+        ]);
+      }
+
+      // Close the diagnostic quiz
+      setDiagnosticQuiz(null);
+
+      toast({
+        title: "Quiz submitted",
+        description: "Your responses have been analyzed.",
+      });
+    } catch (error) {
+      console.error("Error submitting diagnostic quiz:", error);
+      toast({
+        title: "Submission failed",
+        description: "Failed to submit quiz. Please try again.",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let DiagnosticQuiz handle loading state
+    }
+  };
+
   return {
     messages,
     setMessages, // Exposed for external manipulation if needed (e.g. Quiz mode adding user message)
@@ -386,5 +513,8 @@ export const useProfessorChat = ({
     handleFileUpload,
     calibrationRequest,
     setCalibrationRequest,
+    diagnosticQuiz,
+    setDiagnosticQuiz,
+    submitDiagnostic,
   };
 };

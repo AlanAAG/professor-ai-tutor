@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import { KnowledgeLevelSelector, type KnowledgeLevel } from "./KnowledgeLevelSelector";
+import { DiagnosticQuiz } from "./DiagnosticQuiz";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Mode, Message, Lecture } from "./types";
+import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission } from "./types";
 
 interface UploadedFile {
   name: string;
@@ -40,6 +41,9 @@ interface ProfessorChatProps {
   sessionId?: string;
   calibrationRequest?: CalibrationRequest | null;
   onCalibrationSelect?: (level: KnowledgeLevel) => void;
+  diagnosticQuiz?: DiagnosticQuizData | null;
+  onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
+  onDiagnosticClose?: () => void;
 }
 
 const quizSuggestions = [
@@ -67,6 +71,9 @@ export const ProfessorChat = ({
   sessionId,
   calibrationRequest,
   onCalibrationSelect,
+  diagnosticQuiz,
+  onDiagnosticSubmit,
+  onDiagnosticClose,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -524,7 +531,7 @@ export const ProfessorChat = ({
       </div>
 
       {/* Calibration Mode - Knowledge Level Selector */}
-      {calibrationRequest && (
+      {calibrationRequest && !diagnosticQuiz && (
         <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 md:p-6 w-full">
           <div className="max-w-2xl mx-auto">
             <KnowledgeLevelSelector
@@ -535,8 +542,21 @@ export const ProfessorChat = ({
         </div>
       )}
 
+      {/* Diagnostic Quiz - rendered inline when triggered */}
+      {diagnosticQuiz && onDiagnosticSubmit && (
+        <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 md:p-6 w-full">
+          <div className="max-w-3xl mx-auto">
+            <DiagnosticQuiz
+              quiz={diagnosticQuiz}
+              onSubmit={onDiagnosticSubmit}
+              onClose={onDiagnosticClose || (() => {})}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      {!calibrationRequest && (
+      {!calibrationRequest && !diagnosticQuiz && (
         <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
           <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
             {/* Uploaded file indicator - hidden for now
