@@ -45,6 +45,8 @@
 /* Professor AI Chat Styles */
 .professor-chat-scroll-area {
   scrollbar-gutter: stable;
+  /* Force flex item to shrink properly - prevents layout jump during streaming */
+  flex: 1 1 0%;
 }
 
 .professor-message-bubble {
