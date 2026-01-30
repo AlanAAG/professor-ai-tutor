@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import type { Message } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, fixMarkdownTables } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 
 interface ProfessorMessageProps {
@@ -153,8 +153,11 @@ const preprocessContent = (content: string): string => {
 const renderContentWithLatex = (content: string) => {
   const parts: React.ReactNode[] = [];
 
+  // Fix collapsed tables first
+  const fixedContent = fixMarkdownTables(content);
+
   // Preprocess content to fix table rendering issues
-  const processedContent = preprocessContent(content);
+  const processedContent = preprocessContent(fixedContent);
 
   // First split by paragraphs to handle concept definitions
   const paragraphs = processedContent.split(/\n\n+/);
