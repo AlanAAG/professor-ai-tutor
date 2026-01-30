@@ -141,10 +141,10 @@ const preprocessContent = (content: string): string => {
   // Regex to find table headers preceded by text without a blank line
   // Captures:
   // 1. Non-newline character (end of previous line)
-  // 2. The table header row (starts with pipe)
-  // 3. The separator row (starts with pipe, contains dashes/colons/spaces)
+  // 2. The table header row (starts with pipe), ignoring leading whitespace
+  // 3. The separator row (starts with pipe), ignoring leading whitespace
   return content.replace(
-    /([^\n])\n(\|.*\|)\n(\|[\s-:|]*\|)/g,
+    /([^\n])\n\s*(\|.*\|)\n\s*(\|[\s-:|]*\|)/g,
     '$1\n\n$2\n$3'
   );
 };
