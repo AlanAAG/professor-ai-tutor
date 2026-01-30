@@ -366,13 +366,14 @@ export const ProfessorChat = ({
               <div className="w-full max-w-3xl mt-6 md:mt-12 px-2">
                 <form onSubmit={handleSubmit}>
                   <div className="flex items-end gap-2">
-                    {/* File upload button */}
+                    {/* File upload button - hidden for now */}
                     <input
                       ref={fileInputRef}
                       type="file"
                       onChange={handleFileChange}
                       className="hidden"
                     />
+                    {/* Button hidden but logic preserved
                     <Button
                       type="button"
                       variant="ghost"
@@ -383,6 +384,7 @@ export const ProfessorChat = ({
                     >
                       <Paperclip className="w-5 h-5" />
                     </Button>
+                    */}
                     
                     <div className="relative flex-1">
                       <textarea
@@ -416,7 +418,7 @@ export const ProfessorChat = ({
                   </div>
                 </form>
                 
-                {/* Uploaded file indicator */}
+                {/* Uploaded file indicator - hidden for now
                 {uploadedFile && (
                   <div className="flex items-center justify-center gap-2 mt-3 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30 max-w-md mx-auto">
                     <Paperclip className="w-4 h-4 text-primary shrink-0" />
@@ -431,6 +433,7 @@ export const ProfessorChat = ({
                     </Button>
                   </div>
                 )}
+                */}
                 
                 {/* Quick suggestions */}
                 <div className="flex flex-wrap justify-center gap-2 mt-4 md:mt-6">
@@ -536,7 +539,7 @@ export const ProfessorChat = ({
       {!calibrationRequest && (
         <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
           <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
-            {/* Uploaded file indicator */}
+            {/* Uploaded file indicator - hidden for now
             {uploadedFile && (
               <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">
                 <Paperclip className="w-4 h-4 text-primary shrink-0" />
@@ -551,16 +554,18 @@ export const ProfessorChat = ({
                 </Button>
               </div>
             )}
+            */}
             
             <form onSubmit={handleSubmit}>
               <div className="flex items-end gap-2">
-                {/* File upload button */}
+                {/* File upload button - hidden for now */}
                 <input
                   ref={fileInputRef}
                   type="file"
                   onChange={handleFileChange}
                   className="hidden"
                 />
+                {/* Button hidden but logic preserved
                 <Button
                   type="button"
                   variant="ghost"
@@ -571,6 +576,7 @@ export const ProfessorChat = ({
                 >
                   <Paperclip className="w-4 h-4" />
                 </Button>
+                */}
                 
                 {/* Input container with send button - properly centered */}
                 <div className="flex-1 min-w-0 relative flex items-center overflow-hidden">
