@@ -9,7 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import type { Message } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn, fixMarkdownTables } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 
 interface ProfessorMessageProps {
@@ -136,28 +136,37 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   ),
 });
 
+// [Updated Preprocessor]
 // Preprocess content to ensure tables are correctly formatted
 const preprocessContent = (content: string): string => {
-  // Regex to find table headers preceded by text without a blank line
-  // Captures:
-  // 1. Non-newline character (end of previous line)
-  // 2. The table header row (starts with pipe), ignoring leading whitespace
-  // 3. The separator row (starts with pipe), ignoring leading whitespace
-  return content.replace(
+  let processed = content;
+
+  // 1. Ensure blank line BEFORE table header
+  // Looks for: text -> newline -> header row -> newline -> separator row
+  // Adds an extra newline before the header to trigger block mode
+  processed = processed.replace(
     /([^\n])\n\s*(\|.*\|)\n\s*(\|[\s-:|]*\|)/g,
     '$1\n\n$2\n$3'
   );
+
+  // 2. Ensure NO blank line between separator and first row
+  // Looks for: separator row -> double newline -> start of next row (pipe)
+  // Collapses it to a single newline to attach the body to the header
+  processed = processed.replace(
+    /(\|[\s-:|]*\|)\n\n+(?=\|)/g,
+    '$1\n'
+  );
+
+  return processed;
 };
 
 // Parse and render content with LaTeX support
 const renderContentWithLatex = (content: string) => {
   const parts: React.ReactNode[] = [];
 
-  // Fix collapsed tables first
-  const fixedContent = fixMarkdownTables(content);
-
-  // Preprocess content to fix table rendering issues
-  const processedContent = preprocessContent(fixedContent);
+  // FIX: Do not use fixMarkdownTables(content); it interferes with spacing.
+  // Use the robust preprocessor directly.
+  const processedContent = preprocessContent(content);
 
   // First split by paragraphs to handle concept definitions
   const paragraphs = processedContent.split(/\n\n+/);
