@@ -32,9 +32,7 @@ const isConceptDefinition = (text: string): { term: string; description: string 
 
 // Check if text is a Markdown table (contains pipes and separator row pattern)
 const isTable = (text: string): boolean => {
-  // Check if text looks like a table: has newlines, |, and a separator row
-  // Separator row matches loose pattern of dashes and pipes
-  return text.includes('|') && text.includes('\n') && /^\s*\|?[\s-:]*[-]+[\s-:|]*\|[\s-:|]*\|?\s*$/m.test(text);
+  return text.includes('|') && /\|[\s-:|]*\|/.test(text) && text.includes('\n');
 };
 
 // Reusable markdown components configuration
@@ -144,17 +142,16 @@ const preprocessContent = (content: string): string => {
   let processed = content;
 
   // 1. Ensure blank line BEFORE table header
-  // Looks for: non-newline char -> newline -> header row (roughly) -> newline -> separator row
-  // We use a looser pattern for the header to catch more cases
-  // NOTE: Separator row regex matches spaces, tabs, dashes, colons, pipes, but MUST contain at least one dash
-  // and NOT match lines that contain letters (to avoid splitting text tables)
+  // Looks for: text -> newline -> header row -> newline -> separator row
+  // Adds an extra newline before the header to trigger block mode
   processed = processed.replace(
-    /([^\n])\n([ \t]*\|?.*\|.*)\n([ \t]*\|?[- \t:|]*-[ \t:|]*\|?)/g,
+    /([^\n])\n\s*(\|.*\|)\n\s*(\|[\s-:|]*\|)/g,
     '$1\n\n$2\n$3'
   );
 
   // 2. Ensure NO blank line between separator and first row
-  // Looks for: separator row -> double newline -> start of next row
+  // Looks for: separator row -> double newline -> start of next row (pipe)
+  // Collapses it to a single newline to attach the body to the header
   processed = processed.replace(
     /(\|[\s-:|]*\|)\n\n+(?=\|)/g,
     '$1\n'
