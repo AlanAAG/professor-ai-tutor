@@ -116,7 +116,7 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   ),
   // Table components for GFM tables
   table: ({ children }: { children?: React.ReactNode }) => (
-    <div className="my-4 w-full overflow-y-auto rounded-lg border border-border/50">
+    <div className="my-4 w-full overflow-x-auto max-w-full rounded-lg border border-border/50">
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
@@ -245,7 +245,7 @@ const processTextWithLatex = (text: string, keyPrefix: string): React.ReactNode[
     if (segment.type === 'blockMath') {
       try {
         parts.push(
-          <div key={`${keyPrefix}-block-${segIndex}`} className="my-4 overflow-x-auto flex justify-center">
+          <div key={`${keyPrefix}-block-${segIndex}`} className="my-4 overflow-x-auto max-w-full flex justify-center">
             <BlockMath math={segment.content} />
           </div>
         );
