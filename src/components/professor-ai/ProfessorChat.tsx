@@ -469,12 +469,11 @@ export const ProfessorChat = ({
   // Chat mode with messages
   return (
     <main className="flex flex-col h-full bg-background overflow-hidden">
-      {/* Messages area - flex-1 to take available space */}
+      {/* Messages area - flex-1 with min-h-0 ensures stable flex layout during streaming */}
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
-        style={{ minHeight: 0 }}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
       >
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
           {messages.map((message, index) => {
