@@ -146,8 +146,10 @@ const preprocessContent = (content: string): string => {
   // 1. Ensure blank line BEFORE table header
   // Looks for: non-newline char -> newline -> header row (roughly) -> newline -> separator row
   // We use a looser pattern for the header to catch more cases
+  // NOTE: Separator row regex matches spaces, tabs, dashes, colons, pipes, but MUST contain at least one dash
+  // and NOT match lines that contain letters (to avoid splitting text tables)
   processed = processed.replace(
-    /([^\n])\n(\s*\|?.*\|.*)\n(\s*\|?[\s-:|]+\|?)/g,
+    /([^\n])\n([ \t]*\|?.*\|.*)\n([ \t]*\|?[- \t:|]*-[ \t:|]*\|?)/g,
     '$1\n\n$2\n$3'
   );
 
