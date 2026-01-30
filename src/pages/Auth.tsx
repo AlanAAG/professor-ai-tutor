@@ -40,11 +40,12 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate @tetr.com email domain
-    if (!email.toLowerCase().endsWith('@tetr.com')) {
+    // Validate @tetr.com or @tetr.org email domain
+    const emailLower = email.toLowerCase();
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
-        description: "Please log in with your @tetr.com account",
+        description: "Please log in with your @tetr.com or @tetr.org account",
         variant: "destructive",
       });
       return;
@@ -79,11 +80,12 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate @tetr.com email domain
-    if (!email.toLowerCase().endsWith('@tetr.com')) {
+    // Validate @tetr.com or @tetr.org email domain
+    const emailLower = email.toLowerCase();
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
-        description: "Please log in with your @tetr.com account",
+        description: "Please log in with your @tetr.com or @tetr.org account",
         variant: "destructive",
       });
       return;
@@ -145,11 +147,12 @@ const Auth = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate @tetr.com email domain
-    if (!email.toLowerCase().endsWith('@tetr.com')) {
+    // Validate @tetr.com or @tetr.org email domain
+    const emailLower = email.toLowerCase();
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
-        description: "Please use your @tetr.com account",
+        description: "Please use your @tetr.com or @tetr.org account",
         variant: "destructive",
       });
       return;
@@ -184,11 +187,12 @@ const Auth = () => {
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate @tetr.com email domain
-    if (!email.toLowerCase().endsWith('@tetr.com')) {
+    // Validate @tetr.com or @tetr.org email domain
+    const emailLower = email.toLowerCase();
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
-        description: "Please use your @tetr.com account",
+        description: "Please use your @tetr.com or @tetr.org account",
         variant: "destructive",
       });
       return;
