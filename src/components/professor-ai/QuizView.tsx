@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { QuizResults } from "./QuizResults";
 import { QuizCard, Quiz } from "./QuizCard";
 import { ProfessorChat } from "./ProfessorChat";
-import type { Mode, Message, Lecture } from "./types";
+import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission } from "./types";
 import type { KnowledgeLevel } from "./KnowledgeLevelSelector";
 
 interface CalibrationRequest {
@@ -36,6 +36,9 @@ interface QuizViewProps {
   sessionId: string;
   calibrationRequest?: CalibrationRequest | null;
   onCalibrationSelect?: (level: KnowledgeLevel) => void;
+  diagnosticQuiz?: DiagnosticQuizData | null;
+  onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
+  onDiagnosticClose?: () => void;
 }
 
 export const QuizView = ({
