@@ -16,14 +16,16 @@ export interface Lecture {
 
 // Diagnostic Quiz types
 export interface DiagnosticQuestion {
-  q_id: string;
-  question: string;
-  options: { A: string; B: string; C: string; D: string };
+  q_id?: string;
+  id?: string;
+  question?: string;
+  text?: string;
+  options: { A: string; B: string; C: string; D: string } | Array<{ id: string; text: string } | string>;
 }
 
 export interface DiagnosticQuizData {
   topic_slug: string;
-  title: string;
+  title?: string;
   questions: DiagnosticQuestion[];
 }
 
