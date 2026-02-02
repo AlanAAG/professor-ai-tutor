@@ -15,8 +15,8 @@ const EXPERTISE_LEVEL_PATTERN = /USER LEVEL SET:\s*\[?(Novice|Intermediate|Exper
 // Pattern to detect calibration request
 const CALIBRATION_REQUEST_PATTERN = /CALIBRATION_REQUEST:\s*(\{.*?\})/;
 
-// Pattern to detect diagnostic quiz event
-const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
+// Pattern to detect diagnostic quiz event - greedy match to capture full nested JSON
+const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*\})$/;
 
 // Pattern to detect system events (e.g., persona shift)
 const SYSTEM_EVENT_PATTERN = /SYSTEM_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
@@ -99,18 +99,32 @@ export const useProfessorChat = ({
   // Parse AI response for diagnostic quiz event and strip the tag
   const parseAndStripDiagnosticEvent = useCallback((content: string): string => {
     const match = content.match(DIAGNOSTIC_EVENT_PATTERN);
-    if (match) {
+    if (match && match[1]) {
       try {
-        const jsonStr = match[1];
-        const data = JSON.parse(jsonStr) as DiagnosticQuizData;
-        if (data.topic_slug && data.questions && Array.isArray(data.questions)) {
-          console.log("Detected diagnostic quiz event:", data);
-          setDiagnosticQuiz(data);
+        const jsonStr = match[1].trim();
+        const data = JSON.parse(jsonStr);
+        const cleanResponse = content.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+
+        // Handle both new (Object) and old (Array) formats
+        if (data.questions && Array.isArray(data.questions)) {
+          // Format A: Already has topic_slug and questions structure
+          console.log("Detected diagnostic quiz event (object format):", data);
+          setDiagnosticQuiz(data as DiagnosticQuizData);
+        } else if (Array.isArray(data)) {
+          // Format B: Raw array of questions - wrap in object
+          console.log("Detected diagnostic quiz event (array format):", data);
+          setDiagnosticQuiz({
+            topic_slug: "general-review",
+            title: "Knowledge Check",
+            questions: data,
+          });
         }
+        return cleanResponse;
       } catch (e) {
         console.error("Failed to parse diagnostic event:", e);
+        // If parsing fails, return original content to avoid losing data
+        return content;
       }
-      return content.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
     }
     return content;
   }, []);
