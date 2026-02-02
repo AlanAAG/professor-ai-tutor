@@ -113,8 +113,9 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
   };
 
   return (
-    <Card className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-xl max-h-[70vh] flex flex-col">
-      <CardHeader className="pb-4 shrink-0">
+    <Card className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-xl max-h-[60vh] flex flex-col overflow-hidden">
+      {/* Fixed Header */}
+      <CardHeader className="pb-4 shrink-0 border-b border-border/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
@@ -137,7 +138,7 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
         </div>
         
         {/* Progress dots */}
-        <div className="flex items-center gap-1.5 mt-4">
+        <div className="flex items-center gap-1.5 mt-4 flex-wrap">
           {quiz.questions.map((_, idx) => (
             <button
               key={idx}
@@ -155,8 +156,9 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
         </div>
       </CardHeader>
 
-      <ScrollArea className="flex-1 min-h-0">
-        <CardContent className="space-y-5 pb-6">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <CardContent className="space-y-4 py-4 px-6">
           {/* Question */}
           <div className="p-4 bg-secondary/30 rounded-xl border border-border/50">
             <p className="text-foreground font-medium leading-relaxed">
@@ -171,7 +173,7 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
                 key={opt.id}
                 onClick={() => handleSelectOption(opt.id)}
                 className={cn(
-                  "w-full p-4 rounded-xl border-2 text-left transition-all",
+                  "w-full p-3 md:p-4 rounded-xl border-2 text-left transition-all",
                   "hover:border-primary/50 hover:bg-primary/5",
                   currentAnswer.selected === opt.id
                     ? "border-primary bg-primary/10 shadow-sm"
@@ -218,7 +220,7 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
               value={currentAnswer.reasoning}
               onChange={(e) => handleReasoningChange(e.target.value)}
               placeholder="Explain your reasoning..."
-              className="min-h-[100px] bg-background/50 border-border/50 focus:border-primary/50 resize-none"
+              className="min-h-[80px] bg-background/50 border-border/50 focus:border-primary/50 resize-none"
             />
             {currentAnswer.selected !== null && currentAnswer.reasoning.trim().length < MIN_REASONING_LENGTH && (
               <p className="text-xs text-muted-foreground">
@@ -226,50 +228,52 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
               </p>
             )}
           </div>
+        </CardContent>
+      </div>
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between pt-2">
+      {/* Fixed Footer with Navigation */}
+      <div className="shrink-0 border-t border-border/30 bg-card/95 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+            className="gap-1"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Previous
+          </Button>
+
+          {currentIndex === quiz.questions.length - 1 ? (
             <Button
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentIndex === 0}
+              onClick={handleSubmit}
+              disabled={!allQuestionsComplete || isSubmitting}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Submit Quiz
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleNext}
+              disabled={!isCurrentQuestionComplete}
               className="gap-1"
             >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
+              Next
+              <ChevronRight className="w-4 h-4" />
             </Button>
-
-            {currentIndex === quiz.questions.length - 1 ? (
-              <Button
-                onClick={handleSubmit}
-                disabled={!allQuestionsComplete || isSubmitting}
-                className="gap-2 bg-primary hover:bg-primary/90"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    Submit Quiz
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={!isCurrentQuestionComplete}
-                className="gap-1"
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </ScrollArea>
+          )}
+        </div>
+      </div>
     </Card>
   );
 };
