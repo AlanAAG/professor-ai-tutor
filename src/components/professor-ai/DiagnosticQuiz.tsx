@@ -14,7 +14,7 @@ interface DiagnosticQuizProps {
 
 interface Answer {
   q_id: string;
-  selected: "A" | "B" | "C" | "D" | null;
+  selected: "A" | "B" | "C" | "D" | "IDK" | null;
 }
 
 // Helper to normalize option format (handles both object and string formats)
@@ -39,7 +39,7 @@ const getOptionsArray = (options: any): Array<{ id: string; text: string }> => {
   }
   // If options is an object with A, B, C, D keys (old format)
   if (typeof options === 'object' && options !== null) {
-    return ['A', 'B', 'C', 'D']
+    return ['A', 'B', 'C', 'D', 'IDK']
       .filter(key => options[key] !== undefined)
       .map(key => ({ id: key, text: options[key] }));
   }
@@ -89,7 +89,6 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
         answers: answers.map((a) => ({
           q_id: a.q_id,
           selected: a.selected!,
-          reasoning: "",
         })),
       };
       await onSubmit(payload);

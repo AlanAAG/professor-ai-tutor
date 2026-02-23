@@ -20,7 +20,7 @@ export interface DiagnosticQuestion {
   id?: string;
   question?: string;
   text?: string;
-  options: { A: string; B: string; C: string; D: string } | Array<{ id: string; text: string } | string>;
+  options: { A: string; B: string; C: string; D: string; IDK?: string } | Array<{ id: string; text: string } | string>;
 }
 
 export interface DiagnosticQuizData {
@@ -33,8 +33,7 @@ export interface DiagnosticSubmission {
   topic_slug: string;
   answers: Array<{
     q_id: string;
-    selected: "A" | "B" | "C" | "D";
-    reasoning: string;
+    selected: "A" | "B" | "C" | "D" | "IDK";
   }>;
 }
 
