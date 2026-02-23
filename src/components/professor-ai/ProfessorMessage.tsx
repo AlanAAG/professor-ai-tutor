@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
+import { MermaidDiagram } from "./MermaidDiagram";
 
 interface ProfessorMessageProps {
   message: Message;
@@ -85,6 +86,12 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   },
   code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     const isCodeBlock = !!className;
+    const isMermaid = className === 'language-mermaid';
+
+    if (isMermaid && children) {
+      return <MermaidDiagram chart={String(children).replace(/\n$/, '')} />;
+    }
+
     if (isCodeBlock) {
       return (
         <pre className="bg-secondary/60 border border-border/50 p-4 rounded-lg my-4 overflow-x-auto max-w-full">
