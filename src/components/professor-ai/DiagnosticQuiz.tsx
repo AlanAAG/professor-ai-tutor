@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, CheckCircle2, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { DiagnosticQuizData, DiagnosticSubmission } from "./types";
@@ -16,10 +15,7 @@ interface DiagnosticQuizProps {
 interface Answer {
   q_id: string;
   selected: "A" | "B" | "C" | "D" | null;
-  reasoning: string;
 }
-
-const MIN_REASONING_LENGTH = 20;
 
 // Helper to normalize option format (handles both object and string formats)
 const getOptionIdAndText = (opt: any, fallbackKey: string): { id: string; text: string } => {
@@ -53,7 +49,7 @@ const getOptionsArray = (options: any): Array<{ id: string; text: string }> => {
 export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>(
-    quiz.questions.map((q) => ({ q_id: q.q_id || q.id || String(q), selected: null, reasoning: "" }))
+    quiz.questions.map((q) => ({ q_id: q.q_id || q.id || String(q), selected: null }))
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,23 +57,13 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
   const currentAnswer = answers[currentIndex];
   const optionsArray = getOptionsArray(currentQuestion.options);
 
-  const isCurrentQuestionComplete =
-    currentAnswer.selected !== null &&
-    currentAnswer.reasoning.trim().length >= MIN_REASONING_LENGTH;
+  const isCurrentQuestionComplete = currentAnswer.selected !== null;
 
-  const allQuestionsComplete = answers.every(
-    (a) => a.selected !== null && a.reasoning.trim().length >= MIN_REASONING_LENGTH
-  );
+  const allQuestionsComplete = answers.every((a) => a.selected !== null);
 
   const handleSelectOption = (optionId: string) => {
     setAnswers((prev) =>
       prev.map((a, i) => (i === currentIndex ? { ...a, selected: optionId as any } : a))
-    );
-  };
-
-  const handleReasoningChange = (value: string) => {
-    setAnswers((prev) =>
-      prev.map((a, i) => (i === currentIndex ? { ...a, reasoning: value } : a))
     );
   };
 
@@ -103,7 +89,7 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
         answers: answers.map((a) => ({
           q_id: a.q_id,
           selected: a.selected!,
-          reasoning: a.reasoning.trim(),
+          reasoning: "",
         })),
       };
       await onSubmit(payload);
@@ -147,7 +133,7 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
                 "h-2 rounded-full transition-all",
                 idx === currentIndex
                   ? "w-6 bg-primary"
-                  : answers[idx].selected !== null && answers[idx].reasoning.trim().length >= MIN_REASONING_LENGTH
+                  : answers[idx].selected !== null
                   ? "w-2 bg-primary/60"
                   : "w-2 bg-border hover:bg-border/80"
               )}
@@ -199,35 +185,6 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
             ))}
           </div>
 
-          {/* Reasoning textarea */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-foreground">
-                Why did you choose this? <span className="text-destructive">*</span>
-              </label>
-              <span
-                className={cn(
-                  "text-xs transition-colors",
-                  currentAnswer.reasoning.trim().length >= MIN_REASONING_LENGTH
-                    ? "text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {currentAnswer.reasoning.trim().length} / {MIN_REASONING_LENGTH} min
-              </span>
-            </div>
-            <Textarea
-              value={currentAnswer.reasoning}
-              onChange={(e) => handleReasoningChange(e.target.value)}
-              placeholder="Explain your reasoning..."
-              className="min-h-[80px] bg-background/50 border-border/50 focus:border-primary/50 resize-none"
-            />
-            {currentAnswer.selected !== null && currentAnswer.reasoning.trim().length < MIN_REASONING_LENGTH && (
-              <p className="text-xs text-muted-foreground">
-                Please provide at least {MIN_REASONING_LENGTH} characters explaining your choice.
-              </p>
-            )}
-          </div>
         </CardContent>
       </div>
 
