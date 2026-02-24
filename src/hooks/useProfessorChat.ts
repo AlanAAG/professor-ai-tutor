@@ -45,6 +45,7 @@ export const useProfessorChat = ({
   const [uploadedFile, setUploadedFile] = useState<{ name: string; content: string } | null>(null);
   const [calibrationRequest, setCalibrationRequest] = useState<{ topic: string } | null>(null);
   const [diagnosticQuiz, setDiagnosticQuiz] = useState<DiagnosticQuizData | null>(null);
+  const [isGeneratingDiagnostic, setIsGeneratingDiagnostic] = useState(false);
 
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -225,6 +226,7 @@ export const useProfessorChat = ({
     setIsLoading(true);
     setStreamingContent("");
     setCalibrationRequest(null);
+    setIsGeneratingDiagnostic(false);
 
     try {
       // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
@@ -286,10 +288,24 @@ export const useProfessorChat = ({
                   const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
                   if (typeof msgContent === 'string') {
                     accumulatedContent += msgContent;
+
+                    // Check for diagnostic event start
+                    if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
+                      setIsGeneratingDiagnostic(true);
+                    }
+
                     // Strip all event tags for display during streaming
                     let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
                     displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-                    displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+
+                    // Special handling for diagnostic event to hide partial JSON
+                    if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
+                      const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
+                      displayContent = displayContent.substring(0, index).trim();
+                    } else {
+                      displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                    }
+
                     displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                     setStreamingContent(displayContent);
                   }
@@ -297,10 +313,24 @@ export const useProfessorChat = ({
                   // If not valid JSON, treat as raw text
                   if (data.trim() && data !== '[DONE]') {
                     accumulatedContent += data;
+
+                    // Check for diagnostic event start
+                    if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
+                      setIsGeneratingDiagnostic(true);
+                    }
+
                     // Strip all event tags for display during streaming
                     let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
                     displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-                    displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+
+                    // Special handling for diagnostic event to hide partial JSON
+                    if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
+                      const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
+                      displayContent = displayContent.substring(0, index).trim();
+                    } else {
+                      displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                    }
+
                     displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                     setStreamingContent(displayContent);
                   }
@@ -308,10 +338,24 @@ export const useProfessorChat = ({
               } else if (line.trim() && !line.startsWith(':')) {
                 // Handle non-SSE text chunks
                 accumulatedContent += line;
+
+                // Check for diagnostic event start
+                if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
+                  setIsGeneratingDiagnostic(true);
+                }
+
                 // Strip all event tags for display during streaming
                 let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
                 displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-                displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+
+                // Special handling for diagnostic event to hide partial JSON
+                if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
+                  const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
+                  displayContent = displayContent.substring(0, index).trim();
+                } else {
+                  displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+                }
+
                 displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
                 setStreamingContent(displayContent);
               }
@@ -320,6 +364,7 @@ export const useProfessorChat = ({
         }
 
         // Finalize streaming message
+        setIsGeneratingDiagnostic(false);
         if (accumulatedContent) {
           // Parse for expertise level, calibration, diagnostic, and system events, strip tags from content
           let cleanedContent = parseAndStripExpertiseLevel(accumulatedContent);
@@ -530,5 +575,6 @@ export const useProfessorChat = ({
     diagnosticQuiz,
     setDiagnosticQuiz,
     submitDiagnostic,
+    isGeneratingDiagnostic,
   };
 };

@@ -44,6 +44,7 @@ interface ProfessorChatProps {
   diagnosticQuiz?: DiagnosticQuizData | null;
   onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
   onDiagnosticClose?: () => void;
+  isGeneratingDiagnostic?: boolean;
 }
 
 const quizSuggestions = [
@@ -74,6 +75,7 @@ export const ProfessorChat = ({
   diagnosticQuiz,
   onDiagnosticSubmit,
   onDiagnosticClose,
+  isGeneratingDiagnostic,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -262,7 +264,7 @@ export const ProfessorChat = ({
   };
 
   // Pre-chat welcome screen
-  if (messages.length === 0 && !streamingContent && !calibrationRequest) {
+  if (messages.length === 0 && !streamingContent && !calibrationRequest && !isGeneratingDiagnostic) {
     return (
       <main className="flex-1 flex flex-col h-full bg-background">
         {/* Centered welcome content */}
@@ -526,6 +528,14 @@ export const ProfessorChat = ({
               </div>
             </div>
           )}
+
+          {isGeneratingDiagnostic && (
+            <div className="flex items-center space-x-2 text-muted-foreground p-4 bg-secondary/20 rounded-lg animate-pulse">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm font-medium">🧠 Generating knowledge check...</span>
+            </div>
+          )}
+
           <div ref={messagesEndRef} className="h-8" />
         </div>
       </div>

@@ -60,7 +60,7 @@ const ProfessorAI = () => {
     onExpertiseLevelChange: setExpertiseLevel, // Silent auto-update from AI responses
   });
 
-  const { calibrationRequest, setCalibrationRequest, diagnosticQuiz, setDiagnosticQuiz, submitDiagnostic } = chat;
+  const { calibrationRequest, setCalibrationRequest, diagnosticQuiz, setDiagnosticQuiz, submitDiagnostic, isGeneratingDiagnostic } = chat;
 
   const quiz = useProfessorQuiz(getSelectedCourseDisplayName() || undefined);
 
@@ -374,6 +374,7 @@ const ProfessorAI = () => {
             diagnosticQuiz={diagnosticQuiz}
             onDiagnosticSubmit={submitDiagnostic}
             onDiagnosticClose={() => setDiagnosticQuiz(null)}
+            isGeneratingDiagnostic={isGeneratingDiagnostic}
           />
         ) : (
           <ChatView
@@ -397,6 +398,7 @@ const ProfessorAI = () => {
             diagnosticQuiz={diagnosticQuiz}
             onDiagnosticSubmit={submitDiagnostic}
             onDiagnosticClose={() => setDiagnosticQuiz(null)}
+            isGeneratingDiagnostic={isGeneratingDiagnostic}
           />
         )}
 

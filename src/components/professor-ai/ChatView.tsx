@@ -28,6 +28,7 @@ interface ChatViewProps {
   diagnosticQuiz?: DiagnosticQuizData | null;
   onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
   onDiagnosticClose?: () => void;
+  isGeneratingDiagnostic?: boolean;
 }
 
 export const ChatView = ({
