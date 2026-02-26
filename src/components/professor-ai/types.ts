@@ -21,6 +21,7 @@ export interface DiagnosticQuestion {
   question?: string;
   text?: string;
   options: { A: string; B: string; C: string; D: string; IDK?: string } | Array<{ id: string; text: string } | string>;
+  correct_id?: string;
 }
 
 export interface DiagnosticQuizData {
@@ -34,6 +35,7 @@ export interface DiagnosticSubmission {
   answers: Array<{
     q_id: string;
     selected: "A" | "B" | "C" | "D" | "IDK";
+    correct_id?: string;
   }>;
 }
 
