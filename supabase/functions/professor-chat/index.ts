@@ -85,6 +85,33 @@ serve(async (req) => {
     // Chat endpoint - POST requests
     const body = await req.json();
     console.log("Chat request:", JSON.stringify(body));
+
+    // NEW: Route diagnostic submissions correctly
+    if (body.endpoint === "submit-diagnostic") {
+      const diagResponse = await fetch(`${PROFESSOR_API_URL}/api/diagnostic/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "x-cohort-id": cohortId,
+        },
+        body: JSON.stringify({
+          session_id: body.session_id,
+          topic_slug: body.diagnostic_results.topic_slug,
+          answers: body.diagnostic_results.answers
+        }),
+      });
+
+      if (!diagResponse.ok) {
+        const errorText = await diagResponse.text();
+        throw new Error(`Diagnostic submit returned ${diagResponse.status}: ${errorText}`);
+      }
+
+      const data = await diagResponse.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     // Build system message with formatting instructions
     const systemInstructions = `When providing Excel formulas, ALWAYS wrap them in Markdown code blocks (e.g., \`=SUM(A1:B1)\`).

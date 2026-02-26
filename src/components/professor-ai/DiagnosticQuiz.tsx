@@ -61,9 +61,10 @@ export const DiagnosticQuiz = ({ quiz, onSubmit, onClose }: DiagnosticQuizProps)
     try {
       await onSubmit({
         topic_slug: quiz.topic_slug,
-        answers: answers.map((a) => ({
+        answers: answers.map((a, i) => ({
           q_id: a.q_id,
           selected: a.selected as any,
+          correct_id: quiz.questions[i].correct_id,
         })),
       });
     } finally {
