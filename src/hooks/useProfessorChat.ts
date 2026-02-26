@@ -229,6 +229,10 @@ export const useProfessorChat = ({
     setIsGeneratingDiagnostic(false);
 
     try {
+      // Fetch authenticated user ID for backend memory
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id || null;
+
       // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
       const lectureToSend = selectedLecture === "__all__" ? null : selectedLecture;
 
@@ -252,6 +256,7 @@ export const useProfessorChat = ({
             session_id: sessionIdRef.current, // Session ID for backend chat persistence
             cohort_id: selectedBatch,
             expertise_level: expertiseLevel, // Adaptive learning - user's expertise level
+            user_id: userId, // Authenticated user ID for persistent memory
           }),
         }
       );
@@ -496,6 +501,10 @@ export const useProfessorChat = ({
   // Submit diagnostic quiz results to backend
   const submitDiagnostic = async (payload: DiagnosticSubmission) => {
     try {
+      // Fetch authenticated user ID for backend memory
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id || null;
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
         {
@@ -510,6 +519,7 @@ export const useProfessorChat = ({
             session_id: sessionIdRef.current,
             cohort_id: selectedBatch,
             diagnostic_results: payload,
+            user_id: userId, // Authenticated user ID for persistent memory
           }),
         }
       );

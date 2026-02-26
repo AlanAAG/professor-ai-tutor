@@ -86,28 +86,34 @@ serve(async (req) => {
     const body = await req.json();
     console.log("Chat request:", JSON.stringify(body));
 
-    // NEW: Route diagnostic submissions correctly
+    // Handle submit-diagnostic endpoint
     if (body.endpoint === "submit-diagnostic") {
-      const diagResponse = await fetch(`${PROFESSOR_API_URL}/api/diagnostic/submit`, {
+      const diagnosticPayload = {
+        session_id: body.session_id || null,
+        cohort_id: body.cohort_id || cohortId,
+        diagnostic_results: body.diagnostic_results,
+        user_id: body.user_id || null,
+      };
+
+      console.log("Sending diagnostic submission:", JSON.stringify(diagnosticPayload));
+
+      const response = await fetch(`${PROFESSOR_API_URL}/api/diagnostic/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
           "x-cohort-id": cohortId,
         },
-        body: JSON.stringify({
-          session_id: body.session_id,
-          topic_slug: body.diagnostic_results.topic_slug,
-          answers: body.diagnostic_results.answers
-        }),
+        body: JSON.stringify(diagnosticPayload),
       });
 
-      if (!diagResponse.ok) {
-        const errorText = await diagResponse.text();
-        throw new Error(`Diagnostic submit returned ${diagResponse.status}: ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Diagnostic submit error:", errorText);
+        throw new Error(`Backend returned ${response.status}: ${errorText}`);
       }
 
-      const data = await diagResponse.json();
+      const data = await response.json();
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -135,7 +141,8 @@ Use clear bullet points and bold text for lists of definitions.`;
       selectedLecture: body.selectedLecture === "__all__" ? null : (body.selectedLecture || null),
       cohort_id: body.cohort_id || cohortId,
       session_id: body.session_id || null,
-      expertise_level: body.expertise_level || null, // Adaptive learning - user's expertise level
+      expertise_level: body.expertise_level || null,
+      user_id: body.user_id || null,
     };
 
     console.log("Sending to backend:", JSON.stringify(payload));
