@@ -23,14 +23,22 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
           const id = `mermaid-${Math.random().toString(36).substring(2, 11)}`;
           const { svg } = await mermaid.render(id, chart);
           setSvg(svg);
-        } catch (error) {
-          console.error("Failed to render mermaid diagram", error);
-          setSvg(`<div class="text-destructive text-sm p-4 border border-destructive/20 rounded">Failed to render diagram</div>`);
+        } catch {
+          // Expected during streaming — show loading fallback silently
+          setSvg('');
         }
       }
     };
     renderDiagram();
   }, [chart]);
+
+  if (!svg) {
+    return (
+      <div className="my-6 text-sm text-muted-foreground animate-pulse p-4 border rounded-md bg-muted/50">
+        Drawing diagram...
+      </div>
+    );
+  }
 
   return (
     <div
