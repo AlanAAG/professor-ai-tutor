@@ -91,7 +91,8 @@ serve(async (req) => {
       const diagnosticPayload = {
         session_id: body.session_id || null,
         cohort_id: body.cohort_id || cohortId,
-        diagnostic_results: body.diagnostic_results,
+        topic_slug: body.diagnostic_results?.topic_slug,
+        answers: body.diagnostic_results?.answers,
         user_id: body.user_id || null,
       };
 
@@ -143,6 +144,7 @@ Use clear bullet points and bold text for lists of definitions.`;
       session_id: body.session_id || null,
       expertise_level: body.expertise_level || null,
       user_id: body.user_id || null,
+      file_context: body.file_context || null,
     };
 
     console.log("Sending to backend:", JSON.stringify(payload));

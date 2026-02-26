@@ -210,11 +210,8 @@ export const useProfessorChat = ({
   const sendMessage = async (content: string, isHidden = false) => {
     if (!selectedCourse) return;
 
-    // Prepend uploaded file content if available
-    let messageContent = content;
-    if (uploadedFile) {
-      messageContent = `[CONTEXT FROM FILE: ${uploadedFile.name}]\n${uploadedFile.content}\n\n[USER QUERY]\n${content}`;
-    }
+    // Keep message content as pure user query (file context sent separately)
+    const messageContent = content;
 
     const userMessage: Message = { role: "user", content };
 
@@ -257,6 +254,7 @@ export const useProfessorChat = ({
             cohort_id: selectedBatch,
             expertise_level: expertiseLevel, // Adaptive learning - user's expertise level
             user_id: userId, // Authenticated user ID for persistent memory
+            file_context: uploadedFile ? `[CONTEXT FROM FILE: ${uploadedFile.name}]\n${uploadedFile.content}` : null,
           }),
         }
       );
