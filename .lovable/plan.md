@@ -1,280 +1,108 @@
 
-# Implementation Plan: Diagnostic Quiz with Event-Based Persona Shift
 
-## Overview
-This plan adds a **diagnostic quiz system** that allows the AI to trigger an inline assessment quiz during the chat. When the backend sends a `DIAGNOSTIC_EVENT`, the frontend will render an interactive quiz with multiple-choice questions that **require reasoning justification** for each answer. Upon submission, results are sent to the backend, which can then trigger a `SYSTEM_EVENT` for persona shifts.
+# Inline Diagnostic Quiz - Chat-Native Design
+
+## Problem
+The diagnostic quiz currently renders as a separate card panel below the chat (in the footer area), visually disconnected from the conversation. The user wants it to feel like part of the chat -- as if the AI is asking questions in a "pen and paper exam" style, inline with the messages.
+
+## Solution
+Redesign the `DiagnosticQuiz` component to render as an AI message bubble (matching `ProfessorMessage` styling), and move it from the footer into the scrollable messages area. All questions are shown at once (no pagination), with radio-dot selection and a single "Submit Quiz" button at the bottom.
 
 ---
 
-## Architecture Diagram
+## Changes
 
+### 1. Rewrite `src/components/professor-ai/DiagnosticQuiz.tsx`
+
+Replace the current Card-based paginated UI with a chat-native layout:
+
+**Structure:**
+- Renders like an AI message (same left-aligned layout with Sparkles avatar)
+- Title/topic shown as a header line
+- ALL questions listed vertically (no pagination/Next/Previous)
+- Each question: numbered text, radio-dot options (small circles like a paper exam)
+- Selected option gets a filled dot + highlight
+- A single "Submit Quiz" button at the bottom
+- Loading state on submit
+
+**Visual style:**
 ```text
-+------------------+     DIAGNOSTIC_EVENT      +-------------------+
-|   Backend API    | -----------------------> |  useProfessorChat |
-|                  |                           |    (hook)         |
-+------------------+                           +-------------------+
-                                                        |
-                                                        v
-                                              +-------------------+
-                                              |  ProfessorChat    |
-                                              |  (component)      |
-                                              +-------------------+
-                                                        |
-                                      renders when diagnosticQuiz state is set
-                                                        v
-                                              +-------------------+
-                                              | DiagnosticQuiz    |
-                                              |  (new component)  |
-                                              +-------------------+
-                                                        |
-                                           on submit (POST /api/submit-diagnostic)
-                                                        v
-                                              +-------------------+
-                                              |   Backend API     |
-                                              +-------------------+
-                                                        |
-                                               SYSTEM_EVENT: persona_shift
-                                                        v
-                                              +-------------------+
-                                              |   Toast Notify    |
-                                              +-------------------+
+[Sparkles Avatar]  Knowledge Check: Statistics Basics
+                   
+                   1. What is the mean of [5, 10, 15]?
+                      ○ A) 5
+                      ● B) 10      <-- selected, filled dot
+                      ○ C) 15
+                      ○ D) 30
+
+                   2. What does standard deviation measure?
+                      ○ A) Central tendency
+                      ○ B) Spread of data
+                      ...
+
+                   [ Submit Quiz ]
 ```
 
----
+**Key details:**
+- No Card/CardHeader/CardContent -- just divs styled to match chat messages
+- Uses simple circular radio indicators (CSS dots, not Radix RadioGroup)
+- All questions visible, content scrolls naturally with the chat
+- Submit button disabled until all questions answered
+- Progress indicator: "X of Y answered" near submit button
 
-## Components to Create/Modify
+### 2. Modify `src/components/professor-ai/ProfessorChat.tsx`
 
-### 1. New File: `src/components/professor-ai/DiagnosticQuiz.tsx`
+Move the diagnostic quiz rendering from the footer (lines 555-566) into the messages scroll area (around line 537, before `messagesEndRef`).
 
-A card-based quiz interface with the following features:
+**Remove:** The footer `diagnosticQuiz` block (lines 555-566)
 
-**UI Structure:**
-- Card container with header showing quiz title/topic
-- Progress indicator (Question X of Y)
-- Question text display
-- Multiple-choice options (A, B, C, D) as selectable cards
-- **Required** textarea: "Why did you choose this? (Required)"
-- Character counter for reasoning (minimum 20 characters)
-- Submit button (disabled until both option and reasoning are filled)
-- Final submit to send all answers
-
-**State Management:**
-- `answers`: Array tracking `{ q_id, selected, reasoning }` for each question
-- `currentIndex`: Current question being viewed
-- `isSubmitting`: Loading state during submission
-
-**Props Interface:**
-```typescript
-interface DiagnosticQuestion {
-  q_id: string;
-  question: string;
-  options: { A: string; B: string; C: string; D: string };
-}
-
-interface DiagnosticQuizData {
-  topic_slug: string;
-  title: string;
-  questions: DiagnosticQuestion[];
-}
-
-interface DiagnosticQuizProps {
-  quiz: DiagnosticQuizData;
-  onSubmit: (payload: DiagnosticSubmission) => Promise<void>;
-  onClose: () => void;
-}
-
-interface DiagnosticSubmission {
-  topic_slug: string;
-  answers: Array<{
-    q_id: string;
-    selected: "A" | "B" | "C" | "D";
-    reasoning: string;
-  }>;
-}
-```
-
----
-
-### 2. Modify: `src/components/professor-ai/types.ts`
-
-Add new types for diagnostic events and system events:
-
-```typescript
-// Diagnostic Quiz types
-export interface DiagnosticQuestion {
-  q_id: string;
-  question: string;
-  options: { A: string; B: string; C: string; D: string };
-}
-
-export interface DiagnosticQuizData {
-  topic_slug: string;
-  title: string;
-  questions: DiagnosticQuestion[];
-}
-
-// System Event types
-export interface SystemEvent {
-  type: "persona_shift" | string;
-  persona?: string;
-  message?: string;
-}
-```
-
----
-
-### 3. Modify: `src/hooks/useProfessorChat.ts`
-
-Add event detection patterns and state management:
-
-**New Patterns:**
-```typescript
-const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*?\})/;
-const SYSTEM_EVENT_PATTERN = /SYSTEM_EVENT:\s*(\{[\s\S]*?\})/;
-```
-
-**New State:**
-```typescript
-const [diagnosticQuiz, setDiagnosticQuiz] = useState<DiagnosticQuizData | null>(null);
-```
-
-**Stream Processing Updates:**
-- Detect `DIAGNOSTIC_EVENT` in accumulated content
-- Parse the JSON payload and set `diagnosticQuiz` state
-- Strip the event tag from displayed content
-- Detect `SYSTEM_EVENT` with `type: "persona_shift"` and show toast
-
-**New Function:**
-```typescript
-const submitDiagnostic = async (payload: DiagnosticSubmission) => {
-  // POST to /api/submit-diagnostic via edge function or direct
-  // Handle response and close diagnostic quiz
-  // May trigger follow-up message from AI
-};
-```
-
-**Updated Return:**
-```typescript
-return {
-  // ... existing
-  diagnosticQuiz,
-  setDiagnosticQuiz,
-  submitDiagnostic,
-};
-```
-
----
-
-### 4. Modify: `src/components/professor-ai/ProfessorChat.tsx`
-
-**New Props:**
-```typescript
-diagnosticQuiz?: DiagnosticQuizData | null;
-onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
-onDiagnosticClose?: () => void;
-```
-
-**Render Logic Update:**
-- When `diagnosticQuiz` is set, render `<DiagnosticQuiz />` inline in the chat area (after messages, before input)
-- Style similar to the calibration request block (centered, prominent)
-
-**Integration Point (around line 527):**
+**Add:** Inside the messages `<div>` (after streaming content, before `messagesEndRef`):
 ```tsx
-{/* Diagnostic Quiz - rendered inline when triggered */}
-{diagnosticQuiz && (
-  <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 md:p-6 w-full">
-    <div className="max-w-3xl mx-auto">
-      <DiagnosticQuiz
-        quiz={diagnosticQuiz}
-        onSubmit={onDiagnosticSubmit}
-        onClose={onDiagnosticClose}
-      />
-    </div>
-  </div>
+{diagnosticQuiz && onDiagnosticSubmit && (
+  <DiagnosticQuiz
+    quiz={diagnosticQuiz}
+    onSubmit={onDiagnosticSubmit}
+    onClose={onDiagnosticClose || (() => {})}
+  />
 )}
 ```
 
----
-
-### 5. Modify: `src/pages/ProfessorAI.tsx` (if needed)
-
-Pass new props from `useProfessorChat` down to `ProfessorChat`:
-- `diagnosticQuiz`
-- `onDiagnosticSubmit`
-- `onDiagnosticClose`
+**Also update:** The input area condition (line 569) -- remove `!diagnosticQuiz` so the input bar stays visible even during the quiz (since the quiz is now just another message in the flow).
 
 ---
 
-### 6. Optional: New Edge Function `submit-diagnostic`
+## Technical Details
 
-If the backend expects the frontend to proxy through Supabase:
-
-**File:** `supabase/functions/submit-diagnostic/index.ts`
+### DiagnosticQuiz.tsx -- New Component Structure
 
 ```typescript
-// POST handler
-// Forwards payload to PROFESSOR_API_URL/api/submit-diagnostic
-// Returns response or streams follow-up
+// Imports: Sparkles, Loader2, CheckCircle2 from lucide-react
+// Button from ui/button, cn from lib/utils
+// Types from ./types
+
+// State:
+// - answers: Array<{ q_id, selected }> -- one per question, no pagination index needed
+// - isSubmitting: boolean
+
+// Render:
+// - Outer div matching AI message layout (flex gap-4, same as ProfessorMessage)
+// - Avatar circle (Sparkles icon, gradient background)
+// - Content div with:
+//   - Title header
+//   - Questions mapped vertically with radio options
+//   - Answered count + Submit button
 ```
 
----
+### Option rendering per question:
+- Each option is a `<button>` with a circular indicator
+- Unselected: empty circle border (`w-4 h-4 rounded-full border-2 border-muted-foreground/40`)
+- Selected: filled primary circle (`bg-primary border-primary` with inner dot)
+- Option text next to the dot
 
-## Event Format (Backend Contract)
-
-**DIAGNOSTIC_EVENT (from backend):**
-```
-DIAGNOSTIC_EVENT: {
-  "topic_slug": "statistics_basics",
-  "title": "Statistics Knowledge Check",
-  "questions": [
-    {
-      "q_id": "q1",
-      "question": "What is the mean of [5, 10, 15]?",
-      "options": { "A": "5", "B": "10", "C": "15", "D": "30" }
-    }
-  ]
-}
-```
-
-**SYSTEM_EVENT (from backend):**
-```
-SYSTEM_EVENT: { "type": "persona_shift", "persona": "Supportive Coach" }
-```
-
----
-
-## User Experience Flow
-
-1. User asks a question in Study mode
-2. AI determines a diagnostic quiz is needed to calibrate
-3. Backend sends `DIAGNOSTIC_EVENT` in the stream
-4. Frontend parses event, hides input bar, shows DiagnosticQuiz inline
-5. User answers each question with reasoning
-6. User submits quiz
-7. Frontend POSTs to `/api/submit-diagnostic`
-8. Backend processes and may return `SYSTEM_EVENT: { "type": "persona_shift" }`
-9. Frontend shows toast: "Switching to Supportive Coach Mode"
-10. Quiz closes, chat continues with adjusted persona
-
----
-
-## Files Summary
+### Files Summary
 
 | File | Action |
 |------|--------|
-| `src/components/professor-ai/DiagnosticQuiz.tsx` | CREATE |
-| `src/components/professor-ai/types.ts` | MODIFY (add types) |
-| `src/hooks/useProfessorChat.ts` | MODIFY (add event parsing) |
-| `src/components/professor-ai/ProfessorChat.tsx` | MODIFY (render quiz inline) |
-| `src/pages/ProfessorAI.tsx` | MODIFY (pass new props) |
-| `supabase/functions/submit-diagnostic/index.ts` | CREATE (optional) |
+| `src/components/professor-ai/DiagnosticQuiz.tsx` | REWRITE -- chat-native inline layout |
+| `src/components/professor-ai/ProfessorChat.tsx` | MODIFY -- move quiz into messages area, keep input visible |
 
----
-
-## Technical Considerations
-
-1. **Validation:** Reasoning textarea requires minimum 20 characters before enabling submit
-2. **Accessibility:** Focus management when quiz appears/disappears
-3. **Error Handling:** Toast on submission failure with retry option
-4. **Streaming Compatibility:** Event detection works with both SSE streaming and JSON responses
-5. **State Reset:** Clear diagnostic quiz state when mode/course changes
