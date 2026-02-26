@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 import { MermaidDiagram } from "./MermaidDiagram";
+import { MathErrorBoundary } from "./MathErrorBoundary";
 
 interface ProfessorMessageProps {
   message: Message;
@@ -251,14 +252,22 @@ const processTextWithLatex = (text: string, keyPrefix: string): React.ReactNode[
   segments.forEach((segment, segIndex) => {
     if (segment.type === 'blockMath') {
       try {
+        const mathExpr = segment.content;
         parts.push(
-          <div key={`${keyPrefix}-block-${segIndex}`} className="my-4 overflow-x-auto max-w-full flex justify-center">
-            <BlockMath math={segment.content} />
-          </div>
+          <MathErrorBoundary key={`${keyPrefix}-block-${segIndex}`} fallback={<span className="text-destructive font-mono text-sm">{`$$${segment.content}$$`}</span>}>
+            <div className="my-4 overflow-x-auto max-w-full flex justify-center">
+              <BlockMath
+                math={mathExpr}
+                renderError={(error: { message: string }) => (
+                  <span className="text-destructive font-mono text-sm">{error.message}</span>
+                )}
+              />
+            </div>
+          </MathErrorBoundary>
         );
       } catch {
         parts.push(
-          <span key={`${keyPrefix}-block-${segIndex}`} className="text-destructive">{`$$${segment.content}$$`}</span>
+          <span key={`${keyPrefix}-block-${segIndex}`} className="text-destructive font-mono text-sm">{`$$${segment.content}$$`}</span>
         );
       }
     } else {
@@ -341,8 +350,16 @@ const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] =
     if (isFullFormula(mathContent)) {
       try {
         parts.push(
-          <InlineMath key={`${keyPrefix}-inline-${partIndex++}`} math={mathContent} />
+          <MathErrorBoundary key={`${keyPrefix}-inline-${partIndex}`} fallback={<span className="font-mono text-sm">{`$${mathContent}$`}</span>}>
+            <InlineMath
+              math={mathContent}
+              renderError={(error: { message: string }) => (
+                <span className="text-destructive font-mono text-sm">{error.message}</span>
+              )}
+            />
+          </MathErrorBoundary>
         );
+        partIndex++;
       } catch {
         parts.push(<span key={`${keyPrefix}-inline-${partIndex++}`}>{`$${mathContent}$`}</span>);
       }
