@@ -190,9 +190,9 @@ const ProfessorAI = () => {
   const handleCreateNotes = () => {
     if (selectedCourse && selectedLecture) {
       if (mode === "Notes Creator") {
-        sendMessage("Summarize this lecture", true);
+        sendMessage(`Summary of lecture ${selectedLecture}`, true);
       } else if (mode === "Pre-Read") {
-        sendMessage("Summarize the pre-reading material for this lecture", true);
+        sendMessage(`Pre-read summary ${selectedLecture}`, true);
       }
     }
   };
