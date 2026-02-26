@@ -536,6 +536,15 @@ export const ProfessorChat = ({
             </div>
           )}
 
+          {/* Diagnostic Quiz - inline as a chat message */}
+          {diagnosticQuiz && onDiagnosticSubmit && (
+            <DiagnosticQuiz
+              quiz={diagnosticQuiz}
+              onSubmit={onDiagnosticSubmit}
+              onClose={onDiagnosticClose || (() => {})}
+            />
+          )}
+
           <div ref={messagesEndRef} className="h-8" />
         </div>
       </div>
@@ -552,21 +561,8 @@ export const ProfessorChat = ({
         </div>
       )}
 
-      {/* Diagnostic Quiz - rendered inline when triggered */}
-      {diagnosticQuiz && onDiagnosticSubmit && (
-        <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-4 md:p-6 w-full">
-          <div className="max-w-3xl mx-auto">
-            <DiagnosticQuiz
-              quiz={diagnosticQuiz}
-              onSubmit={onDiagnosticSubmit}
-              onClose={onDiagnosticClose || (() => {})}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Input area at bottom - uses flex shrink-0 to stay in place */}
-      {!calibrationRequest && !diagnosticQuiz && (
+      {!calibrationRequest && (
         <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
           <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
             {/* Uploaded file indicator - hidden for now
