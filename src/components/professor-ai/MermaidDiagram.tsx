@@ -24,8 +24,10 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
           const { svg } = await mermaid.render(id, chart);
           setSvg(svg);
         } catch {
-          // Expected during streaming — show loading fallback silently
+          // Expected during streaming — silently absorb and clean up orphaned DOM nodes
           setSvg('');
+          // Clean up any orphaned mermaid error SVGs that pollute the DOM
+          document.querySelectorAll('[id^="dmermaid-"]').forEach(el => el.remove());
         }
       }
     };
@@ -34,7 +36,7 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
 
   if (!svg) {
     return (
-      <div className="my-6 text-sm text-muted-foreground animate-pulse p-4 border rounded-md bg-muted/50">
+      <div className="my-6 text-sm text-muted-foreground animate-pulse p-4 border rounded-md bg-muted/50 min-h-[80px] flex items-center">
         Drawing diagram...
       </div>
     );
