@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import personasData from "@/data/personas.json";
 import type { Mode, Message, ExpertiseLevel, DiagnosticQuizData, DiagnosticSubmission, SystemEvent } from "@/components/professor-ai/types";
 
 const NO_MATERIALS_FALLBACK_PHRASES = [
@@ -236,6 +237,11 @@ export const useProfessorChat = ({
       // Create the message with file context for the API
       const apiUserMessage: Message = { role: "user", content: messageContent };
 
+      // Resolve course display name for the backend
+      const cohortPersonas = (personasData as any)[selectedBatch || "2029"] || {};
+      const courseInfo = cohortPersonas[selectedCourse || ""];
+      const courseDisplayName = courseInfo?.display_name || selectedCourse;
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
         {
@@ -249,6 +255,7 @@ export const useProfessorChat = ({
             messages: [...messages, apiUserMessage],
             mode,
             selectedCourse: selectedCourse, // Send the db_key
+            courseDisplayName, // Human-readable course name
             selectedLecture: lectureToSend, // The lecture title or null
             session_id: sessionIdRef.current, // Session ID for backend chat persistence
             cohort_id: selectedBatch,
