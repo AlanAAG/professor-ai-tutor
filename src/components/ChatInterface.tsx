@@ -27,10 +27,11 @@ type Message = {
 };
 type Persona = {
   display_name?: string;
-  professor_name: string;
-  style_prompt: string;
+  professor_name?: string;
+  system_prompt: string;
+  initial_message?: string;
 };
-type BatchPersonas = Record<string, Record<string, Persona>>;
+type BatchPersonas = Record<string, Record<string, Persona> | any>;
 type Mode = "balanced" | "study" | "professor" | "socratic";
 const MODE_DESCRIPTIONS = {
   balanced: "Balanced tutor - A helpful mix of guidance and explanation",

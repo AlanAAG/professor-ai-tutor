@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type BatchPersonas = Record<string, Record<string, { display_name?: string; professor_name: string }>>;
+// personas type - uses Record<string, any> due to mixed modes/cohort structure
 
 interface Conversation {
   id: string;
@@ -53,10 +53,11 @@ interface ProfessorSidebarNewProps {
 }
 
 const getDisplayName = (classId: string): string => {
-  const batchPersonas = personas as BatchPersonas;
-  for (const batchId of Object.keys(batchPersonas)) {
-    if (batchPersonas[batchId][classId]) {
-      return batchPersonas[batchId][classId].display_name || classId;
+  const allPersonas = personas as Record<string, any>;
+  for (const batchId of Object.keys(allPersonas)) {
+    if (batchId === "modes") continue;
+    if (allPersonas[batchId]?.[classId]) {
+      return allPersonas[batchId][classId].display_name || classId;
     }
   }
   return classId;
