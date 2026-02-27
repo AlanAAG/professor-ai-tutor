@@ -61,8 +61,6 @@ export const COURSES_BY_BATCH_TERM: Record<string, Record<string, Course[]>> = {
     "term4": [
       { id: "NudgeBehavior", name: "How to Nudge to understand human behaviour" },
       { id: "SustainableNudges", name: "How to use nudges to promote sustainable and healthy behaviors" },
-      { id: "FinancialModels", name: "How to build Financial Models?" },
-      { id: "ImpactInvestor", name: "How to Think Like an Impact Investor: Risk, Return, and SROI" },
       { id: "TalentManagement", name: "How to attract, manage, and retain talent" },
       { id: "CrossCulturalLeadership", name: "How to negotiate and lead across diverse cultures and stakeholders" },
       { id: "NonProfitBrand", name: "How to position & market your non-profit brand" },
