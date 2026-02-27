@@ -6,13 +6,14 @@ import { Plus, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import personas from "@/data/personas.json";
 
-type BatchPersonas = Record<string, Record<string, { display_name?: string; professor_name: string }>>;
+type CohortPersonas = Record<string, { display_name?: string; professor_name?: string }>;
 
 const getDisplayName = (classId: string): string => {
-  const batchPersonas = personas as BatchPersonas;
-  for (const batchId of Object.keys(batchPersonas)) {
-    if (batchPersonas[batchId][classId]) {
-      return batchPersonas[batchId][classId].display_name || classId;
+  const allPersonas = personas as Record<string, any>;
+  for (const batchId of Object.keys(allPersonas)) {
+    if (batchId === "modes") continue;
+    if (allPersonas[batchId]?.[classId]) {
+      return allPersonas[batchId][classId].display_name || classId;
     }
   }
   return classId;
