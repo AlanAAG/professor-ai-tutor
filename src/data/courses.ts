@@ -26,7 +26,7 @@ export const COURSES_BY_BATCH_TERM: Record<string, Record<string, Course[]>> = {
       { id: "CRO", name: "How to execute CRO and increase AOV" },
     ],
     "term2": [
-      { id: "CareerLabs", name: "Career Labs" },
+      
       { id: "OfflineMarket", name: "How to Crack the offline Market" },
       { id: "GlobalStartupEcon", name: "How to understand the Economics for Global Start-up ecosystem" },
       { id: "D2CBusiness", name: "How to build a D2C Business" },
