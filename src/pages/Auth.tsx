@@ -42,7 +42,7 @@ const Auth = () => {
     
     // Validate @tetr.com or @tetr.org email domain
     const emailLower = email.toLowerCase();
-    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org') && !emailLower.endsWith('@quietedge.io')) {
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
         description: "Please log in with your @tetr.com or @tetr.org account",
@@ -82,7 +82,7 @@ const Auth = () => {
     
     // Validate @tetr.com or @tetr.org email domain
     const emailLower = email.toLowerCase();
-    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org') && !emailLower.endsWith('@quietedge.io')) {
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
         description: "Please log in with your @tetr.com or @tetr.org account",
@@ -149,7 +149,7 @@ const Auth = () => {
     
     // Validate @tetr.com or @tetr.org email domain
     const emailLower = email.toLowerCase();
-    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org') && !emailLower.endsWith('@quietedge.io')) {
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
         description: "Please use your @tetr.com or @tetr.org account",
@@ -189,7 +189,7 @@ const Auth = () => {
     
     // Validate @tetr.com or @tetr.org email domain
     const emailLower = email.toLowerCase();
-    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org') && !emailLower.endsWith('@quietedge.io')) {
+    if (!emailLower.endsWith('@tetr.com') && !emailLower.endsWith('@tetr.org')) {
       toast({
         title: "Invalid email domain",
         description: "Please use your @tetr.com or @tetr.org account",
