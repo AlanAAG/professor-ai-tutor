@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, MutableRefObject } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import personasData from "@/data/personas.json";
@@ -280,6 +280,10 @@ export const useProfessorChat = ({
         let accumulatedContent = "";
         let sseBuffer = "";
 
+        // RAF-debounced display updater to batch renders
+        let rafHandle: number | undefined;
+        let pendingDisplay = "";
+
         const updateDisplayContent = (accumulated: string) => {
           // Check for diagnostic event start
           if (accumulated.includes("DIAGNOSTIC_EVENT:")) {
@@ -299,7 +303,14 @@ export const useProfessorChat = ({
           }
 
           displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
-          setStreamingContent(displayContent);
+
+          pendingDisplay = displayContent;
+          if (rafHandle === undefined) {
+            rafHandle = requestAnimationFrame(() => {
+              setStreamingContent(pendingDisplay);
+              rafHandle = undefined;
+            });
+          }
         };
 
         const processSSELine = (line: string) => {

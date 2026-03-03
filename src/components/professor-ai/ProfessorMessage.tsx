@@ -1,10 +1,11 @@
 import { Sparkles, Copy, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import 'katex/dist/katex.min.css';
-import { InlineMath, BlockMath } from 'react-katex';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import type { Message } from "./types";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +13,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 import { MermaidDiagram } from "./MermaidDiagram";
-import { MathErrorBoundary } from "./MathErrorBoundary";
 
 interface ProfessorMessageProps {
   message: Message;
@@ -22,32 +22,11 @@ interface ProfessorMessageProps {
   userQuery?: string;
 }
 
-// Check if a paragraph starts with bold text followed by a description (concept pattern)
-const isConceptDefinition = (text: string): { term: string; description: string } | null => {
-  // Match pattern like "**Term** description..." or "**Term Name** description..."
-  const match = text.match(/^\*\*([^*]+)\*\*\s+(.+)$/s);
-  if (match) {
-    return { term: match[1], description: match[2] };
-  }
-  return null;
-};
-
-// Check if text is a Markdown table (contains pipes and separator row pattern)
-const isTable = (text: string): boolean => {
-  // Check if text looks like a table: has newlines, |, and a separator row
-  // Separator row matches loose pattern of dashes and pipes
-  return text.includes('|') && text.includes('\n') && /^\s*\|?[\s-:]*[-]+[\s-:|]*\|[\s-:|]*\|?\s*$/m.test(text);
-};
-
-// Reusable markdown components configuration
-const getMarkdownComponents = (isInline: boolean = false) => ({
-  p: ({ children }: { children?: React.ReactNode }) => {
-    // For inline rendering, don't wrap in p tags
-    if (isInline) {
-      return <>{children}</>;
-    }
-    return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
-  },
+// Module-level markdown components — no dynamic dependencies, created once
+const markdownComponents = {
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
+  ),
   h1: ({ children }: { children?: React.ReactNode }) => (
     <h1 className="text-xl font-semibold text-primary mt-6 mb-3">{children}</h1>
   ),
@@ -122,7 +101,6 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
       {children}
     </a>
   ),
-  // Table components for GFM tables
   table: ({ children }: { children?: React.ReactNode }) => (
     <div className="my-4 w-full overflow-x-auto max-w-full rounded-lg border border-border/50">
       <table className="w-full border-collapse text-sm">{children}</table>
@@ -133,7 +111,6 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
   tr: ({ children }: { children?: React.ReactNode }) => <tr className="border-b border-border/50 last:border-0">{children}</tr>,
   th: ({ children }: { children?: React.ReactNode }) => <th className="px-4 py-3 font-semibold text-primary">{children}</th>,
   td: ({ children }: { children?: React.ReactNode }) => <td className="px-4 py-3 text-chat-text align-top">{children}</td>,
-  // Details/Summary for collapsible sections
   details: ({ children }: { children?: React.ReactNode }) => (
     <details className="my-4 rounded-lg border border-border/50 bg-secondary/20 px-4 py-3 open:bg-secondary/30">
       {children}
@@ -144,249 +121,10 @@ const getMarkdownComponents = (isInline: boolean = false) => ({
       {children}
     </summary>
   ),
-});
-
-// [Updated Preprocessor]
-// Preprocess content to ensure tables are correctly formatted
-const preprocessContent = (content: string): string => {
-  let processed = content;
-
-  // 1. Ensure blank line BEFORE table header
-  // Looks for: non-newline char -> newline -> header row (roughly) -> newline -> separator row
-  // We use a looser pattern for the header to catch more cases
-  // NOTE: Separator row regex matches spaces, tabs, dashes, colons, pipes, but MUST contain at least one dash
-  // and NOT match lines that contain letters (to avoid splitting text tables)
-  processed = processed.replace(
-    /([^\n])\n([ \t]*\|?.*\|.*)\n([ \t]*\|?[- \t:|]*-[ \t:|]*\|?)/g,
-    '$1\n\n$2\n$3'
-  );
-
-  // 2. Ensure NO blank line between separator and first row
-  // Looks for: separator row -> double newline -> start of next row
-  processed = processed.replace(
-    /(\|[\s-:|]*\|)\n\n+(?=\|)/g,
-    '$1\n'
-  );
-
-  return processed;
 };
 
-// Parse and render content with LaTeX support
-const renderContentWithLatex = (content: string) => {
-  const parts: React.ReactNode[] = [];
-
-  // FIX: Do not use fixMarkdownTables(content); it interferes with spacing.
-  // Use the robust preprocessor directly.
-  const processedContent = preprocessContent(content);
-
-  // First split by paragraphs to handle concept definitions
-  const paragraphs = processedContent.split(/\n\n+/);
-  
-  paragraphs.forEach((paragraph, paraIndex) => {
-    // Check if this paragraph is a concept definition (starts with **Term**)
-    const conceptMatch = isConceptDefinition(paragraph.trim());
-    
-    if (conceptMatch) {
-      // Render as a styled concept block
-      parts.push(
-        <div key={`concept-${paraIndex}`} className="mb-4">
-          <h4 className="text-base font-semibold text-primary mb-2">{conceptMatch.term}</h4>
-          <div className="text-chat-text leading-relaxed">
-            {processTextWithLatex(conceptMatch.description, `concept-desc-${paraIndex}`)}
-          </div>
-        </div>
-      );
-    } else if (isTable(paragraph)) {
-      // Render tables directly as blocks, bypassing inline math processing
-      parts.push(
-        <div key={`table-${paraIndex}`} className="mb-4 w-full overflow-x-auto">
-          <ReactMarkdown 
-            components={getMarkdownComponents(false)}
-            remarkPlugins={[remarkGfm]} 
-            rehypePlugins={[rehypeRaw]}
-          >
-            {paragraph}
-          </ReactMarkdown>
-        </div>
-      );
-    } else {
-      // Process normal text/math as before
-      const processed = processTextWithLatex(paragraph, `para-${paraIndex}`);
-      if (paragraph.trim()) {
-        parts.push(
-          <div key={`para-${paraIndex}`} className="mb-3 last:mb-0">
-            {processed}
-          </div>
-        );
-      }
-    }
-  });
-
-  return parts;
-};
-
-// Process text with both block and inline LaTeX
-const processTextWithLatex = (text: string, keyPrefix: string): React.ReactNode[] => {
-  const parts: React.ReactNode[] = [];
-  
-  // Process block math first ($$...$$)
-  const blockMathRegex = /\$\$([\s\S]*?)\$\$/g;
-  let lastIndex = 0;
-  let match;
-
-  const segments: { type: 'text' | 'blockMath'; content: string }[] = [];
-  
-  while ((match = blockMathRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-    }
-    segments.push({ type: 'blockMath', content: match[1] });
-    lastIndex = match.index + match[0].length;
-  }
-  
-  if (lastIndex < text.length) {
-    segments.push({ type: 'text', content: text.slice(lastIndex) });
-  }
-
-  // Now process each segment
-  segments.forEach((segment, segIndex) => {
-    if (segment.type === 'blockMath') {
-      try {
-        const mathExpr = segment.content;
-        parts.push(
-          <MathErrorBoundary key={`${keyPrefix}-block-${segIndex}`} fallback={<span className="text-destructive font-mono text-sm">{`$$${segment.content}$$`}</span>}>
-            <div className="my-4 overflow-x-auto max-w-full flex justify-center">
-              <BlockMath
-                math={mathExpr}
-                renderError={(error: { message: string }) => (
-                  <span className="text-destructive font-mono text-sm">{error.message}</span>
-                )}
-              />
-            </div>
-          </MathErrorBoundary>
-        );
-      } catch {
-        parts.push(
-          <span key={`${keyPrefix}-block-${segIndex}`} className="text-destructive font-mono text-sm">{`$$${segment.content}$$`}</span>
-        );
-      }
-    } else {
-      // Process inline math ($...$) in text segments - keep everything inline
-      const inlineParts = processInlineMath(segment.content, `${keyPrefix}-${segIndex}`);
-      parts.push(...inlineParts);
-    }
-  });
-
-  return parts;
-};
-
-// Check if a math expression is a full formula (not just a simple number)
-const isFullFormula = (math: string): boolean => {
-  const trimmed = math.trim();
-  
-  // Simple numbers (with optional currency/percent sign) should NOT be LaTeX
-  // Examples to NOT render as LaTeX: $500, 40%, 1000, $1,000
-  const simpleNumberPattern = /^[$€£¥]?\s*[\d,]+(\.\d+)?%?$/;
-  if (simpleNumberPattern.test(trimmed)) {
-    return false;
-  }
-  
-  // Contains LaTeX commands like \frac, \sqrt, \sum, etc. - IS a formula
-  if (/\\[a-zA-Z]+/.test(trimmed)) {
-    return true;
-  }
-  
-  // Contains operators between variables/numbers - IS a formula
-  // e.g., x + y, a = b, 2x + 3y
-  if (/[a-zA-Z].*[+\-*/=].*[a-zA-Z0-9]|[0-9].*[+\-*/=].*[a-zA-Z]/.test(trimmed)) {
-    return true;
-  }
-  
-  // Contains subscripts or superscripts - IS a formula
-  if (/[_^]/.test(trimmed)) {
-    return true;
-  }
-  
-  // Contains Greek letters or special math symbols - IS a formula
-  if (/\\(alpha|beta|gamma|delta|sigma|pi|theta|lambda|mu|omega|infty|partial|nabla)/.test(trimmed)) {
-    return true;
-  }
-  
-  // If it's just simple text or numbers, don't render as LaTeX
-  return false;
-};
-
-// Process inline math and render markdown - designed to keep content inline
-const processInlineMath = (text: string, keyPrefix: string): React.ReactNode[] => {
-  const parts: React.ReactNode[] = [];
-  const inlineMathRegex = /\$([^$\n]+?)\$/g;
-  let lastIndex = 0;
-  let match;
-  let partIndex = 0;
-
-  // Use inline markdown components (no p wrapper)
-  const inlineMarkdownComponents = getMarkdownComponents(true);
-
-  while ((match = inlineMathRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      const textPart = text.slice(lastIndex, match.index);
-      // Render markdown inline without breaking the flow
-      parts.push(
-        <span key={`${keyPrefix}-md-${partIndex++}`}>
-          <ReactMarkdown 
-            components={inlineMarkdownComponents}
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-          >
-            {textPart}
-          </ReactMarkdown>
-        </span>
-      );
-    }
-    
-    const mathContent = match[1];
-    
-    // Only render as LaTeX if it's a full formula
-    if (isFullFormula(mathContent)) {
-      try {
-        parts.push(
-          <MathErrorBoundary key={`${keyPrefix}-inline-${partIndex}`} fallback={<span className="font-mono text-sm">{`$${mathContent}$`}</span>}>
-            <InlineMath
-              math={mathContent}
-              renderError={(error: { message: string }) => (
-                <span className="text-destructive font-mono text-sm">{error.message}</span>
-              )}
-            />
-          </MathErrorBoundary>
-        );
-        partIndex++;
-      } catch {
-        parts.push(<span key={`${keyPrefix}-inline-${partIndex++}`}>{`$${mathContent}$`}</span>);
-      }
-    } else {
-      // Render as plain text (preserving the content without $ signs)
-      parts.push(<span key={`${keyPrefix}-text-${partIndex++}`}>{mathContent}</span>);
-    }
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    const remainingText = text.slice(lastIndex);
-    parts.push(
-      <span key={`${keyPrefix}-md-${partIndex}`}>
-        <ReactMarkdown 
-          components={inlineMarkdownComponents}
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw]}
-        >
-          {remainingText}
-        </ReactMarkdown>
-      </span>
-    );
-  }
-
-  return parts;
-};
+const remarkPlugins = [remarkGfm, remarkMath];
+const rehypePlugins = [rehypeKatex, rehypeRaw];
 
 export const ProfessorMessage = ({ message, isStreaming = false, messageId, sessionId, userQuery }: ProfessorMessageProps) => {
   const isUser = message.role === "user";
@@ -395,7 +133,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  // Load existing feedback on mount (for Supabase local storage)
+  // Load existing feedback on mount
   useEffect(() => {
     if (!messageId || isUser) return;
 
@@ -412,7 +150,6 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
           .maybeSingle();
 
         if (data) {
-          // Convert 'up'/'down' to rating for display
           const ratingFromType = data.feedback_type === 'up' ? 5 : data.feedback_type === 'down' ? 1 : null;
           if (ratingFromType) setFeedbackRating(ratingFromType);
         }
@@ -440,12 +177,9 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
     
     setIsSubmitting(true);
     try {
-      // Send feedback to /api/feedback endpoint
       const response = await fetch("/api/feedback", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
           query: userQuery || "",
@@ -455,15 +189,12 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to submit feedback");
-      }
+      if (!response.ok) throw new Error("Failed to submit feedback");
 
       setFeedbackRating(rating);
       setFeedbackModalOpen(false);
       toast.success("Thanks for your feedback!");
 
-      // Also save to Supabase for local tracking if we have messageId
       if (messageId) {
         const { data: session } = await supabase.auth.getSession();
         if (session.session) {
@@ -488,7 +219,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
     }
   };
 
-  // User message - clean white bubble
+  // User message
   if (isUser) {
     return (
       <div className="flex justify-end animate-fade-in">
@@ -503,25 +234,27 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
     );
   }
 
-  // AI message - modern clean layout
+  // AI message — single unified ReactMarkdown pass
   return (
     <div className="flex gap-4 animate-fade-in group max-w-full overflow-hidden">
-      {/* AI Avatar */}
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
         <Sparkles className="w-4 h-4 text-primary-foreground" />
       </div>
       
-      {/* Message Content */}
       <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
-        {/* Content area with proper typography */}
         <div className="text-[15px] leading-7 text-chat-text break-words overflow-hidden max-w-full [overflow-wrap:anywhere] professor-message-bubble">
-          {renderContentWithLatex(message.content)}
+          <ReactMarkdown
+            remarkPlugins={remarkPlugins}
+            rehypePlugins={rehypePlugins}
+            components={markdownComponents}
+          >
+            {message.content}
+          </ReactMarkdown>
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />
           )}
         </div>
         
-        {/* Action buttons - show on hover or when feedback exists */}
         {!isStreaming && message.content.length > 0 && (
           <div className="flex items-center gap-0.5 pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <Button
@@ -561,7 +294,6 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
         )}
       </div>
 
-      {/* Feedback Modal */}
       <FeedbackModal
         open={feedbackModalOpen}
         onOpenChange={setFeedbackModalOpen}
