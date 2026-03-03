@@ -32,7 +32,9 @@ serve(async (req) => {
 
       const fetchLectures = async (cohortHeaderValue: string) => {
         // FIX: Pass the mode parameter to the backend
-        const lectureUrl = `${PROFESSOR_API_URL}/api/lectures`;
+        const lectureUrl = mode
+          ? `${PROFESSOR_API_URL}/api/lectures?mode=${encodeURIComponent(mode)}`
+          : `${PROFESSOR_API_URL}/api/lectures`;
 
         const res = await fetch(lectureUrl, {
           headers: {
