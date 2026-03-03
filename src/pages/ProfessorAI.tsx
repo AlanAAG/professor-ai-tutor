@@ -139,7 +139,7 @@ const ProfessorAI = () => {
       setLecturesError(false);
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures&mode=${encodeURIComponent(mode)}`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures`,
           {
             headers: {
               "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
@@ -150,10 +150,21 @@ const ProfessorAI = () => {
 
         if (response.ok) {
           const data = await response.json();
-          // Filter out any lectures with empty or null IDs
-          const validLectures = (data.lectures || []).filter(
+          let validLectures = (data.lectures || []).filter(
             (lecture: Lecture) => lecture.id && lecture.id.trim() !== ""
           );
+
+          // Bridge the old and new metadata schemas via frontend filtering
+          if (mode === "Notes Creator") {
+            validLectures = validLectures.filter(
+              (lecture: any) => lecture.section === "sessions" || lecture.section === "recording"
+            );
+          } else if (mode === "Pre-Read") {
+            validLectures = validLectures.filter(
+              (lecture: any) => lecture.section === "pre_read"
+            );
+          }
+
           setLectures(validLectures);
         } else {
           console.error("Failed to fetch lectures:", response.status);
