@@ -278,97 +278,81 @@ export const useProfessorChat = ({
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         let accumulatedContent = "";
+        let sseBuffer = "";
+
+        const updateDisplayContent = (accumulated: string) => {
+          // Check for diagnostic event start
+          if (accumulated.includes("DIAGNOSTIC_EVENT:")) {
+            setIsGeneratingDiagnostic(true);
+          }
+
+          // Strip all event tags for display during streaming
+          let displayContent = accumulated.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
+          displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
+
+          // Special handling for diagnostic event to hide partial JSON
+          if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
+            const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
+            displayContent = displayContent.substring(0, index).trim();
+          } else {
+            displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
+          }
+
+          displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
+          setStreamingContent(displayContent);
+        };
+
+        const processSSELine = (line: string) => {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') return;
+
+            try {
+              const parsed = JSON.parse(data);
+              const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
+              if (typeof msgContent === 'string') {
+                accumulatedContent += msgContent;
+                updateDisplayContent(accumulatedContent);
+              }
+            } catch {
+              // If not valid JSON, treat as raw text only if it doesn't look like partial SSE JSON
+              if (data.trim() && data !== '[DONE]' && !data.startsWith('{')) {
+                accumulatedContent += data;
+                updateDisplayContent(accumulatedContent);
+              }
+            }
+          } else if (line.trim() && !line.startsWith(':') && !line.startsWith('{')) {
+            // Handle non-SSE text chunks, but skip raw JSON fragments
+            accumulatedContent += line;
+            updateDisplayContent(accumulatedContent);
+          }
+        };
 
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
+            sseBuffer += decoder.decode(value, { stream: true });
 
-            // Parse SSE events
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') continue;
+            // Split by double newline to get complete SSE messages
+            const messages = sseBuffer.split('\n\n');
+            // Keep the last element as it may be incomplete
+            sseBuffer = messages.pop() || "";
 
-                try {
-                  const parsed = JSON.parse(data);
-                  const msgContent = parsed.choices?.[0]?.delta?.content || parsed.content || parsed.chunk || data;
-                  if (typeof msgContent === 'string') {
-                    accumulatedContent += msgContent;
-
-                    // Check for diagnostic event start
-                    if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
-                      setIsGeneratingDiagnostic(true);
-                    }
-
-                    // Strip all event tags for display during streaming
-                    let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                    displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-
-                    // Special handling for diagnostic event to hide partial JSON
-                    if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
-                      const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
-                      displayContent = displayContent.substring(0, index).trim();
-                    } else {
-                      displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
-                    }
-
-                    displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
-                    setStreamingContent(displayContent);
-                  }
-                } catch {
-                  // If not valid JSON, treat as raw text
-                  if (data.trim() && data !== '[DONE]') {
-                    accumulatedContent += data;
-
-                    // Check for diagnostic event start
-                    if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
-                      setIsGeneratingDiagnostic(true);
-                    }
-
-                    // Strip all event tags for display during streaming
-                    let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                    displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-
-                    // Special handling for diagnostic event to hide partial JSON
-                    if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
-                      const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
-                      displayContent = displayContent.substring(0, index).trim();
-                    } else {
-                      displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
-                    }
-
-                    displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
-                    setStreamingContent(displayContent);
-                  }
-                }
-              } else if (line.trim() && !line.startsWith(':')) {
-                // Handle non-SSE text chunks
-                accumulatedContent += line;
-
-                // Check for diagnostic event start
-                if (accumulatedContent.includes("DIAGNOSTIC_EVENT:")) {
-                  setIsGeneratingDiagnostic(true);
-                }
-
-                // Strip all event tags for display during streaming
-                let displayContent = accumulatedContent.replace(EXPERTISE_LEVEL_PATTERN, '').trim();
-                displayContent = displayContent.replace(CALIBRATION_REQUEST_PATTERN, '').trim();
-
-                // Special handling for diagnostic event to hide partial JSON
-                if (displayContent.includes("DIAGNOSTIC_EVENT:")) {
-                  const index = displayContent.indexOf("DIAGNOSTIC_EVENT:");
-                  displayContent = displayContent.substring(0, index).trim();
-                } else {
-                  displayContent = displayContent.replace(DIAGNOSTIC_EVENT_PATTERN, '').trim();
-                }
-
-                displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
-                setStreamingContent(displayContent);
+            for (const message of messages) {
+              const lines = message.split('\n');
+              for (const line of lines) {
+                processSSELine(line);
               }
+            }
+          }
+
+          // Process any remaining buffered data
+          if (sseBuffer.trim()) {
+            const lines = sseBuffer.split('\n');
+            for (const line of lines) {
+              processSSELine(line);
             }
           }
         }
