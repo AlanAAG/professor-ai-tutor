@@ -1,108 +1,103 @@
 
 
-# Inline Diagnostic Quiz - Chat-Native Design
+# Recommendations for Improving the Frontend Rendering Pipeline
 
-## Problem
-The diagnostic quiz currently renders as a separate card panel below the chat (in the footer area), visually disconnected from the conversation. The user wants it to feel like part of the chat -- as if the AI is asking questions in a "pen and paper exam" style, inline with the messages.
-
-## Solution
-Redesign the `DiagnosticQuiz` component to render as an AI message bubble (matching `ProfessorMessage` styling), and move it from the footer into the scrollable messages area. All questions are shown at once (no pagination), with radio-dot selection and a single "Submit Quiz" button at the bottom.
+Your analysis is accurate. Here are concrete, prioritized improvements:
 
 ---
 
-## Changes
+## 1. Eliminate Layout Shifts During Streaming (High Impact)
 
-### 1. Rewrite `src/components/professor-ai/DiagnosticQuiz.tsx`
+**Problem**: Content type detection (table, LaTeX, concept) only works when the full block arrives, causing sudden re-renders.
 
-Replace the current Card-based paginated UI with a chat-native layout:
+**Solution**: Use a single `ReactMarkdown` pass instead of splitting by `\n\n` and detecting types manually. Move LaTeX handling into remark/rehype plugins so the entire content flows through one unified pipeline.
 
-**Structure:**
-- Renders like an AI message (same left-aligned layout with Sparkles avatar)
-- Title/topic shown as a header line
-- ALL questions listed vertically (no pagination/Next/Previous)
-- Each question: numbered text, radio-dot options (small circles like a paper exam)
-- Selected option gets a filled dot + highlight
-- A single "Submit Quiz" button at the bottom
-- Loading state on submit
+- Replace the `renderContentWithLatex` function with a single `<ReactMarkdown>` call using custom remark plugins for LaTeX (`remark-math` + `rehype-katex`).
+- This eliminates the paragraph-splitting logic, the `isTable()` regex, the `isConceptDefinition()` check, and the `processInlineMath()` function entirely.
+- Tables, headings, bold text, and code blocks are all handled natively by ReactMarkdown + remark-gfm without custom detection.
 
-**Visual style:**
-```text
-[Sparkles Avatar]  Knowledge Check: Statistics Basics
-                   
-                   1. What is the mean of [5, 10, 15]?
-                      ○ A) 5
-                      ● B) 10      <-- selected, filled dot
-                      ○ C) 15
-                      ○ D) 30
-
-                   2. What does standard deviation measure?
-                      ○ A) Central tendency
-                      ○ B) Spread of data
-                      ...
-
-                   [ Submit Quiz ]
-```
-
-**Key details:**
-- No Card/CardHeader/CardContent -- just divs styled to match chat messages
-- Uses simple circular radio indicators (CSS dots, not Radix RadioGroup)
-- All questions visible, content scrolls naturally with the chat
-- Submit button disabled until all questions answered
-- Progress indicator: "X of Y answered" near submit button
-
-### 2. Modify `src/components/professor-ai/ProfessorChat.tsx`
-
-Move the diagnostic quiz rendering from the footer (lines 555-566) into the messages scroll area (around line 537, before `messagesEndRef`).
-
-**Remove:** The footer `diagnosticQuiz` block (lines 555-566)
-
-**Add:** Inside the messages `<div>` (after streaming content, before `messagesEndRef`):
-```tsx
-{diagnosticQuiz && onDiagnosticSubmit && (
-  <DiagnosticQuiz
-    quiz={diagnosticQuiz}
-    onSubmit={onDiagnosticSubmit}
-    onClose={onDiagnosticClose || (() => {})}
-  />
-)}
-```
-
-**Also update:** The input area condition (line 569) -- remove `!diagnosticQuiz` so the input bar stays visible even during the quiz (since the quiz is now just another message in the flow).
+**Files**: `ProfessorMessage.tsx`, remove `fixMarkdownTables` from `utils.ts`
 
 ---
 
-## Technical Details
+## 2. Stabilize Mermaid Diagram Height (Medium Impact)
 
-### DiagnosticQuiz.tsx -- New Component Structure
+**Problem**: Placeholder is `min-h-[80px]` but rendered diagrams are much taller, causing a jump.
+
+**Solution**: 
+- Use `min-h-[200px]` for the placeholder (closer to average diagram height).
+- Add a CSS `transition: height 0.2s ease` on the container so the size change is animated rather than abrupt.
+- Alternatively, render Mermaid in a hidden container first to measure the height, then swap.
+
+**File**: `MermaidDiagram.tsx`
+
+---
+
+## 3. Simplify the SSE Stream Processing (Medium Impact)
+
+**Problem**: The hook manually strips multiple regex patterns (`DIAGNOSTIC_EVENT`, `EXPERTISE_LEVEL`, `SYSTEM_EVENT`, `CALIBRATION_REQUEST`) from the stream content with fragile regex. If the backend format changes slightly, the UI leaks raw data.
+
+**Solution**: Have the backend send system events as distinct SSE event types instead of embedding them in the text content:
+
+```
+event: diagnostic
+data: {"topic_slug": "...", "questions": [...]}
+
+event: system
+data: {"type": "persona_shift", "persona": "..."}
+
+event: message
+data: {"content": "visible text chunk"}
+```
+
+Then in `processSSELine`, route by event type instead of regex-stripping the accumulated string. This completely eliminates the fragile regex pipeline.
+
+**Files**: `professor-chat/index.ts` (edge function), `useProfessorChat.ts`
+
+---
+
+## 4. Debounce Streaming Content Updates (Low-Medium Impact)
+
+**Problem**: Every SSE chunk triggers `setStreamingContent()`, causing a React re-render per chunk. With the heavy rendering pipeline (LaTeX parsing, regex checks), this causes visible jank.
+
+**Solution**: Batch updates using `requestAnimationFrame` or a 50ms debounce:
 
 ```typescript
-// Imports: Sparkles, Loader2, CheckCircle2 from lucide-react
-// Button from ui/button, cn from lib/utils
-// Types from ./types
+const rafRef = useRef<number>();
+const pendingContentRef = useRef("");
 
-// State:
-// - answers: Array<{ q_id, selected }> -- one per question, no pagination index needed
-// - isSubmitting: boolean
-
-// Render:
-// - Outer div matching AI message layout (flex gap-4, same as ProfessorMessage)
-// - Avatar circle (Sparkles icon, gradient background)
-// - Content div with:
-//   - Title header
-//   - Questions mapped vertically with radio options
-//   - Answered count + Submit button
+const updateDisplayContent = (accumulated: string) => {
+  pendingContentRef.current = accumulated;
+  if (!rafRef.current) {
+    rafRef.current = requestAnimationFrame(() => {
+      setStreamingContent(strip(pendingContentRef.current));
+      rafRef.current = undefined;
+    });
+  }
+};
 ```
 
-### Option rendering per question:
-- Each option is a `<button>` with a circular indicator
-- Unselected: empty circle border (`w-4 h-4 rounded-full border-2 border-muted-foreground/40`)
-- Selected: filled primary circle (`bg-primary border-primary` with inner dot)
-- Option text next to the dot
+**File**: `useProfessorChat.ts`
 
-### Files Summary
+---
 
-| File | Action |
-|------|--------|
-| `src/components/professor-ai/DiagnosticQuiz.tsx` | REWRITE -- chat-native inline layout |
-| `src/components/professor-ai/ProfessorChat.tsx` | MODIFY -- move quiz into messages area, keep input visible |
+## 5. Memoize the Markdown Components Object (Low Impact)
+
+**Problem**: `getMarkdownComponents()` creates a new object on every render, forcing ReactMarkdown to re-mount all custom components.
+
+**Solution**: Define the components object once at module level (it has no dynamic dependencies) or wrap in `useMemo`.
+
+**File**: `ProfessorMessage.tsx`
+
+---
+
+## Priority Order
+
+| # | Recommendation | Effort | Impact |
+|---|----------------|--------|--------|
+| 1 | Unified ReactMarkdown + remark-math pipeline | High | Eliminates most layout shifts and ~200 lines of fragile code |
+| 2 | Stabilize Mermaid placeholder height | Low | Removes diagram jump |
+| 3 | Typed SSE events from backend | Medium | Eliminates regex fragility entirely |
+| 4 | RAF-debounced streaming updates | Low | Smoother streaming render |
+| 5 | Memoize markdown components | Trivial | Minor perf improvement |
 
