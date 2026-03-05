@@ -34,19 +34,22 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart }) => {
     renderDiagram();
   }, [chart]);
 
-  if (!svg) {
-    return (
-      <div className="my-6 text-sm text-muted-foreground animate-pulse p-4 border rounded-md bg-muted/50 min-h-[200px] flex items-center transition-all duration-200">
-        Drawing diagram...
-      </div>
-    );
-  }
-
   return (
     <div
-      className="my-6 overflow-x-auto max-w-full flex justify-center bg-secondary/20 p-4 rounded-xl border border-border/50 transition-all duration-200"
+      className="my-6 overflow-x-auto max-w-full flex justify-center bg-secondary/20 p-4 rounded-xl border border-border/50"
       ref={containerRef}
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+    >
+      {svg ? (
+        <div dangerouslySetInnerHTML={{ __html: svg }} />
+      ) : (
+        <div className="text-sm text-muted-foreground animate-pulse flex items-center gap-2 py-2">
+          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          Drawing diagram...
+        </div>
+      )}
+    </div>
   );
 };
