@@ -1,11 +1,15 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cohort-id",
-};
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PROFESSOR_API_URL = "https://professor-agent-platform.onrender.com";
+
+// CORS: allow origin from env variable (set in Supabase secrets), fallback to wildcard for dev
+const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") || "*";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cohort-id",
+};
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -19,19 +23,74 @@ serve(async (req) => {
       throw new Error("API key not configured");
     }
 
+    // Verify caller is an authenticated Supabase user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const url = new URL(req.url);
     const endpoint = url.searchParams.get("endpoint");
     const mode = url.searchParams.get("mode");
-    
+
     // Get cohort from header (default to 2029)
     const cohortId = req.headers.get("x-cohort-id") || "2029";
 
+    // File upload proxy endpoint — avoids exposing RENDER API key to the browser
+    if (endpoint === "upload") {
+      const formData = await req.formData();
+      const file = formData.get("file");
+
+      if (!file) {
+        return new Response(JSON.stringify({ error: "No file provided" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const forwardFormData = new FormData();
+      forwardFormData.append("file", file);
+
+      const response = await fetch(`${PROFESSOR_API_URL}/api/upload`, {
+        method: "POST",
+        headers: { "x-api-key": apiKey },
+        body: forwardFormData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Upload backend error ${response.status}`);
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch lectures endpoint
     if (endpoint === "lectures") {
-      console.log(`Fetching lectures for cohort: ${cohortId} with mode: ${mode}`);
+      console.log(`Fetching lectures for cohort: ${cohortId}, mode: ${mode}`);
 
       const fetchLectures = async (cohortHeaderValue: string) => {
-        // FIX: Pass the mode parameter to the backend
         const lectureUrl = mode
           ? `${PROFESSOR_API_URL}/api/lectures?mode=${encodeURIComponent(mode)}`
           : `${PROFESSOR_API_URL}/api/lectures`;
@@ -45,11 +104,9 @@ serve(async (req) => {
         });
 
         const text = await res.text();
-        console.log(
-          `Lectures response for x-cohort-id=${cohortHeaderValue}: status=${res.status} bodyPreview=${text.slice(0, 500)}`
-        );
+        console.log(`Lectures response: status=${res.status} cohort=${cohortHeaderValue}`);
 
-        let json: any = null;
+        let json: unknown = null;
         try {
           json = text ? JSON.parse(text) : null;
         } catch (e) {
@@ -63,7 +120,7 @@ serve(async (req) => {
       let { res, json } = await fetchLectures(cohortId);
 
       // Retry logic for cohort prefix
-      const lectures = (json?.lectures ?? []) as unknown[];
+      const lectures = ((json as Record<string, unknown>)?.lectures ?? []) as unknown[];
       if (res.ok && Array.isArray(lectures) && lectures.length === 0 && !cohortId.startsWith("cohort_")) {
         console.log(`Empty lectures for cohort ${cohortId}; retrying with cohort_${cohortId}`);
         const retry = await fetchLectures(`cohort_${cohortId}`);
@@ -76,27 +133,27 @@ serve(async (req) => {
         throw new Error(`Backend returned ${res.status}`);
       }
 
-      console.log("Lectures fetched:", JSON.stringify(json));
-      return new Response(JSON.stringify(json ?? { lectures: [] }), {
+      return new Response(JSON.stringify((json as Record<string, unknown>) ?? { lectures: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Chat endpoint - POST requests
-    const body = await req.json();
-    console.log("Chat request:", JSON.stringify(body));
+    const body = await req.json() as Record<string, unknown>;
+    console.log(`Chat request: endpoint=${body.endpoint ?? "chat"}, mode=${body.mode ?? "unknown"}`);
 
     // Handle submit-diagnostic endpoint
     if (body.endpoint === "submit-diagnostic") {
+      const diagnosticResults = body.diagnostic_results as Record<string, unknown> | undefined;
       const diagnosticPayload = {
         session_id: body.session_id || null,
         cohort_id: body.cohort_id || cohortId,
-        topic_slug: body.diagnostic_results?.topic_slug,
-        answers: body.diagnostic_results?.answers,
+        topic_slug: diagnosticResults?.topic_slug,
+        answers: diagnosticResults?.answers,
         user_id: body.user_id || null,
       };
 
-      console.log("Sending diagnostic submission:", JSON.stringify(diagnosticPayload));
+      console.log(`Sending diagnostic submission: session=${diagnosticPayload.session_id}`);
 
       const response = await fetch(`${PROFESSOR_API_URL}/api/diagnostic/submit`, {
         method: "POST",
@@ -110,7 +167,7 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Diagnostic submit error:", errorText);
+        console.error("Diagnostic submit error:", response.status);
         throw new Error(`Backend returned ${response.status}: ${errorText}`);
       }
 
@@ -119,7 +176,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    
+
     // Build system message with formatting instructions
     const systemInstructions = `When providing Excel formulas, ALWAYS wrap them in Markdown code blocks (e.g., \`=SUM(A1:B1)\`).
 
@@ -128,10 +185,13 @@ When providing Mathematical equations, ALWAYS use LaTeX wrapped in double dollar
 Use clear bullet points and bold text for lists of definitions.`;
 
     // Prepend system message if not already present
-    const messages = body.messages || [];
-    const hasSystemMessage = messages.length > 0 && messages[0].role === "system";
-    const finalMessages = hasSystemMessage 
-      ? [{ ...messages[0], content: `${systemInstructions}\n\n${messages[0].content}` }, ...messages.slice(1)]
+    const messages = (body.messages as unknown[]) || [];
+    const hasSystemMessage = messages.length > 0 && (messages[0] as Record<string, unknown>).role === "system";
+    const finalMessages = hasSystemMessage
+      ? [
+          { ...(messages[0] as Record<string, unknown>), content: `${systemInstructions}\n\n${(messages[0] as Record<string, unknown>).content}` },
+          ...messages.slice(1),
+        ]
       : [{ role: "system", content: systemInstructions }, ...messages];
 
     // Build payload with mode
@@ -147,7 +207,7 @@ Use clear bullet points and bold text for lists of definitions.`;
       file_context: body.file_context || null,
     };
 
-    console.log("Sending to backend:", JSON.stringify(payload));
+    console.log(`Forwarding chat: course=${payload.selectedCourse}, mode=${payload.mode}`);
 
     const response = await fetch(`${PROFESSOR_API_URL}/api/chat`, {
       method: "POST",
@@ -161,7 +221,7 @@ Use clear bullet points and bold text for lists of definitions.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Backend error:", errorText);
+      console.error("Backend error:", response.status);
       throw new Error(`Backend returned ${response.status}: ${errorText}`);
     }
 
@@ -169,8 +229,8 @@ Use clear bullet points and bold text for lists of definitions.`;
     const contentType = response.headers.get("content-type");
     if (contentType?.includes("text/event-stream")) {
       return new Response(response.body, {
-        headers: { 
-          ...corsHeaders, 
+        headers: {
+          ...corsHeaders,
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",
           "Connection": "keep-alive",
@@ -185,7 +245,7 @@ Use clear bullet points and bold text for lists of definitions.`;
     });
 
   } catch (error) {
-    console.error("Professor chat error:", error);
+    console.error("Professor chat error:", error instanceof Error ? error.message : error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,

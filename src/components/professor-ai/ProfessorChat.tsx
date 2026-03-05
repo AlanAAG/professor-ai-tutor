@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X, BookOpen } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ProfessorMessage } from "./ProfessorMessage";
 import { KnowledgeLevelSelector, type KnowledgeLevel } from "./KnowledgeLevelSelector";
@@ -202,16 +203,23 @@ export const ProfessorChat = ({
           description: `Extracting text from ${file.name}`,
         });
 
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token || "";
+
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
-          method: "POST",
-          headers: {
-            "x-api-key": import.meta.env.VITE_API_KEY || "",
-          },
-          body: formData,
-        });
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=upload`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              "Authorization": `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`Upload failed: ${response.statusText}`);
