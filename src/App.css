@@ -47,6 +47,8 @@
   scrollbar-gutter: stable;
   /* Force flex item to shrink properly - prevents layout jump during streaming */
   flex: 1 1 0%;
+  /* Isolate layout changes inside the scroll area from affecting the chatbar */
+  contain: layout style;
 }
 
 .professor-message-bubble {
@@ -54,9 +56,22 @@
   /* line-height is also set via tailwind leading-7 (1.75rem), ensuring consistency */
 }
 
-/* LaTeX display margin fix */
+/* LaTeX display: contain layout changes so they don't affect the outer flex layout */
 .katex-display {
   margin: 1em 0 !important;
   overflow-x: auto;
   overflow-y: hidden;
+  /* Prevent KaTeX block from causing the scroll container to reflow */
+  contain: layout;
+}
+
+/* Inline KaTeX: prevent vertical overflow from shifting surrounding text */
+.katex {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Table wrapper: ensure tables never cause horizontal overflow that affects layout */
+.professor-message-bubble .overflow-x-auto {
+  contain: layout;
 }
