@@ -51,10 +51,6 @@ export const useProfessorChat = ({
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(crypto.randomUUID());
 
-  // Debug: Log session ID on initialization
-  useEffect(() => {
-    console.log("Session ID:", sessionIdRef.current);
-  }, []);
 
   // Clear chat when mode or lecture changes
   useEffect(() => {
@@ -227,9 +223,10 @@ export const useProfessorChat = ({
     setIsGeneratingDiagnostic(false);
 
     try {
-      // Fetch authenticated user ID for backend memory
+      // Fetch authenticated user ID and session token for backend
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id || null;
+      const token = sessionData.session?.access_token || "";
 
       // Send selectedLecture as null or empty string if "All Lectures" is selected or not selected
       const lectureToSend = selectedLecture === "__all__" ? null : selectedLecture;
@@ -242,6 +239,9 @@ export const useProfessorChat = ({
       const courseInfo = cohortPersonas[selectedCourse || ""];
       const courseDisplayName = courseInfo?.display_name || selectedCourse;
 
+      // Limit history to last 20 messages to keep requests bounded
+      const recentMessages = messages.slice(-20);
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
         {
@@ -249,10 +249,11 @@ export const useProfessorChat = ({
           headers: {
             "Content-Type": "application/json",
             "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            "Authorization": `Bearer ${token}`,
             "x-cohort-id": selectedBatch || "2029",
           },
           body: JSON.stringify({
-            messages: [...messages, apiUserMessage],
+            messages: [...recentMessages, apiUserMessage],
             mode,
             selectedCourse: selectedCourse, // Send the db_key
             courseDisplayName, // Human-readable course name
@@ -484,7 +485,6 @@ export const useProfessorChat = ({
     // Regenerate session ID when switching courses for expertise isolation
     if (regenerateSession) {
       sessionIdRef.current = crypto.randomUUID();
-      console.log("New Session ID:", sessionIdRef.current);
     }
   };
 
@@ -501,9 +501,10 @@ export const useProfessorChat = ({
   // Submit diagnostic quiz results to backend
   const submitDiagnostic = async (payload: DiagnosticSubmission) => {
     try {
-      // Fetch authenticated user ID for backend memory
+      // Fetch authenticated user ID and session token for backend
       const { data: sessionData } = await supabase.auth.getSession();
       const userId = sessionData.session?.user?.id || null;
+      const token = sessionData.session?.access_token || "";
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat`,
@@ -512,6 +513,7 @@ export const useProfessorChat = ({
           headers: {
             "Content-Type": "application/json",
             "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            "Authorization": `Bearer ${token}`,
             "x-cohort-id": selectedBatch || "2029",
           },
           body: JSON.stringify({
