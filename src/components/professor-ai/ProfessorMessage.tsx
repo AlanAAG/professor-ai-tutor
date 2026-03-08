@@ -163,7 +163,7 @@ const markdownComponents = {
   ),
   table: ({ children }: { children?: React.ReactNode }) => (
     <div className="my-4 w-full overflow-x-auto max-w-full rounded-lg border border-border/50">
-      <table className="min-w-full border-collapse text-sm">{children}</table>
+      <table className="w-max border-collapse text-sm">{children}</table>
     </div>
   ),
   thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-secondary/50 text-left">{children}</thead>,
@@ -301,8 +301,8 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
         <Sparkles className="w-4 h-4 text-primary-foreground" />
       </div>
       
-      <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
-        <div className="text-[15px] leading-7 text-chat-text break-words overflow-hidden max-w-full [overflow-wrap:anywhere] professor-message-bubble">
+      <div className="flex-1 min-w-0 space-y-1 max-w-full">
+        <div className="text-[15px] leading-7 text-chat-text break-words max-w-full [overflow-wrap:anywhere] professor-message-bubble">
           <ReactMarkdown
             remarkPlugins={remarkPlugins}
             rehypePlugins={rehypePlugins}
