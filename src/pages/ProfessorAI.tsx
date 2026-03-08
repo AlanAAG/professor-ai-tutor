@@ -276,7 +276,7 @@ const ProfessorAI = () => {
 
   if (!selectedBatch) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="flex h-dvh items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -285,8 +285,8 @@ const ProfessorAI = () => {
   // Show term selection after batch is selected
   if (!selectedTerm) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <ProfessorTermSelection 
+      <div className="flex h-dvh items-center justify-center bg-background">
+        <ProfessorTermSelection
           batch={selectedBatch} 
           onTermSelect={handleTermSelect} 
           onBatchChange={(newBatch) => {
@@ -302,7 +302,7 @@ const ProfessorAI = () => {
   // Show course selection after term is selected
   if (!selectedCourse) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background overflow-y-auto">
+      <div className="flex h-dvh items-center justify-center bg-background overflow-y-auto">
         <ProfessorCourseSelection
           batch={selectedBatch}
           term={selectedTerm}
@@ -315,7 +315,7 @@ const ProfessorAI = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-dvh bg-background text-foreground overflow-hidden">
       {/* Collapsible Sidebar */}
       <ProfessorSidebarNew
         isOpen={sidebarOpen}

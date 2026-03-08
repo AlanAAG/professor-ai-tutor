@@ -75,3 +75,11 @@
 .professor-message-bubble .overflow-x-auto {
   contain: layout;
 }
+
+/* Fallback for browsers that don't support dvh */
+@supports not (height: 100dvh) {
+  .h-dvh {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}
