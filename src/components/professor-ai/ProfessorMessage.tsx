@@ -163,14 +163,14 @@ const markdownComponents = {
   ),
   table: ({ children }: { children?: React.ReactNode }) => (
     <div className="my-4 w-full overflow-x-auto max-w-full rounded-lg border border-border/50">
-      <table className="w-full border-collapse text-sm">{children}</table>
+      <table className="min-w-full border-collapse text-sm">{children}</table>
     </div>
   ),
   thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-secondary/50 text-left">{children}</thead>,
   tbody: ({ children }: { children?: React.ReactNode }) => <tbody className="bg-background">{children}</tbody>,
   tr: ({ children }: { children?: React.ReactNode }) => <tr className="border-b border-border/50 last:border-0">{children}</tr>,
-  th: ({ children }: { children?: React.ReactNode }) => <th className="px-4 py-3 font-semibold text-primary">{children}</th>,
-  td: ({ children }: { children?: React.ReactNode }) => <td className="px-4 py-3 text-chat-text align-top">{children}</td>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="px-4 py-3 font-semibold text-primary min-w-[120px]">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="px-4 py-3 text-chat-text align-top min-w-[120px]">{children}</td>,
   details: ({ children }: { children?: React.ReactNode }) => (
     <details className="my-4 rounded-lg border border-border/50 bg-secondary/20 px-4 py-3 open:bg-secondary/30">
       {children}
