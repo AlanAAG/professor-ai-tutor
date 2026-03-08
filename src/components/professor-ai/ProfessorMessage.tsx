@@ -14,6 +14,66 @@ import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 import { MermaidDiagram } from "./MermaidDiagram";
 
+/** Pre-process markdown to fix malformed GFM tables so remark-gfm can parse them. */
+function fixMalformedTables(md: string): string {
+  const lines = md.split('\n');
+  const result: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    // Detect start of a table block (consecutive lines starting with |)
+    if (lines[i].trimStart().startsWith('|')) {
+      const block: string[] = [];
+      while (i < lines.length && lines[i].trimStart().startsWith('|')) {
+        block.push(lines[i]);
+        i++;
+      }
+
+      if (block.length >= 2) {
+        // Count columns per row
+        const colCounts = block.map(line => {
+          const stripped = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+          return stripped.split('|').length;
+        });
+        const maxCols = Math.max(...colCounts);
+
+        // Check if there's a separator row (index 1 ideally)
+        const isSep = (line: string) => /^\|[\s\-:|]+(\|[\s\-:|]+)*\|?\s*$/.test(line.trim());
+
+        let sepIndex = block.findIndex(isSep);
+
+        if (sepIndex === -1) {
+          // No separator — insert one after the first row
+          const sep = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
+          block.splice(1, 0, sep);
+        } else {
+          // Separator exists but may have wrong column count — rebuild it
+          const sep = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
+          block[sepIndex] = sep;
+        }
+
+        // Pad any rows that have fewer columns
+        for (let j = 0; j < block.length; j++) {
+          if (isSep(block[j])) continue;
+          const stripped = block[j].trim().replace(/^\|/, '').replace(/\|$/, '');
+          const cells = stripped.split('|').map(c => c.trim());
+          while (cells.length < maxCols) cells.push('');
+          block[j] = '| ' + cells.join(' | ') + ' |';
+        }
+
+        result.push(...block);
+      } else {
+        result.push(...block);
+      }
+    } else {
+      result.push(lines[i]);
+      i++;
+    }
+  }
+
+  return result.join('\n');
+}
+
 interface ProfessorMessageProps {
   message: Message;
   isStreaming?: boolean;
@@ -248,7 +308,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
             rehypePlugins={rehypePlugins}
             components={markdownComponents}
           >
-            {message.content}
+            {fixMalformedTables(message.content)}
           </ReactMarkdown>
           {isStreaming && (
             <span className="inline-block w-0.5 h-5 bg-primary ml-0.5 animate-blink align-middle" />
