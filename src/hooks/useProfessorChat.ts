@@ -439,6 +439,11 @@ export const useProfessorChat = ({
         };
 
         setMessages(prev => [...prev, assistantMessage]);
+
+        // Update socratic state after AI response in Study mode
+        if (mode === "Study") {
+          updateSocraticState(content);
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);
