@@ -7,10 +7,13 @@ import { ProfessorHeader } from "@/components/professor-ai/ProfessorHeader";
 import { ProfessorSidebarNew } from "@/components/professor-ai/ProfessorSidebarNew";
 import { QuizView } from "@/components/professor-ai/QuizView";
 import { ChatView } from "@/components/professor-ai/ChatView";
+import { StudentProgressView } from "@/components/professor-ai/StudentProgressView";
+import { CohortAnalyticsView } from "@/components/professor-ai/CohortAnalyticsView";
+import { GuardrailsView } from "@/components/professor-ai/GuardrailsView";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { COURSES_BY_BATCH_TERM } from "@/data/courses";
-import type { Mode, Lecture, ExpertiseLevel } from "@/components/professor-ai/types";
+import type { Mode, Lecture, ExpertiseLevel, HeaderTab } from "@/components/professor-ai/types";
 import { useProfessorChat } from "@/hooks/useProfessorChat";
 import { useProfessorQuiz } from "@/hooks/useProfessorQuiz";
 
@@ -27,72 +30,57 @@ const ProfessorAI = () => {
   const [lecturesLoading, setLecturesLoading] = useState(false);
   const [lecturesError, setLecturesError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<HeaderTab>("chat");
   
-  // Adaptive learning - expertise level state
   const [expertiseLevel, setExpertiseLevel] = useState<ExpertiseLevel>(null);
-  
-  // Feedback dialog state
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  // Get available courses for selected batch and term
   const availableCourses = selectedBatch && selectedTerm 
     ? COURSES_BY_BATCH_TERM[selectedBatch]?.[selectedTerm] || [] 
     : [];
   
-  // Filter lectures by selected course (matching class_name to db_key)
   const filteredLectures = selectedCourse 
     ? lectures.filter(lecture => lecture.class_name === selectedCourse)
     : [];
 
-  // Get the display name for selected course
   const getSelectedCourseDisplayName = () => {
     const course = availableCourses.find(c => c.id === selectedCourse);
     return course?.name || selectedCourse;
   };
 
-  // Hooks
   const chat = useProfessorChat({
     selectedCourse,
     selectedBatch,
     selectedLecture,
     mode,
     expertiseLevel,
-    onExpertiseLevelChange: setExpertiseLevel, // Silent auto-update from AI responses
+    onExpertiseLevelChange: setExpertiseLevel,
   });
 
   const { calibrationRequest, setCalibrationRequest, diagnosticQuiz, setDiagnosticQuiz, submitDiagnostic, isGeneratingDiagnostic } = chat;
 
   const quiz = useProfessorQuiz(getSelectedCourseDisplayName() || undefined);
 
-  // Prevent the browser page from scrolling; only the chat areas should scroll
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Track if user is an admin (has full access to all batches)
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Determine batch from user email and check admin role from database
   useEffect(() => {
     const setBatchFromUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      let batch = "2029"; // Default fallback
+      let batch = "2029";
       let isAdminUser = false;
 
       if (user?.email) {
         const email = user.email.toLowerCase();
-        if (email.includes("2028")) {
-          batch = "2028";
-        } else if (email.includes("2029")) {
-          batch = "2029";
-        }
+        if (email.includes("2028")) batch = "2028";
+        else if (email.includes("2029")) batch = "2029";
       }
 
-      // Check admin status from database
       if (user) {
         const { data: roleData } = await supabase
           .from('user_roles')
@@ -103,7 +91,6 @@ const ProfessorAI = () => {
 
         if (roleData) {
           isAdminUser = true;
-          // For admins, use stored batch or default to 2029
           const storedBatch = localStorage.getItem("professorSelectedBatch");
           batch = storedBatch && (storedBatch === "2028" || storedBatch === "2029") ? storedBatch : "2029";
         }
@@ -112,7 +99,6 @@ const ProfessorAI = () => {
       setIsAdmin(isAdminUser);
 
       const storedBatch = localStorage.getItem("professorSelectedBatch");
-      // Only reset if batch changed and user is not an admin (admins can switch freely)
       if (!isAdminUser && storedBatch && storedBatch !== batch) {
         localStorage.removeItem("professorSelectedTerm");
         setSelectedTerm(null);
@@ -130,7 +116,6 @@ const ProfessorAI = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch lectures when batch is selected
   useEffect(() => {
     if (!selectedBatch) return;
 
@@ -155,12 +140,10 @@ const ProfessorAI = () => {
           );
           setLectures(validLectures);
         } else {
-          console.error("Failed to fetch lectures:", response.status);
           setLecturesError(true);
           setLectures([]);
         }
-      } catch (error) {
-        console.error("Failed to fetch lectures:", error);
+      } catch {
         setLecturesError(true);
         setLectures([]);
       } finally {
@@ -172,48 +155,35 @@ const ProfessorAI = () => {
   }, [selectedBatch, mode]);
 
   const sendMessage = async (content: string, isHidden = false) => {
-    // In Quiz mode, treat the message as a quiz topic request
     if (mode === "Quiz") {
       quiz.generateQuiz(content);
-      // Add to messages for display
       if (!isHidden) {
         chat.setMessages(prev => [...prev, { role: "user", content }]);
       }
       return;
     }
-
     chat.sendMessage(content, isHidden);
   };
 
-  // Handle create notes action (called from ProfessorChat)
   const handleCreateNotes = () => {
     if (selectedCourse && selectedLecture) {
-      if (mode === "Notes Creator") {
-        sendMessage(`Summary of lecture ${selectedLecture}`, true);
-      } else if (mode === "Pre-Read") {
-        sendMessage(`Pre-read summary ${selectedLecture}`, true);
-      }
+      if (mode === "Notes Creator") sendMessage(`Summary of lecture ${selectedLecture}`, true);
+      else if (mode === "Pre-Read") sendMessage(`Pre-read summary ${selectedLecture}`, true);
     }
   };
 
-  const handleStartQuiz = () => {
-    // No longer used - quiz starts when user types a topic
-  };
+  const handleStartQuiz = () => {};
 
   const handleCourseSelect = (courseId: string) => {
     setSelectedCourse(courseId);
     setSelectedLecture(null);
-    
-    // Expertise Isolation: Reset expertise level and regenerate session on course change
     setExpertiseLevel(null);
-    chat.resetChat(true); // true = regenerate session ID
+    chat.resetChat(true);
     quiz.resetQuiz();
   };
 
   const handleModeChange = (newMode: Mode) => {
     setMode(newMode);
-    // Note: useProfessorChat's useEffect will also clear chat when mode changes,
-    // but we can be explicit if we want.
     chat.resetChat();
     quiz.resetQuiz();
   };
@@ -248,20 +218,15 @@ const ProfessorAI = () => {
     quiz.resetQuiz();
   };
 
-  // Handle selecting a conversation from history
   const handleSelectConversation = async (conversation: { id: string; class_id: string; mode: string; title: string }) => {
     try {
-      // Set the course and mode based on conversation
       setSelectedCourse(conversation.class_id);
       setMode(conversation.mode as Mode);
-      
-      // Load messages for this conversation
+      setActiveTab("chat");
       await chat.loadConversation(conversation);
-
       quiz.resetQuiz();
     } catch (error) {
       console.error("Error loading conversation:", error);
-      // Toast is handled inside loadConversation? No, useProfessorChat calls toast.
     }
   };
 
@@ -270,9 +235,7 @@ const ProfessorAI = () => {
     navigate("/auth");
   };
 
-  const handleFeedback = () => {
-    setFeedbackOpen(true);
-  };
+  const handleFeedback = () => setFeedbackOpen(true);
 
   if (!selectedBatch) {
     return (
@@ -282,7 +245,6 @@ const ProfessorAI = () => {
     );
   }
 
-  // Show term selection after batch is selected
   if (!selectedTerm) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background">
@@ -299,7 +261,6 @@ const ProfessorAI = () => {
     );
   }
 
-  // Show course selection after term is selected
   if (!selectedCourse) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background overflow-y-auto">
@@ -314,43 +275,22 @@ const ProfessorAI = () => {
     );
   }
 
-  return (
-    <div className="flex h-dvh bg-background text-foreground overflow-hidden">
-      {/* Collapsible Sidebar */}
-      <ProfessorSidebarNew
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        onNewChat={handleNewChat}
-        onSelectConversation={handleSelectConversation}
-        activeConversationId={chat.activeConversationId}
-        onLogout={handleLogout}
-        onFeedback={handleFeedback}
-      />
-
-      {/* Main content area - offset by sidebar width */}
-      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
-        {/* Header with selectors */}
-        <ProfessorHeader
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          selectedCourse={selectedCourse}
-          onCourseChange={handleCourseSelect}
-          selectedMode={mode}
-          onModeChange={handleModeChange}
-          selectedBatch={selectedBatch}
-          selectedTerm={selectedTerm}
-          onTermChange={handleTermSelect}
-          courses={availableCourses}
-          onOpenCourseSelection={handleOpenCourseSelection}
-        />
-
-        {mode === "Quiz" ? (
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "progress":
+        return <StudentProgressView selectedBatch={selectedBatch} />;
+      case "analytics":
+        return isAdmin ? <CohortAnalyticsView selectedBatch={selectedBatch} /> : null;
+      case "guardrails":
+        return isAdmin ? <GuardrailsView selectedBatch={selectedBatch} selectedCourse={selectedCourse} /> : null;
+      default:
+        return mode === "Quiz" ? (
           <QuizView
             quizLoading={quiz.quizLoading}
             quizResults={quiz.quizResults}
             currentQuiz={quiz.currentQuiz}
             onRetry={quiz.handleRetryQuiz}
-            onNewQuiz={handleNewChat} // Using handleNewChat to reset everything including quiz
+            onNewQuiz={handleNewChat}
             onComplete={quiz.handleQuizComplete}
             onClose={quiz.handleQuizClose}
             messages={chat.messages}
@@ -398,8 +338,43 @@ const ProfessorAI = () => {
             onDiagnosticSubmit={submitDiagnostic}
             onDiagnosticClose={() => setDiagnosticQuiz(null)}
             isGeneratingDiagnostic={isGeneratingDiagnostic}
+            socraticState={chat.socraticState}
           />
-        )}
+        );
+    }
+  };
+
+  return (
+    <div className="flex h-dvh bg-background text-foreground overflow-hidden">
+      <ProfessorSidebarNew
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onNewChat={handleNewChat}
+        onSelectConversation={handleSelectConversation}
+        activeConversationId={chat.activeConversationId}
+        onLogout={handleLogout}
+        onFeedback={handleFeedback}
+      />
+
+      <div className={`flex flex-col flex-1 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : "lg:ml-14"}`}>
+        <ProfessorHeader
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          selectedCourse={selectedCourse}
+          onCourseChange={handleCourseSelect}
+          selectedMode={mode}
+          onModeChange={handleModeChange}
+          selectedBatch={selectedBatch}
+          selectedTerm={selectedTerm}
+          onTermChange={handleTermSelect}
+          courses={availableCourses}
+          onOpenCourseSelection={handleOpenCourseSelection}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isAdmin={isAdmin}
+        />
+
+        {renderTabContent()}
 
         <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       </div>
