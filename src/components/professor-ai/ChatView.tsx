@@ -1,13 +1,12 @@
 import { ProfessorChat } from "./ProfessorChat";
-import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission } from "./types";
+import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission, SocraticState } from "./types";
 import type { KnowledgeLevel } from "./KnowledgeLevelSelector";
 
 interface CalibrationRequest {
   topic: string;
 }
 
-interface ChatViewProps {
-  // ProfessorChat props
+export interface ChatViewProps {
   messages: Message[];
   isLoading: boolean;
   streamingContent: string;
@@ -29,6 +28,7 @@ interface ChatViewProps {
   onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
   onDiagnosticClose?: () => void;
   isGeneratingDiagnostic?: boolean;
+  socraticState?: SocraticState | null;
 }
 
 export const ChatView = ({
