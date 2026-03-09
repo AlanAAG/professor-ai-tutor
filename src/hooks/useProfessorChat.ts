@@ -401,6 +401,7 @@ export const useProfessorChat = ({
           if (mode === "Study") {
             updateSocraticState(content);
           }
+        }
         setStreamingContent("");
       } else {
         // Handle JSON response
