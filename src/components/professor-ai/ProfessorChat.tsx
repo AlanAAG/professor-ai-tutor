@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission } from "./types";
+import type { Mode, Message, Lecture, DiagnosticQuizData, DiagnosticSubmission, SocraticState } from "./types";
 
 interface UploadedFile {
   name: string;
@@ -46,6 +46,7 @@ interface ProfessorChatProps {
   onDiagnosticSubmit?: (payload: DiagnosticSubmission) => Promise<void>;
   onDiagnosticClose?: () => void;
   isGeneratingDiagnostic?: boolean;
+  socraticState?: SocraticState | null;
 }
 
 const quizSuggestions = [
@@ -77,6 +78,7 @@ export const ProfessorChat = ({
   onDiagnosticSubmit,
   onDiagnosticClose,
   isGeneratingDiagnostic,
+  socraticState,
 }: ProfessorChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -573,6 +575,20 @@ export const ProfessorChat = ({
       {!calibrationRequest && (
         <div className="shrink-0 border-t border-border/30 bg-background/95 backdrop-blur-xl p-2 md:p-4 safe-area-inset-bottom w-full max-w-full overflow-hidden box-border">
           <div className="max-w-3xl mx-auto space-y-2 w-full box-border overflow-hidden">
+            {/* Socratic hint counter */}
+            {socraticState && socraticState.max_hints > 0 && (
+              <div className="flex items-center justify-center gap-2">
+                {socraticState.resolved && socraticState.resolution_type === "hints_exhausted" ? (
+                  <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    Switching to direct answers
+                  </span>
+                ) : (
+                  <span className="text-xs px-3 py-1 rounded-full bg-secondary border border-border/50 text-muted-foreground">
+                    Hint {socraticState.hints_given} of {socraticState.max_hints}
+                  </span>
+                )}
+              </div>
+            )}
             {/* Uploaded file indicator - hidden for now
             {uploadedFile && (
               <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-lg border border-border/30">

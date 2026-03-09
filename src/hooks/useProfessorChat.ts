@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, MutableRefObject } from "reac
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import personasData from "@/data/personas.json";
-import type { Mode, Message, ExpertiseLevel, DiagnosticQuizData, DiagnosticSubmission, SystemEvent } from "@/components/professor-ai/types";
+import type { Mode, Message, ExpertiseLevel, DiagnosticQuizData, DiagnosticSubmission, SystemEvent, SocraticState } from "@/components/professor-ai/types";
 
 const NO_MATERIALS_FALLBACK_PHRASES = [
   "couldn't find relevant materials",
@@ -47,6 +47,7 @@ export const useProfessorChat = ({
   const [calibrationRequest, setCalibrationRequest] = useState<{ topic: string } | null>(null);
   const [diagnosticQuiz, setDiagnosticQuiz] = useState<DiagnosticQuizData | null>(null);
   const [isGeneratingDiagnostic, setIsGeneratingDiagnostic] = useState(false);
+  const [socraticState, setSocraticState] = useState<SocraticState | null>(null);
 
   // Session ID for chat persistence - persists for the duration of the user's visit
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -255,7 +256,8 @@ export const useProfessorChat = ({
           body: JSON.stringify({
             messages: [...recentMessages, apiUserMessage],
             mode,
-            selectedCourse: selectedCourse, // Send the db_key
+            selectedCourse: selectedCourse,
+            course_key: selectedCourse, // Alias for backend compatibility
             courseDisplayName, // Human-readable course name
             selectedLecture: lectureToSend, // The lecture title or null
             session_id: sessionIdRef.current, // Session ID for backend chat persistence
@@ -394,6 +396,11 @@ export const useProfessorChat = ({
             ...prev,
             { id: messageId || undefined, role: "assistant", content: cleanedContent },
           ]);
+
+          // Update socratic state after AI response in Study mode
+          if (mode === "Study") {
+            updateSocraticState(content);
+          }
         }
         setStreamingContent("");
       } else {
@@ -432,6 +439,11 @@ export const useProfessorChat = ({
         };
 
         setMessages(prev => [...prev, assistantMessage]);
+
+        // Update socratic state after AI response in Study mode
+        if (mode === "Study") {
+          updateSocraticState(content);
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);
@@ -570,9 +582,46 @@ export const useProfessorChat = ({
     }
   };
 
+  // Call socratic update after AI response in Study mode
+  const updateSocraticState = async (userMessage: string) => {
+    if (mode !== "Study") return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id || null;
+      const token = sessionData.session?.access_token || "";
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=socratic-update`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${token}`,
+            "x-cohort-id": selectedBatch || "2029",
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            session_id: sessionIdRef.current,
+            concept: userMessage.slice(0, 100),
+            student_attempt: userMessage,
+            was_correct: false,
+            course_key: selectedCourse,
+          }),
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSocraticState(data);
+      }
+    } catch (e) {
+      console.error("Socratic update failed:", e);
+    }
+  };
+
   return {
     messages,
-    setMessages, // Exposed for external manipulation if needed (e.g. Quiz mode adding user message)
+    setMessages,
     isLoading,
     streamingContent,
     sessionId: sessionIdRef.current,
@@ -588,5 +637,7 @@ export const useProfessorChat = ({
     setDiagnosticQuiz,
     submitDiagnostic,
     isGeneratingDiagnostic,
+    socraticState,
+    updateSocraticState,
   };
 };

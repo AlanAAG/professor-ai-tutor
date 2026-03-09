@@ -64,3 +64,49 @@ export interface SystemEvent {
   persona?: string;
   message?: string;
 }
+
+// Header tab type
+export type HeaderTab = "chat" | "progress" | "analytics" | "guardrails";
+
+// Analytics types
+export interface CohortAnalyticsTopic {
+  topic: string;
+  gap_count: number;
+  mastery_count: number;
+  gap_rate: number;
+  avg_attempts: number;
+  most_common_bloom_gap: string;
+}
+
+export interface StudentMastery {
+  topic: string;
+  status: "Mastery" | "Gap";
+  bloom_level_achieved: string;
+}
+
+export interface StudentBlindSpot {
+  topic: string;
+  gap_count: number;
+  last_seen: string;
+}
+
+// Guardrails types
+export interface GuardrailsConfig {
+  professor_id: string;
+  course_key: string;
+  cohort_id: string;
+  max_hints_per_concept: number;
+  socratic_mode_enforced: boolean;
+  direct_answer_bloom_threshold: string;
+  restricted_topics: string[];
+  allowed_modes: string[];
+}
+
+// Socratic State types
+export interface SocraticState {
+  hints_given: number;
+  max_hints: number;
+  resolved: boolean;
+  resolution_type: string | null;
+  student_attempts: Array<{ attempt: string; correct: boolean }>;
+}

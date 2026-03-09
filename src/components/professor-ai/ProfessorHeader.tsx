@@ -1,7 +1,7 @@
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Mode } from "./types";
+import type { Mode, HeaderTab } from "./types";
 import type { Course } from "@/data/courses";
 
 interface ProfessorHeaderProps {
@@ -18,6 +18,9 @@ interface ProfessorHeaderProps {
   onLogout?: () => void;
   onFeedback?: () => void;
   onOpenCourseSelection?: () => void;
+  activeTab: HeaderTab;
+  onTabChange: (tab: HeaderTab) => void;
+  isAdmin: boolean;
 }
 
 const modeOptions: {
@@ -62,137 +65,130 @@ export const ProfessorHeader = ({
   onLogout,
   onFeedback,
   onOpenCourseSelection,
+  activeTab,
+  onTabChange,
+  isAdmin,
 }: ProfessorHeaderProps) => {
   const selectedCourseDisplay = courses.find(c => c.id === selectedCourse)?.name;
   const termOptions = TERM_OPTIONS_BY_BATCH[selectedBatch] || [];
   const selectedTermLabel = termOptions.find(t => t.value === selectedTerm)?.label || selectedTerm;
 
-  // Get a short, readable course name for mobile - show START of title
   const getMobileCourseLabel = () => {
     if (!selectedCourseDisplay) return "Select Course";
-    // Remove "How to" prefix if present, then show first ~18 chars
     const cleanedName = selectedCourseDisplay.replace(/^How to /i, '');
-    if (cleanedName.length <= 18) {
-      return cleanedName;
-    }
-    // Truncate at word boundary if possible
+    if (cleanedName.length <= 18) return cleanedName;
     const truncated = cleanedName.substring(0, 18);
     const lastSpace = truncated.lastIndexOf(' ');
-    if (lastSpace > 10) {
-      return truncated.substring(0, lastSpace) + '...';
-    }
+    if (lastSpace > 10) return truncated.substring(0, lastSpace) + '...';
     return truncated + '...';
   };
 
+  const tabs: { id: HeaderTab; label: string; adminOnly?: boolean }[] = [
+    { id: "chat", label: "Chat" },
+    { id: "progress", label: "My Progress" },
+    { id: "analytics", label: "Cohort Analytics", adminOnly: true },
+    { id: "guardrails", label: "Settings", adminOnly: true },
+  ];
+
+  const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
+
   return (
-    <div className="bg-background border-b border-border/50 py-2 px-2 md:px-4 shrink-0">
-      {/* Mobile/Tablet layout - two rows for better readability */}
-      <div className="flex lg:hidden flex-col gap-2">
-        {/* Top row: Menu, Logo, Course */}
+    <div className="bg-background border-b border-border/50 shrink-0">
+      {/* Mobile/Tablet layout */}
+      <div className="flex lg:hidden flex-col gap-2 py-2 px-2">
         <div className="flex items-center gap-2">
-          {/* Hamburger menu */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleSidebar}
-            className="h-9 w-9 shrink-0"
-          >
+          <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="h-9 w-9 shrink-0">
             <Menu className="h-5 w-5" />
           </Button>
-          
-          {/* Logo */}
           <span className="text-base font-bold text-primary shrink-0">AskTETR</span>
-
-          {/* Course selector - takes remaining space */}
           <Button
             variant="outline"
             className="flex-1 min-w-0 bg-secondary/50 border-border/50 text-sm h-9 justify-start px-3"
             onClick={onOpenCourseSelection}
           >
-            <span className="truncate">
-              {getMobileCourseLabel()}
-            </span>
+            <span className="truncate">{getMobileCourseLabel()}</span>
           </Button>
         </div>
         
-        {/* Bottom row: Mode, Term - evenly spaced */}
-        <div className="flex items-center gap-2 px-1">
-          {/* Mode selector */}
-          <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
-            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
-              <SelectValue placeholder="Mode" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {modeOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Term selector */}
-          <Select value={selectedTerm} onValueChange={onTermChange}>
-            <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
-              <span className="truncate">{selectedTermLabel}</span>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {termOptions.map(term => (
-                <SelectItem key={term.value} value={term.value}>
-                  {term.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {activeTab === "chat" && (
+          <div className="flex items-center gap-2 px-1">
+            <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
+              <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+                <SelectValue placeholder="Mode" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {modeOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedTerm} onValueChange={onTermChange}>
+              <SelectTrigger className="flex-1 bg-secondary/50 border-border/50 text-sm h-9">
+                <span className="truncate">{selectedTermLabel}</span>
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {termOptions.map(term => (
+                  <SelectItem key={term.value} value={term.value}>{term.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
-      {/* Desktop layout - centered selectors */}
-      <div className="hidden lg:flex items-center gap-2">
-        {/* Logo */}
+      {/* Desktop layout */}
+      <div className="hidden lg:flex items-center gap-2 py-2 px-4">
         <span className="text-lg font-bold text-primary shrink-0">AskTETR</span>
-
-        {/* Desktop selectors - centered */}
-        <div className="flex items-center gap-2 flex-1 justify-center max-w-3xl px-4">
-          <Button
-            variant="outline"
-            className="w-[220px] bg-secondary/50 border-border/50 text-sm h-9 justify-start"
-            onClick={onOpenCourseSelection}
-          >
-            <span className="truncate">
-              {selectedCourseDisplay || "Select a course"}
-            </span>
-          </Button>
-
-          <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
-            <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50 text-sm h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {modeOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedTerm} onValueChange={onTermChange}>
-            <SelectTrigger className="w-[90px] bg-secondary/50 border-border/50 text-sm h-9">
-              <span className="truncate">{selectedTermLabel}</span>
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border">
-              {termOptions.map(term => (
-                <SelectItem key={term.value} value={term.value}>
-                  {term.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Desktop right side placeholder for balance */}
+        {activeTab === "chat" && (
+          <div className="flex items-center gap-2 flex-1 justify-center max-w-3xl px-4">
+            <Button
+              variant="outline"
+              className="w-[220px] bg-secondary/50 border-border/50 text-sm h-9 justify-start"
+              onClick={onOpenCourseSelection}
+            >
+              <span className="truncate">{selectedCourseDisplay || "Select a course"}</span>
+            </Button>
+            <Select value={selectedMode} onValueChange={v => onModeChange(v as Mode)}>
+              <SelectTrigger className="w-[100px] bg-secondary/50 border-border/50 text-sm h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {modeOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedTerm} onValueChange={onTermChange}>
+              <SelectTrigger className="w-[90px] bg-secondary/50 border-border/50 text-sm h-9">
+                <span className="truncate">{selectedTermLabel}</span>
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                {termOptions.map(term => (
+                  <SelectItem key={term.value} value={term.value}>{term.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {activeTab !== "chat" && <div className="flex-1" />}
         <div className="w-[100px]" />
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-2 md:px-4 pb-1 overflow-x-auto">
+        {visibleTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-full transition-colors whitespace-nowrap ${
+              activeTab === tab.id
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
     </div>
   );
