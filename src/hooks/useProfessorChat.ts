@@ -256,7 +256,8 @@ export const useProfessorChat = ({
           body: JSON.stringify({
             messages: [...recentMessages, apiUserMessage],
             mode,
-            selectedCourse: selectedCourse, // Send the db_key
+            selectedCourse: selectedCourse,
+            course_key: selectedCourse, // Alias for backend compatibility
             courseDisplayName, // Human-readable course name
             selectedLecture: lectureToSend, // The lecture title or null
             session_id: sessionIdRef.current, // Session ID for backend chat persistence
