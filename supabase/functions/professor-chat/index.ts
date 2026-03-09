@@ -86,6 +86,87 @@ serve(async (req) => {
       });
     }
 
+    // Analytics: cohort endpoint
+    if (endpoint === "analytics-cohort") {
+      const cohortParam = url.searchParams.get("cohort_id") || cohortId;
+      const response = await fetch(`${PROFESSOR_API_URL}/analytics/cohort/${encodeURIComponent(cohortParam)}`, {
+        headers: { "x-api-key": apiKey, "Accept": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Analytics: student endpoint
+    if (endpoint === "analytics-student") {
+      const studentId = url.searchParams.get("user_id");
+      if (!studentId) {
+        return new Response(JSON.stringify({ error: "user_id required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const response = await fetch(`${PROFESSOR_API_URL}/analytics/student/${encodeURIComponent(studentId)}`, {
+        headers: { "x-api-key": apiKey, "Accept": "application/json" },
+      });
+      if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Guardrails: GET
+    if (endpoint === "guardrails-get") {
+      const courseKey = url.searchParams.get("course_key");
+      const cohortParam = url.searchParams.get("cohort_id") || cohortId;
+      if (!courseKey) {
+        return new Response(JSON.stringify({ error: "course_key required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const response = await fetch(
+        `${PROFESSOR_API_URL}/guardrails/${encodeURIComponent(courseKey)}?cohort_id=${encodeURIComponent(cohortParam)}`,
+        { headers: { "x-api-key": apiKey, "Accept": "application/json" } }
+      );
+      if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Guardrails: SET (POST — body forwarded from client)
+    if (endpoint === "guardrails-set") {
+      const body = await req.json();
+      const response = await fetch(`${PROFESSOR_API_URL}/guardrails/set`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Socratic: update
+    if (endpoint === "socratic-update") {
+      const body = await req.json();
+      const response = await fetch(`${PROFESSOR_API_URL}/socratic/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) throw new Error(`Backend returned ${response.status}`);
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch lectures endpoint
     if (endpoint === "lectures") {
       console.log(`Fetching lectures for cohort: ${cohortId}, mode: ${mode}`);
