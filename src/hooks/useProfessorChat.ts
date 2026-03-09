@@ -396,7 +396,11 @@ export const useProfessorChat = ({
             ...prev,
             { id: messageId || undefined, role: "assistant", content: cleanedContent },
           ]);
-        }
+
+          // Update socratic state after AI response in Study mode
+          if (mode === "Study") {
+            updateSocraticState(content);
+          }
         setStreamingContent("");
       } else {
         // Handle JSON response
