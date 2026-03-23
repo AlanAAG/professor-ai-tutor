@@ -309,6 +309,7 @@ export const useProfessorChat = ({
           }
 
           displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
+          displayContent = displayContent.replace(BLOOM_LEVEL_PATTERN, '').trim();
 
           pendingDisplay = displayContent;
           if (rafHandle === undefined) {
