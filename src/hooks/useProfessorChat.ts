@@ -22,6 +22,9 @@ const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*\})$/;
 // Pattern to detect system events (e.g., persona shift)
 const SYSTEM_EVENT_PATTERN = /SYSTEM_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
 
+// Pattern to detect inline bloom_level JSON objects emitted by the backend
+const BLOOM_LEVEL_PATTERN = /\{"type"\s*:\s*"bloom_level"[^}]*\}/g;
+
 interface UseProfessorChatProps {
   selectedCourse: string | null;
   selectedBatch: string | null;
@@ -306,6 +309,7 @@ export const useProfessorChat = ({
           }
 
           displayContent = displayContent.replace(SYSTEM_EVENT_PATTERN, '').trim();
+          displayContent = displayContent.replace(BLOOM_LEVEL_PATTERN, '').trim();
 
           pendingDisplay = displayContent;
           if (rafHandle === undefined) {
@@ -379,6 +383,7 @@ export const useProfessorChat = ({
           cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
           cleanedContent = parseAndStripDiagnosticEvent(cleanedContent);
           cleanedContent = parseAndStripSystemEvent(cleanedContent);
+          cleanedContent = cleanedContent.replace(BLOOM_LEVEL_PATTERN, '').trim();
 
           // Check for no materials fallback
           if (checkForNoMaterialsFallback(cleanedContent)) {
