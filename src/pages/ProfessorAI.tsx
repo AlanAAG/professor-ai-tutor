@@ -129,20 +129,17 @@ const ProfessorAI = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedBatch) return;
+    if (!selectedBatch || !accessToken) return;
 
     const fetchLectures = async () => {
       setLecturesLoading(true);
       setLecturesError(false);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
         const headers: Record<string, string> = {
           "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           "x-cohort-id": selectedBatch,
+          "authorization": `Bearer ${accessToken}`,
         };
-        if (session?.access_token) {
-          headers["authorization"] = `Bearer ${session.access_token}`;
-        }
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures&mode=${encodeURIComponent(mode)}`,
           { headers }
@@ -167,7 +164,7 @@ const ProfessorAI = () => {
     };
 
     fetchLectures();
-  }, [selectedBatch, mode]);
+  }, [selectedBatch, mode, accessToken]);
 
   const sendMessage = async (content: string, isHidden = false) => {
     if (mode === "Quiz") {
