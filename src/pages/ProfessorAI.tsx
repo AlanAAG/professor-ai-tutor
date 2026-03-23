@@ -31,6 +31,7 @@ const ProfessorAI = () => {
   const [lecturesError, setLecturesError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<HeaderTab>("chat");
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   
   const [expertiseLevel, setExpertiseLevel] = useState<ExpertiseLevel>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
