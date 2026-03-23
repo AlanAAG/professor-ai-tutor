@@ -383,6 +383,7 @@ export const useProfessorChat = ({
           cleanedContent = parseAndStripCalibrationRequest(cleanedContent);
           cleanedContent = parseAndStripDiagnosticEvent(cleanedContent);
           cleanedContent = parseAndStripSystemEvent(cleanedContent);
+          cleanedContent = cleanedContent.replace(BLOOM_LEVEL_PATTERN, '').trim();
 
           // Check for no materials fallback
           if (checkForNoMaterialsFallback(cleanedContent)) {
