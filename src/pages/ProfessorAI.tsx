@@ -123,14 +123,17 @@ const ProfessorAI = () => {
       setLecturesLoading(true);
       setLecturesError(false);
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "x-cohort-id": selectedBatch,
+        };
+        if (session?.access_token) {
+          headers["authorization"] = `Bearer ${session.access_token}`;
+        }
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/professor-chat?endpoint=lectures&mode=${encodeURIComponent(mode)}`,
-          {
-            headers: {
-              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              "x-cohort-id": selectedBatch,
-            },
-          }
+          { headers }
         );
 
         if (response.ok) {
