@@ -22,6 +22,9 @@ const DIAGNOSTIC_EVENT_PATTERN = /DIAGNOSTIC_EVENT:\s*(\{[\s\S]*\})$/;
 // Pattern to detect system events (e.g., persona shift)
 const SYSTEM_EVENT_PATTERN = /SYSTEM_EVENT:\s*(\{[\s\S]*?\})(?:\s|$)/;
 
+// Pattern to detect inline bloom_level JSON objects emitted by the backend
+const BLOOM_LEVEL_PATTERN = /\{"type"\s*:\s*"bloom_level"[^}]*\}/g;
+
 interface UseProfessorChatProps {
   selectedCourse: string | null;
   selectedBatch: string | null;
