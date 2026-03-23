@@ -240,7 +240,7 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
   }, [messageId, isUser]);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(message.content);
+    await navigator.clipboard.writeText(markdownToPlainText(message.content));
     setCopied(true);
     toast.success("Copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
