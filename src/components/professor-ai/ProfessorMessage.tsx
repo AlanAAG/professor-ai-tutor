@@ -14,6 +14,24 @@ import { cn } from "@/lib/utils";
 import { FeedbackModal } from "./FeedbackModal";
 import { MermaidDiagram } from "./MermaidDiagram";
 
+/** Convert markdown to clean plain text for clipboard copying. */
+function markdownToPlainText(md: string): string {
+  return md
+    .replace(/^#{1,6}\s+/gm, '')                          // headings
+    .replace(/\*\*(.+?)\*\*/g, '$1')                       // bold
+    .replace(/\*(.+?)\*/g, '$1')                           // italic
+    .replace(/```[\s\S]*?```/g, (m) =>                     // code blocks → keep content
+      m.replace(/```\w*\n?/g, '').trim()
+    )
+    .replace(/`(.+?)`/g, '$1')                             // inline code
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1')                    // links
+    .replace(/\$\$(.+?)\$\$/gs, '$1')                      // block LaTeX
+    .replace(/\$(.+?)\$/g, '$1')                           // inline LaTeX
+    .replace(/^\s*[-*+]\s/gm, '• ')                        // bullets
+    .replace(/\n{3,}/g, '\n\n')                            // excess newlines
+    .trim();
+}
+
 /** Pre-process markdown to fix malformed GFM tables so remark-gfm can parse them. */
 function fixMalformedTables(md: string): string {
   const lines = md.split('\n');
