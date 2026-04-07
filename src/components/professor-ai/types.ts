@@ -66,7 +66,7 @@ export interface SystemEvent {
 }
 
 // Header tab type
-export type HeaderTab = "chat" | "progress" | "analytics" | "guardrails";
+export type HeaderTab = "chat" | "progress" | "analytics";
 
 // Analytics types
 export interface CohortAnalyticsTopic {
