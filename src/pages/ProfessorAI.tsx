@@ -9,7 +9,7 @@ import { QuizView } from "@/components/professor-ai/QuizView";
 import { ChatView } from "@/components/professor-ai/ChatView";
 import { StudentProgressView } from "@/components/professor-ai/StudentProgressView";
 import { CohortAnalyticsView } from "@/components/professor-ai/CohortAnalyticsView";
-import { GuardrailsView } from "@/components/professor-ai/GuardrailsView";
+
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { COURSES_BY_BATCH_TERM } from "@/data/courses";
@@ -80,6 +80,7 @@ const ProfessorAI = () => {
   }, []);
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canSwitchBatch, setCanSwitchBatch] = useState(false);
 
   useEffect(() => {
     const setBatchFromUser = async () => {
@@ -93,6 +94,7 @@ const ProfessorAI = () => {
         else if (email.includes("2029")) batch = "2029";
       }
 
+      let canSwitch = false;
       if (user) {
         const { data: roleData } = await supabase
           .from('user_roles')
@@ -103,12 +105,20 @@ const ProfessorAI = () => {
 
         if (roleData) {
           isAdminUser = true;
-          const storedBatch = localStorage.getItem("professorSelectedBatch");
-          batch = storedBatch && (storedBatch === "2028" || storedBatch === "2029") ? storedBatch : "2029";
+          // Only allow batch switching for super-admins (solanki.shivam)
+          canSwitch = user.email?.toLowerCase() === 'solanki.shivam@tetr.org';
+          if (canSwitch) {
+            const storedBatch = localStorage.getItem("professorSelectedBatch");
+            batch = storedBatch && (storedBatch === "2028" || storedBatch === "2029") ? storedBatch : "2029";
+          } else {
+            // Non-switching admins default to 2029
+            batch = "2029";
+          }
         }
       }
 
       setIsAdmin(isAdminUser);
+      setCanSwitchBatch(canSwitch);
 
       const storedBatch = localStorage.getItem("professorSelectedBatch");
       if (!isAdminUser && storedBatch && storedBatch !== batch) {
@@ -267,7 +277,7 @@ const ProfessorAI = () => {
             setSelectedBatch(newBatch);
             localStorage.setItem("professorSelectedBatch", newBatch);
           }}
-          isDeveloper={isAdmin}
+          isDeveloper={canSwitchBatch}
         />
       </div>
     );
@@ -293,8 +303,6 @@ const ProfessorAI = () => {
         return <StudentProgressView selectedBatch={selectedBatch} />;
       case "analytics":
         return isAdmin ? <CohortAnalyticsView selectedBatch={selectedBatch} /> : null;
-      case "guardrails":
-        return isAdmin ? <GuardrailsView selectedBatch={selectedBatch} selectedCourse={selectedCourse} /> : null;
       default:
         return mode === "Quiz" ? (
           <QuizView

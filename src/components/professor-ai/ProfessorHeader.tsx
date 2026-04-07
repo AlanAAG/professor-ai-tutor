@@ -87,7 +87,6 @@ export const ProfessorHeader = ({
     { id: "chat", label: "Chat" },
     { id: "progress", label: "My Progress" },
     { id: "analytics", label: "Cohort Analytics", adminOnly: true },
-    { id: "guardrails", label: "Settings", adminOnly: true },
   ];
 
   const visibleTabs = tabs.filter(t => !t.adminOnly || isAdmin);
