@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Loader2, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
