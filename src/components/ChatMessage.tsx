@@ -220,6 +220,6 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
