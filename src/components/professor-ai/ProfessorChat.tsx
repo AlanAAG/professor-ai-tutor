@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, MessageSquare, ArrowUp, Search, Brain, FileText, Paperclip, X, BookOpen } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -280,9 +281,20 @@ export const ProfessorChat = ({
         {/* Centered welcome content */}
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col items-center justify-center px-4 py-6 md:py-8">
-            <div className="text-center space-y-4 md:space-y-6 max-w-2xl animate-fade-in">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.1 }
+                }
+              }}
+              className="text-center space-y-4 md:space-y-6 max-w-2xl"
+            >
               {/* Gradient icon */}
-              <div className="inline-flex items-center justify-center w-14 h-14 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 shadow-lg mx-auto">
+              <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="inline-flex items-center justify-center w-14 h-14 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 shadow-lg mx-auto">
                 {mode === "Notes Creator" ? (
                   <Sparkles className="w-7 h-7 md:w-10 md:h-10 text-primary" />
                 ) : mode === "Pre-Read" ? (
@@ -292,10 +304,10 @@ export const ProfessorChat = ({
                 ) : (
                   <Search className="w-7 h-7 md:w-10 md:h-10 text-primary" />
                 )}
-              </div>
+              </motion.div>
               
               {/* Welcome text */}
-              <div className="space-y-2">
+              <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="space-y-2">
                 <h1 className="text-2xl md:text-4xl font-semibold text-chat-text">
                   {mode === "Quiz"
                     ? "What topic should I quiz you on?"
@@ -318,7 +330,7 @@ export const ProfessorChat = ({
                     ? "Pre-Read mode requires a specific lecture selection"
                     : `Ready to help you learn about ${getLectureDisplayText()}`}
                 </p>
-              </div>
+              </motion.div>
 
               {/* Lecture selector for Notes Creator and Pre-Read modes */}
               {(mode === "Notes Creator" || mode === "Pre-Read") && selectedCourse && (
@@ -357,28 +369,30 @@ export const ProfessorChat = ({
                   
                   {/* Create Notes / Pre-Read button */}
                   {hasSpecificLecture && (
-                    <Button
-                      onClick={onCreateNotes}
-                      disabled={isLoading}
-                      size="lg"
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-lg hover:shadow-[var(--shadow-hover)] transition-all"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          {mode === "Pre-Read" ? "Creating summary..." : "Creating notes..."}
-                        </>
-                      ) : (
-                        <>
-                          {mode === "Pre-Read" ? <BookOpen className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
-                          {mode === "Pre-Read" ? "Create Pre-Read Summary" : "Create Notes"}
-                        </>
-                      )}
-                    </Button>
+                    <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
+                      <Button
+                        onClick={onCreateNotes}
+                        disabled={isLoading}
+                        size="lg"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2 shadow-lg hover:shadow-[var(--shadow-hover)] transition-all"
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            {mode === "Pre-Read" ? "Creating summary..." : "Creating notes..."}
+                          </>
+                        ) : (
+                          <>
+                            {mode === "Pre-Read" ? <BookOpen className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                            {mode === "Pre-Read" ? "Create Pre-Read Summary" : "Create Notes"}
+                          </>
+                        )}
+                      </Button>
+                    </motion.div>
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
             
             {/* Input area for Quiz mode and Study mode */}
             {(mode === "Quiz" || canChat) && mode !== "Notes Creator" && mode !== "Pre-Read" && (
@@ -455,7 +469,7 @@ export const ProfessorChat = ({
                 */}
                 
                 {/* Quick suggestions */}
-                <div className="flex flex-wrap justify-center gap-2 mt-4 md:mt-6">
+                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="flex flex-wrap justify-center gap-2 mt-4 md:mt-6">
                   {(mode === "Quiz" ? quizSuggestions : ["Explain the key concepts", "Help me understand", "Give me examples"]).map(suggestion => (
                     <button
                       key={suggestion}
@@ -465,7 +479,7 @@ export const ProfessorChat = ({
                       {suggestion}
                     </button>
                   ))}
-                </div>
+                </motion.div>
               </div>
             )}
 
@@ -495,25 +509,34 @@ export const ProfessorChat = ({
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden professor-chat-scroll-area"
+        className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden professor-chat-scroll-area scroll-smooth"
       >
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 space-y-8">
-          {messages.map((message, index) => {
-            // Find the preceding user message for feedback context
-            const precedingUserQuery = message.role === "assistant" 
-              ? messages.slice(0, index).reverse().find(m => m.role === "user")?.content || lastUserQuery
-              : undefined;
-            
-            return (
-              <ProfessorMessage 
-                key={message.id || index} 
-                message={message} 
-                messageId={message.id}
-                sessionId={sessionId}
-                userQuery={precedingUserQuery}
-              />
-            );
-          })}
+          <AnimatePresence initial={false}>
+            {messages.map((message, index) => {
+              // Find the preceding user message for feedback context
+              const precedingUserQuery = message.role === "assistant"
+                ? messages.slice(0, index).reverse().find(m => m.role === "user")?.content || lastUserQuery
+                : undefined;
+
+              return (
+                <motion.div
+                  key={message.id || index}
+                  layout
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <ProfessorMessage
+                    message={message}
+                    messageId={message.id}
+                    sessionId={sessionId}
+                    userQuery={precedingUserQuery}
+                  />
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
           
           {/* Streaming content display */}
           {streamingContent && (
@@ -629,7 +652,8 @@ export const ProfessorChat = ({
                 */}
                 
                 {/* Input container with send button - properly centered */}
-                <div className="flex-1 min-w-0 relative flex items-center overflow-hidden">
+                <div className="flex-1 min-w-0 relative flex items-center group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500 group-focus-within:animate-pulse-glow" />
                   <textarea
                     ref={textareaRef}
                     value={input}
@@ -649,21 +673,23 @@ export const ProfessorChat = ({
                     }
                     disabled={isInputDisabled}
                     rows={1}
-                    className="w-full bg-secondary/70 backdrop-blur-md border border-border/50 rounded-2xl pl-4 pr-14 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px]"
+                    className="relative w-full bg-background/60 backdrop-blur-xl border border-border/20 rounded-2xl pl-4 pr-14 py-3 text-chat-text placeholder:text-chat-text-secondary text-sm outline-none transition-all disabled:opacity-50 resize-none overflow-y-auto max-h-[200px] shadow-sm group-focus-within:bg-background/80"
                     style={{ minHeight: '48px' }}
                   />
-                  <Button
-                    type="submit"
-                    disabled={isInputDisabled || !input.trim()}
-                    size="sm"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center flex-shrink-0"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ArrowUp className="w-4 h-4" />
-                    )}
-                  </Button>
+                  <motion.div className="absolute right-2 top-1/2 -translate-y-1/2" whileTap={{ scale: 0.9 }}>
+                    <Button
+                      type="submit"
+                      disabled={isInputDisabled || !input.trim()}
+                      size="sm"
+                      className="h-9 w-9 p-0 rounded-full bg-primary hover:bg-primary/90 disabled:opacity-30 shadow-md flex items-center justify-center flex-shrink-0"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ArrowUp className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </form>

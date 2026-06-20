@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Plus,
@@ -241,7 +242,7 @@ export const ProfessorSidebarNew = ({
 
   // Filter and sort conversations
   const filteredConversations = useMemo(() => {
-    let filtered = conversations.filter((c) => {
+    const filtered = conversations.filter((c) => {
       const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         getDisplayName(c.class_id).toLowerCase().includes(searchQuery.toLowerCase());
       const matchesArchived = showArchived ? c.is_archived : !c.is_archived;

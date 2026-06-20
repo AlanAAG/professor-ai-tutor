@@ -1,4 +1,5 @@
 import { Sparkles, ThumbsUp, ThumbsDown, BookOpen, Copy, Check } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,21 +101,32 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
 
   if (isUser) {
     return (
-      <div className="flex justify-end animate-fade-in">
+      <motion.div
+        className="flex justify-end"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         <div className="max-w-[85%] md:max-w-[70%]">
-          <div className="bg-white text-black px-4 py-3 rounded-2xl rounded-br-md shadow-md">
+          <div className="bg-chat-user-bg text-chat-user-fg px-4 py-3 rounded-2xl rounded-br-sm shadow-sm border border-border/10">
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{content}</p>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex gap-3 animate-fade-in">
+    <motion.div
+      className="flex gap-3 group"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
       {/* AI Avatar */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg">
-        <Sparkles className="w-4 h-4 text-primary-foreground" />
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-md relative overflow-hidden">
+        {content === "" && <div className="absolute inset-0 bg-white/20 animate-shimmer" />}
+        <Sparkles className="w-4 h-4 text-primary-foreground relative z-10" />
       </div>
       
       {/* Message Content */}
@@ -208,6 +220,6 @@ export const ChatMessage = ({ role, content, sources, messageId }: ChatMessagePr
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

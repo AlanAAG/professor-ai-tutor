@@ -1,4 +1,5 @@
 import { Sparkles, Copy, Check, Star } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useMemo } from "react";
 import 'katex/dist/katex.min.css';
@@ -58,7 +59,7 @@ function fixMalformedTables(md: string): string {
         // Check if there's a separator row (index 1 ideally)
         const isSep = (line: string) => /^\|[\s\-:|]+(\|[\s\-:|]+)*\|?\s*$/.test(line.trim());
 
-        let sepIndex = block.findIndex(isSep);
+        const sepIndex = block.findIndex(isSep);
 
         if (sepIndex === -1) {
           // No separator — insert one after the first row
@@ -300,23 +301,34 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
   // User message
   if (isUser) {
     return (
-      <div className="flex justify-end animate-fade-in">
+      <motion.div
+        className="flex justify-end"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         <div className="max-w-[85%] md:max-w-[75%] overflow-hidden">
-          <div className="bg-foreground text-background px-4 py-3 rounded-2xl rounded-br-sm shadow-md overflow-hidden max-w-full">
+          <div className="bg-chat-user-bg text-chat-user-fg px-4 py-3 rounded-2xl rounded-br-sm shadow-sm overflow-hidden max-w-full border border-border/10">
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-wrap-anywhere">
               {message.content}
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // AI message — single unified ReactMarkdown pass
   return (
-    <div className="flex gap-4 animate-fade-in group max-w-full overflow-hidden">
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-lg shadow-primary/20">
-        <Sparkles className="w-4 h-4 text-primary-foreground" />
+    <motion.div
+      className="flex gap-4 group max-w-full overflow-hidden"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center shadow-md relative overflow-hidden">
+        {isStreaming && <div className="absolute inset-0 bg-white/20 animate-shimmer" />}
+        <Sparkles className="w-4 h-4 text-primary-foreground relative z-10" />
       </div>
       
       <div className="flex-1 min-w-0 space-y-1 overflow-hidden max-w-full">
@@ -378,6 +390,6 @@ export const ProfessorMessage = ({ message, isStreaming = false, messageId, sess
         onSubmit={handleSubmitFeedback}
         isSubmitting={isSubmitting}
       />
-    </div>
+    </motion.div>
   );
 };
